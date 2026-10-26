@@ -20,5 +20,10 @@ a recipe).
 \author{
 \strong{Maintainer}: D.M. Kloppenburg \email{192165061+dm-k1@users.noreply.github.com}
 
+Authors:
+\itemize{
+  \item D.M. Kloppenburg \email{192165061+dm-k1@users.noreply.github.com}
+}
+
 }
 \keyword{internal}
