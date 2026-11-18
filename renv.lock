@@ -3922,7 +3922,7 @@
       "RemoteUsername": "dm-k1",
       "RemoteRepo": "flatcor",
       "RemoteRef": "main",
-      "RemoteSha": "64df3ba804d5f13c64ac6adad43f2d3432377d03",
+      "RemoteSha": "86b66b3344f31ec86b5eec3b6483c6d3a51dd56c",
       "Requirements": [
         "MASS",
         "R",
