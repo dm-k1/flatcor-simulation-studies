@@ -177,8 +177,10 @@ points of practical advice). What flatcor and the studies take from it:
 
 ## Status (17 November 2026)
 
-- **flatcor 3.0** (in development) is on flatcor's `main` (commit 395e763,
-  18 November 2026) and pinned in `renv.lock`. Since a6f135d:
+- **flatcor 3.0** (in development) is on flatcor's `main` (commit 64df3ba,
+  18 November 2026) and pinned in `renv.lock`. Since a6f135d: Bayes factor
+  fits no longer draw log_lik and y_rep (at n = 5000 they took gigabytes per
+  model and crashed 3b's run-time estimate);
   `bayes_factor_models()` takes formulas and data instead of `lm()` fits,
   `seed` makes a Bayes factor fully reproducible, rstan is tested in its own
   R process, and the code is lintr-clean. In 3.0: one Stan model for the three priors, with the
