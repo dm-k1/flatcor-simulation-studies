@@ -21,8 +21,10 @@ validation.
 `machine`. JZS and Zellner–Siow rows have BayesFactor's Bayes factor of each
 model against the intercept-only model instead (`log_bf_intercept_a`, ...).
 
-**Files `_variables.csv.gz` and `_chains.csv.gz`** next to a study's file
-hold, joined by `id` and `model` (`a`, `b`): the summary of every Stan
+**Files `_variables.csv.gz` and `_chains.csv.gz`** (not in git: 197 MB;
+attached to the release of tag
+[`v2-results`](https://github.com/dm-k1/flatcor-validation/releases/tag/v2-results),
+with their SHA-256 sums; a run writes them here) hold, joined by `id` and `model` (`a`, `b`): the summary of every Stan
 variable (mean, median, sd, mad, quantiles, rhat, ess_bulk, ess_tail) and
 the sampler per chain (divergences, treedepth hits, E-BFMI, step size,
 leapfrog steps, warmup and sampling seconds), as flatcor returns them.
@@ -40,7 +42,7 @@ leapfrog steps, warmup and sampling seconds), as flatcor returns them.
 | `study_3a_repeated_runs.csv` (+ both) | one of several runs on the same dataset (`run`) |
 | `study_3b_formula.csv` (+ both) | one prior at one small *n* (3b.1, 3b.2) |
 | `study_3b_rates.csv` (+ both) | one dataset's log BF (3b.3–3b.6): `log_bf` for the truth, `log_bf_smaller` of the smaller model against the larger |
-| `study_3b_growing_k.csv` (+ both, one per growth rule: `_k_n_4`, `_k_sqrt_n`) | one method on one dataset as *k* grows with *n* (3b.8, 3b.9); its `_variables` and `_chains` are split by `growth` to stay under GitHub's 100 MB per file |
+| `study_3b_growing_k.csv` (+ both, one per growth rule: `_k_n_4`, `_k_sqrt_n`) | one method on one dataset as *k* grows with *n* (3b.8, 3b.9); its `_variables` and `_chains` are split by `growth` |
 | `study_3b_intrinsic_draws.csv.gz` | one prior draw of x1's coefficient with the sample or the population covariance (3b.7) |
 
 Numbers are written with 15 significant digits (`data.table::fwrite`).
