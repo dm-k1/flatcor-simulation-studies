@@ -5,8 +5,11 @@ package for objective Bayes factors and estimation in linear regression.
 The argument for its priors, the priors and their derivations, and the
 paper are in [Objective-bayes](https://github.com/dm-k1/Objective-bayes).
 
-> **Branch v2: work in progress.** Results here can change at any time. The
-> final validation reported in the paper is on `main`, fixed at tag [`v1-results`](https://github.com/dm-k1/flatcor-validation/tree/v1-results).
+> **Branch v2: work in progress.** Code and results here can change at any
+> time. `main` holds the last full run (tag
+> [`v2-results`](https://github.com/dm-k1/flatcor-validation/tree/v2-results));
+> the results reported in the paper are at tag
+> [`v1-results`](https://github.com/dm-k1/flatcor-validation/tree/v1-results).
 
 The repository holds an engine, which runs simulation studies on parallel
 workers up to their results files, and the projects that use it, each in a

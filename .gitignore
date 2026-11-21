@@ -25,3 +25,8 @@ Rplots.pdf
 
 # The targets store (results of the pipeline, re-created by tar_make())
 _targets/
+
+# Per-dataset detail files: too big for git, attached to a release instead
+# (project_1_validation/results/per_dataset/README.md)
+project_1_validation/results/per_dataset/*_variables*.csv.gz
+project_1_validation/results/per_dataset/*_chains*.csv.gz
