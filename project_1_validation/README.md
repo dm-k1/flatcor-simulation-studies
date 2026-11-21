@@ -66,7 +66,7 @@ above is enough to follow the validation. In this repository:
 | | Document | What it is |
 |---|---|---|
 | 1 | [`docs/validation_tests.md`](docs/validation_tests.md) | **What the validation tests**: per study its design, what is tested, what is expected and why, with what Monte Carlo error and how many datasets, and the data sets |
-| 2 | [a separate private repository](https://github.com/dm-k1/a separate private repository) | **The results**, shown: per study its question, its estimates against what is expected, and figures (a separate repository that reads this one's results files) |
+| 2 | a separate private repository (a private repository) | **The results**, shown: per study its question, its estimates against what is expected, and figures (a separate repository that reads this one's results files) |
 
 Working notes: [`docs/notes/`](docs/notes/) (the plan of the redesign, the
 run-time estimate).
@@ -121,7 +121,7 @@ Rscript run_all.R project_1_validation 3a                   # one study
 The results go to [`results/`](results/): each study's results
 (`results/studies/study_<study>.rds`) and every dataset's rows
 (`results/per_dataset/`). The figures and the notebook that show them live
-in [a separate private repository](https://github.com/dm-k1/a separate private repository).
+in a separate private repository (a private repository).
 
 ## What's where
 

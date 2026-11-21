@@ -19,7 +19,7 @@ a0d2ac9, root seed 0, not a smoke test), 21 November 2026:
 | `per_dataset/` (one or more files per study, see its README; the `_variables` and `_chains` files are attached to the release of tag `v2-results`) | the pipeline, as each study's last step before its metrics |
 
 The figures drawn from these files at the end of that run are in
-[a separate private repository](https://github.com/dm-k1/a separate private repository)
+a separate private repository (a private repository)
 (`figures/`), which shows the results; this repository ends at the results
 files.
 

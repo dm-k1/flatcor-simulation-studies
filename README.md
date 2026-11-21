@@ -60,7 +60,7 @@ with its results in `cache/` (never mixed with real ones).
 
 This repository ends at the results files. The figures and the notebook
 that show project 1's results live in
-[a separate private repository](https://github.com/dm-k1/a separate private repository),
+a separate private repository (a private repository),
 which only reads those files; nothing here knows of it.
 
 ### Faster checks while working on the code
