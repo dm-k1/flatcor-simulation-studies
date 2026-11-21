@@ -5,13 +5,13 @@
 # would take the log density for its Bayes factors from BridgeStan instead
 # of cmdstanr's model methods; it changes nothing in flatcor or the pipeline.
 #
-# It runs when the check or this file changes on v2, and on demand
+# It runs when the check or this file changes, on any branch, and on demand
 # (Actions > "BridgeStan check" > Run workflow).
 name: BridgeStan check
 
 on:
   push:
-    branches: [v2]
+    branches: ["**"]   # every branch (not tags)
     paths:
       - ci/bridgestan_check.R
       - .github/workflows/bridgestan.yml

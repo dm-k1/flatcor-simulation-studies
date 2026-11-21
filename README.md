@@ -112,8 +112,8 @@ Every run ends with a check of its outputs
 ([`engine/tests/check_results.R`](engine/tests/check_results.R)): a results file
 for every study run, all with the run's flatcor; no empty table, no NaN,
 Inf or NA in any table, except blanks that are there by design (each study
-declares its own, with its reason, in its `design.R`). The smoke test, and so every push to
-`main` or `v2`, fails when the check finds a problem; a real run reports it
+declares its own, with its reason, in its `design.R`). The smoke test, and so every push,
+fails when the check finds a problem; a real run reports it
 in its log.
 
 A stopped run continues where it was. It refuses to
@@ -125,11 +125,13 @@ without that check: for working on a single step.)
 long the full run takes, and how to run it on a cluster (Apptainer, a SLURM
 job, resubmitting until it is done).
 
-Every push to `main` is checked automatically
+Every push, to any branch, is checked automatically
 ([`.github/workflows/check.yml`](.github/workflows/check.yml)): lintr, the
-links, the workflow files, and the smoke test inside the published image
-(once per change: a push that builds a new image is smoke-tested by that
-build, and the check then skips it).
+links, the workflow files, and for every project folder the static check
+and the smoke test inside the published image (once per change: a push that
+builds a new image is smoke-tested by that build, and the check then skips
+it). A push that changes the environment (the Dockerfile, `renv.lock`)
+builds and publishes its image first (`image.yml`), on any branch too.
 
 The smoke test is meant to run the way a real run does, because a bug can
 hide anywhere the two differ. So it runs in the same image (the same

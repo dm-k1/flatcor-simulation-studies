@@ -1,8 +1,9 @@
-# Checks the validation on every push to main or v2: five independent jobs that
+# Checks the code on every push, on any branch: five independent jobs that
 # start at the same time, written from the quickest to the slowest.
 #
 #   lint        lintr, in the style of .lintr (seconds)
-#   static      the static check (engine/tests/static_check.R): the pipeline is
+#   static      the static check (engine/tests/static_check.R), for every
+#               project folder (project_*/): the pipeline is
 #               valid, every function called exists, and the code keeps to
 #               the declared way (expensive calls replayable, files declared
 #               as steps); inside the published image, for its packages,
@@ -10,8 +11,9 @@
 #               (ci/wait_for_image.sh)
 #   links       every link in the README and the docs (seconds)
 #   workflows   actionlint on these workflow files (seconds)
-#   smoke       the smoke test (VALIDATION_SMOKE=1: Rscript run_all.R project_1_validation, a corner
-#               of every study from scratch) inside the published image, so with exactly the packages and CmdStan of
+#   smoke       the smoke test of every project folder (VALIDATION_SMOKE=1:
+#               Rscript run_all.R <project>, a corner of every study from
+#               scratch) inside the published image, so with exactly the packages and CmdStan of
 #               the real run (about 40 minutes); skipped when an image build
 #               runs it, or ran it on the same code (see the smoke job). It fails
 #               when the outputs check (engine/tests/check_results.R) finds a
@@ -25,7 +27,7 @@ name: Check
 
 on:
   push:
-    branches: [main, v2]
+    branches: ["**"]   # every branch (not tags)
   workflow_dispatch:
 
 permissions:
@@ -67,9 +69,11 @@ jobs:
         run: ci/wait_for_image.sh
       - name: Static check
         run: |
-          docker run --rm -v "$PWD":/project -e PROJECT=project_1_validation \
-            "ghcr.io/${{ github.repository_owner }}/flatcor-validation:$(cluster/image_tag.sh)" \
-            Rscript engine/tests/static_check.R
+          for project in project_*/; do
+            docker run --rm -v "$PWD":/project -e PROJECT="${project%/}" \
+              "ghcr.io/${{ github.repository_owner }}/flatcor-validation:$(cluster/image_tag.sh)" \
+              Rscript engine/tests/static_check.R
+          done
 
   links:
     runs-on: ubuntu-latest
@@ -155,7 +159,9 @@ jobs:
       - name: Smoke test
         if: steps.build.outputs.tested != 'true' && steps.image.outputs.tested != 'true'
         run: |
-          docker run --rm -v "$PWD":/project \
-            -e VALIDATION_SMOKE=1 -e R_PARALLELLY_AVAILABLECORES_SYSTEM=16 \
-            "$IMAGE:$(cluster/image_tag.sh)" \
-            Rscript run_all.R project_1_validation
+          for project in project_*/; do
+            docker run --rm -v "$PWD":/project \
+              -e VALIDATION_SMOKE=1 -e R_PARALLELLY_AVAILABLECORES_SYSTEM=16 \
+              "$IMAGE:$(cluster/image_tag.sh)" \
+              Rscript run_all.R "${project%/}"
+          done

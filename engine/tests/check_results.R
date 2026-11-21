@@ -8,7 +8,7 @@
 ##      its study declares (each with its reason), and no empty table except
 ##      those its study declares for the smoke test
 ##
-##  The smoke test (and so every push to main or v2, check.yml, and every image build)
+##  The smoke test (and so every push, check.yml, and every image build)
 ##  stops with an error when something is wrong; a real run reports it in
 ##  its log, as its results are written and should not be lost.
 ## =====================================================================

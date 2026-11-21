@@ -5,11 +5,13 @@
 # datasets, each on its own runner (4 cores). engine/run_time/estimate_run_time.R then
 # fits the fixed part and the part per dataset and reads off the full run; the
 # table appears on the run's summary page and as the artifact run-time-estimate.
-# Each job first times a reference task (project_1_validation/settings/timing_reference.R: one fixed
-# flatcor Bayes factor), so the estimate can divide out how fast its runner
-# was; GitHub's runners have several kinds of processors.
-# Studies 1a (it does not depend on the number of datasets) and 1b (20 per
-# prior, too few to scale) run in full. The fractions, 4% and 6%, give exact
+# The project, its studies and the fractions are inputs (left as they are:
+# project 1, the only project folder so far). Each job first times the
+# project's reference task (<project>/settings/timing_reference.R; for
+# project 1 one fixed flatcor Bayes factor), so the estimate can divide out
+# how fast its runner was; GitHub's runners have several kinds of
+# processors. Studies too small to scale run in full (project 1: 1a, which
+# does not depend on the number of datasets, and 1b, 20 per prior). The fractions, 4% and 6%, give exact
 # numbers of datasets for every study (3b: 2 and 3 per growing-k cell, 4 and
 # 6 per rates cell); only 3a's repeated runs (part B, 20 datasets) stay at 2
 # in both, so the estimate counts part B low.
@@ -24,6 +26,15 @@ name: Run-time estimate
 on:
   workflow_dispatch:
     inputs:
+      project:
+        description: The project folder to time (may be left empty while there is only one)
+        default: ""
+      studies:
+        description: The studies to time at those fractions (JSON list)
+        default: '["2a", "2b", "3a", "3b"]'
+      full_studies:
+        description: The studies too small to scale, timed in full (JSON list, or [])
+        default: '["1a", "1b"]'
       fractions:
         description: Fractions of the datasets to time each study at (JSON list)
         default: '["0.04", "0.06"]'
@@ -40,11 +51,26 @@ concurrency:
 jobs:
   # When an image build for this branch is still running (renv.lock changed in
   # this push or a recent one), time the new image, not the one before it.
+  # It also lays out the jobs: every study at every fraction, and the
+  # studies too small to scale at fraction 1.
   image:
     runs-on: ubuntu-latest
     timeout-minutes: 320
+    outputs:
+      jobs: ${{ steps.jobs.outputs.jobs }}
     steps:
       - uses: actions/checkout@v4
+      - name: The jobs
+        id: jobs
+        env:
+          STUDIES: ${{ inputs.studies }}
+          FULL_STUDIES: ${{ inputs.full_studies }}
+          FRACTIONS: ${{ inputs.fractions }}
+        run: |
+          jobs=$(jq -nc --argjson s "$STUDIES" --argjson full "$FULL_STUDIES" --argjson f "$FRACTIONS" \
+            '[($s[] as $study | $f[] | {study: $study, fraction: .}), ($full[] | {study: ., fraction: "1"})]')
+          echo "$jobs"
+          echo "jobs=$jobs" >> "$GITHUB_OUTPUT"
       - name: Wait for an image build of this branch, if one is running
         env:
           GH_TOKEN: ${{ github.token }}
@@ -57,13 +83,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        study: ["2a", "2b", "3a", "3b"]
-        fraction: ${{ fromJSON(inputs.fractions || '["0.04", "0.06"]') }}
-        include:
-          - study: "1a"
-            fraction: "1"
-          - study: "1b"
-            fraction: "1"
+        include: ${{ fromJSON(needs.image.outputs.jobs) }}
     name: study ${{ matrix.study }} at ${{ matrix.fraction }}
     steps:
       - uses: actions/checkout@v4
@@ -71,7 +91,7 @@ jobs:
       - name: Time the study
         run: |
           docker run --rm -v "$PWD":/project \
-            -e VALIDATION_TIMING=${{ matrix.fraction }} -e PROJECT=project_1_validation \
+            -e VALIDATION_TIMING=${{ matrix.fraction }} -e PROJECT=${{ inputs.project }} \
             "ghcr.io/${{ github.repository_owner }}/flatcor-validation:$(cluster/image_tag.sh)" \
             Rscript engine/run_time/time_study.R ${{ matrix.study }}
 
@@ -79,7 +99,7 @@ jobs:
         if: always()
         with:
           name: time-${{ matrix.study }}-at-${{ matrix.fraction }}
-          path: cache/project_1_validation/timing/time_*.rds
+          path: cache/*/timing/time_*.rds
           if-no-files-found: ignore
 
   estimate:
@@ -97,7 +117,7 @@ jobs:
 
       - name: Scale up to the full run
         run: |
-          docker run --rm -v "$PWD":/project -e PROJECT=project_1_validation \
+          docker run --rm -v "$PWD":/project -e PROJECT=${{ inputs.project }} \
             "ghcr.io/${{ github.repository_owner }}/flatcor-validation:$(cluster/image_tag.sh)" \
             Rscript engine/run_time/estimate_run_time.R timing | tee run_time_estimate.md
           cat run_time_estimate.md >> "$GITHUB_STEP_SUMMARY"
