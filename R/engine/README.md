@@ -5,8 +5,8 @@ parallel workers, reports each study's estimates against what is expected,
 and tests itself. It names no study and no package. Another project copies
 this folder and the two root scripts (`_targets.R`, `run_all.R`)
 unchanged, then writes its own `R/project/` and `R/studies/`. The engine
-ends at the results files; showing them (figures, a notebook) is the
-project's own (here `R/project/report/`).
+ends at the results files; showing them (figures, a notebook) is not its
+concern.
 
 ## Words
 
@@ -90,5 +90,4 @@ A study is one folder in `R/studies/`:
 | `code.R` | The functions that compute the study |
 | `steps.R` | Its steps in the pipeline, ending in a `list()`. Every step's name ends in `_<study>`, and the results step is `results_<study>` (`format = "file"`) |
 
-A new study is a new folder. No engine file changes; only what the project
-shows of it (its figures, in this project `R/project/report/`) is added there.
+A new study is a new folder. No other file changes.

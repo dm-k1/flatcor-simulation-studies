@@ -8,7 +8,7 @@
 #               as steps); inside the published image, for its packages,
 #               after waiting for an image build still running
 #               (ci/wait_for_image.sh)
-#   links       every link in the README, the docs and the notebook (seconds)
+#   links       every link in the README and the docs (seconds)
 #   workflows   actionlint on these workflow files (seconds)
 #   smoke       the smoke test (VALIDATION_SMOKE=1: Rscript run_all.R, a corner
 #               of every study from scratch) inside the published image, so with exactly the packages and CmdStan of
@@ -84,7 +84,7 @@ jobs:
           args: >-
             --no-progress --accept '200..=299,403' --max-retries 3
             --remap 'https://github.com/([^/]+)/([^/]+)/blob/(.*) https://raw.githubusercontent.com/$1/$2/$3'
-            README.md 'docs/**/*.md' cluster/README.md validation.ipynb
+            README.md 'docs/**/*.md' cluster/README.md
           fail: true
 
   workflows:
@@ -106,7 +106,7 @@ jobs:
   #     org.opencontainers.image.revision). If the code is the same there and
   #     here, the test has run: it stops. "The code" is everything except the
   #     files the pipeline never reads: docs/, every .md file, .github/,
-  #     cluster/aws/, .lintr, validation.ipynb. So a push of only docs or
+  #     cluster/aws/, .lintr. So a push of only docs or
   #     workflows right after an image build is not tested twice, and any
   #     change to the pipeline's code is tested once.
   #  3. Otherwise it runs the smoke test.
@@ -147,7 +147,7 @@ jobs:
           echo "$image was smoke-tested on commit $tested"
           if git cat-file -e "$tested^{commit}" 2>/dev/null &&
             git diff --quiet "$tested" HEAD -- . ':!docs' ':!*.md' ':!.github' \
-              ':!cluster/aws' ':!.lintr' ':!validation.ipynb'; then
+              ':!cluster/aws' ':!.lintr'; then
             echo "Same code here: the smoke test has run"
             echo "tested=true" >> "$GITHUB_OUTPUT"
           fi

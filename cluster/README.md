@@ -1,8 +1,7 @@
 # Running the validation elsewhere, and how long it takes
 
 The validation is one pipeline ([`_targets.R`](../_targets.R)); `Rscript
-run_all.R` runs it, up to the results files (showing them is a step of its
-own, on any machine: README, "Figures and the notebook"). It saves every
+run_all.R` runs it, up to the results files. It saves every
 finished batch as it goes, so it can run anywhere a run may stop (a laptop, Colab, a cloud
 machine) and continue where it was, as long as the project folder (with its
 `_targets/` store) survives and flatcor stays the same: `run_all.R` refuses
@@ -147,7 +146,7 @@ sbatch run_validation.sbatch
   VALIDATION_FRESH=1 ...`) starts from scratch.
 - **Afterwards.** The results are in `results/studies/` (one file per
   study) and `results/per_dataset/`. Copy them back and commit them; the
-  figures, the notebook and the docs read them from there.
+  docs read them from there.
 
 A SLURM array script was here until 17 November 2026 (in the git history);
 one job on one node replaces it.

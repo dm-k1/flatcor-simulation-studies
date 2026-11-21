@@ -47,7 +47,7 @@ Every study reports its estimates against what is expected, with their Monte
 Carlo errors; nothing is judged pass or fail per row.
 
 > **TO REFRESH from the full run:** a short summary of the six studies'
-> results for each prior, with the figure that shows them best.
+> results for each prior (the figures: a separate private repository).
 
 ## Reading order
 
@@ -63,7 +63,7 @@ above is enough to follow the validation. In this repository:
 | | Document | What it is |
 |---|---|---|
 | 1 | [`docs/validation_tests.md`](docs/validation_tests.md) | **What the validation tests**: per study its design, what is tested, what is expected and why, with what Monte Carlo error and how many datasets, and the data sets |
-| 2 | [`validation.ipynb`](validation.ipynb) | **The results**: per study its question, its estimates against what is expected, and figures |
+| 2 | [a separate private repository](https://github.com/dm-k1/a separate private repository) | **The results**, shown: per study its question, its estimates against what is expected, and figures (a separate repository that reads this one's results files) |
 
 Working notes: [`docs/working/`](docs/working/) (the plan of the redesign, the
 run-time estimate).
@@ -131,23 +131,11 @@ A run ends at the results files: each study's results
 smoke test runs every step on a small part of each design, from scratch,
 with its results in `cache/` (never mixed with real ones).
 
-### Figures and the notebook: a step of their own
+### Figures and the notebook: another repository
 
-Showing the results is apart from the run: [`R/project/report/`](R/project/report/)
-only reads the results files, on any machine, also after downloading them.
-The run, its tests and CI know nothing of it.
-
-```bash
-Rscript R/project/report/make_figures.R                     # every study's figures (results/figures/)
-Rscript R/project/report/make_figures.R 3a                  # one study's
-VALIDATION_SMOKE=1 Rscript R/project/report/make_figures.R  # from the smoke test's results (cache/)
-```
-
-The notebook ([`validation.ipynb`](validation.ipynb)) runs nothing: it
-presents the results, each study's deciding tables, figures and result in a
-line, the rest under Details, and draws figures that are missing (after a
-new run, draw them again with `make_figures.R`). `make_figures.R` stops with an error when a figure
-script stops (after running the others).
+This repository ends at the results files. The figures and the notebook
+that show them live in [a separate private repository](https://github.com/dm-k1/a separate private repository), which only reads
+these files (from a checkout next to it); nothing here knows of it.
 
 ### Faster checks while working on the code
 
@@ -235,10 +223,8 @@ corner of each design.
 | `R/project/engine_settings/` | This project's answers to the engine: its settings (the package under test, the packages every step loads, the cores a batch keeps busy), the stopping rule, the dry run's seams, and the timing reference |
 | `R/project/tested_package/` | Compiling and loading flatcor's Stan model |
 | `R/project/shared_by_studies/` | What the studies share: the comparison methods and the data generators (`data/`; what each is and which study needs it: `docs/validation_tests.md`, "The data sets") |
-| `R/project/report/` | Everything that shows the results, and only reads them: `make_figures.R` draws every study's figures (one script per study in `figures/`), `notebook.R` holds the notebook's helpers, with the methods' colours and how the notebook names things |
-| `R/studies/` | The six studies, one folder each: `design.R` (the design, and what the study declares), `code.R` and `steps.R` (its pipeline steps): only what makes its results. A new study is a new folder, plus a figure script in `R/project/report/figures/` if it has figures |
-| `results/` | Each study's metrics and setup, `studies/study_<cell>.rds` (layer 2); every dataset's numbers and everything else computed, `per_dataset/` (layer 1, its README lists the files and columns); the figures, `figures/<cell>_*.png` |
-| `validation.ipynb` | The notebook (R kernel) |
+| `R/studies/` | The six studies, one folder each: `design.R` (the design, and what the study declares), `code.R` and `steps.R` (its pipeline steps): only what makes its results. A new study is a new folder; no other file changes |
+| `results/` | Each study's metrics and setup, `studies/study_<cell>.rds` (layer 2); every dataset's numbers and everything else computed, `per_dataset/` (layer 1, its README lists the files and columns) |
 | `docs/` | What the validation tests, working notes |
 | `cluster/` | The container image, the run-time estimate, and how to run the validation on a cluster |
 | `.github/workflows/` | The checks on every push (`check.yml`), the image build (`image.yml`) and the run-time estimate, on demand (`timing.yml`) |

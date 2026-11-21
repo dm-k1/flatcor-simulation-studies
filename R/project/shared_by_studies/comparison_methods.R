@@ -19,7 +19,7 @@
 ## =====================================================================
 
 
-## ---- Method names (the same in every study; their colours: R/project/report/method_colours.R)
+## ---- Method names (the same in every study) ------------------------------------
 
 contenders <- c(
   `flat partial r` = "flat_partial_r",
