@@ -26,12 +26,12 @@ behave the way a default prior should?
 | **Computed correctly?** | Stan's prior-only draws against the exact prior: R ~ Beta(2a, 1), direction uniform (prior check) | SBC (Talts et al., 2018; `SBC` package, Modrák et al., 2023), with Stan's diagnostics: divergent transitions, R-hat, effective sample size (Vehtari et al., 2021) | bridge sampling with its own error estimate and repeated runs (Gronau et al., 2017, 2020); Bayes factor calibration on data from each prior (Schad et al., 2023) |
 | **Behaves like a default?** | invariance: rescaling or recoding the predictors changes nothing (Bayarri et al., 2012) | behaviour in estimation: bias and coverage of a slope, prediction error against OLS, on data with a known truth | predictive matching, information consistency, intrinsic consistency, model-selection consistency (Bayarri et al., 2012) |
 
-Each cell is one study folder in `R/studies/`, named after its heading (1-3)
+Each cell is one study folder in `validation/studies/`, named after its heading (1-3)
 and row (a: computed correctly; b: behaves like a default), so the folder
 reads like the table:
 
 ```
-R/studies/
+validation/studies/
   1a_prior_sampling/      prior, computed correctly: Stan's prior-only draws = the exact prior
   1b_invariance/          prior, behaves like a default: rescaling or recoding changes nothing
   2a_posterior/           posterior, computed correctly: SBC and Stan's diagnostics
@@ -94,7 +94,7 @@ whether the estimates are sensible; the software gives no verdict per row.
 How the priors behave in use beyond estimation (how often the test of a
 term finds an effect, confirms a null or stays undecided) is a separate
 study, for later. Its earlier code, with a factor extension of the data, is
-in commit 9ffd1bf (`R/studies/05_behaviour.R` there, parts A and B).
+in commit 9ffd1bf (`validation/studies/05_behaviour.R` there, parts A and B).
 
 ## The software: flatcor
 
@@ -200,7 +200,7 @@ points of practical advice). What flatcor and the studies take from it:
   `studies/<cell>/` with
   `design.R` and `code.R`, `_targets.R`, figure scripts in `figures/`,
   `run_all.R` as the run-all, and `docs/validation_tests.md` as the one
-  document of what is tested. The old scripts in `R/studies/`, the shared
+  document of what is tested. The old scripts in `validation/studies/`, the shared
   `settings.R` and `precision.R`, appendix C (now `validation_tests.md`),
   SimDesign and the SLURM array are gone (in the git history); the
   motivating simulation moved to the paper repository, Objective-bayes.
@@ -218,7 +218,7 @@ points of practical advice). What flatcor and the studies take from it:
 1. Done (18 November 2026): the numbers of datasets as
    `docs/validation_tests.md` defines them. 2a has 131 fits per cell
    (computed); 1b, 2b, 3a (parts A and B) and 3b (rates, growing k) run in
-   rounds (`R/engine/workers/batches.R`, the loop in `run_all.R`): a first round,
+   rounds (`engine/workers/batches.R`, the loop in `run_all.R`): a first round,
    then every unit short of its target gets the datasets it is estimated to
    lack; 1a lengthens its chains until every percentile reaches its target.
    A fresh smoke run passes through two rounds.

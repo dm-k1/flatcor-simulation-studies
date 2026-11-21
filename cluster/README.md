@@ -40,7 +40,7 @@ measures it on GitHub's runners, for free on a public repository. It runs on
 demand only, from Actions > Run-time estimate > Run workflow (it first waits
 for an image build still running; a newer run cancels one still going). Each study runs its full design on 4% and
 6% of its datasets (at least 2 per cell; 1a and 1b in full), each on its own
-4-core runner; `R/engine/run_time/estimate_run_time.R`
+4-core runner; `engine/run_time/estimate_run_time.R`
 separates the fixed part of a study's cost from the part per dataset and reads
 off the full run. The run's summary page shows the hours per study on 4, 8, 16
 and 32 cores.
@@ -48,24 +48,24 @@ and 32 cores.
 The same can be run anywhere, a study at a time:
 
 ```bash
-VALIDATION_TIMING=0.04 Rscript R/engine/run_time/time_study.R 3a
-VALIDATION_TIMING=0.06 Rscript R/engine/run_time/time_study.R 3a
-Rscript R/engine/run_time/estimate_run_time.R
+VALIDATION_TIMING=0.04 Rscript engine/run_time/time_study.R 3a
+VALIDATION_TIMING=0.06 Rscript engine/run_time/time_study.R 3a
+Rscript engine/run_time/estimate_run_time.R
 ```
 
 Timing runs write only to `cache/timing/`, so they never mix with a real run.
 
 **For your own machine.** GitHub's runners differ (several processor types),
 so every timing run first times a reference task: one fixed flatcor Bayes
-factor (`R/project/engine_settings/timing_reference.R`, about a minute). The estimate counts each
+factor (`validation/engine_settings/timing_reference.R`, about a minute). The estimate counts each
 timing in multiples of its own runner's reference, so a faster or slower
 runner divides out. To read the estimate off for the machine you plan to
 use, run the reference task there and give its seconds to the estimate (the
 artifact `run-time-estimate` holds the timing runs, in `timing/`):
 
 ```bash
-Rscript R/project/engine_settings/timing_reference.R          # e.g. "8.9 seconds" on an M-series Mac
-Rscript R/engine/run_time/estimate_run_time.R timing --reference=8.9
+Rscript validation/engine_settings/timing_reference.R          # e.g. "8.9 seconds" on an M-series Mac
+Rscript engine/run_time/estimate_run_time.R timing --reference=8.9
 ```
 
 ## On a cluster
@@ -77,12 +77,12 @@ one job on one node, resubmitted until the pipeline is done. (Several nodes
 would need crew's cluster controllers instead; not set up.)
 
 The workers stay busy until the end. Every batch goes through the
-scheduler ([`R/engine/workers/scheduler.R`](../R/engine/workers/scheduler.R)):
+scheduler ([`engine/workers/scheduler.R`](../engine/workers/scheduler.R)):
 each cell is judged as soon as its own batch is done and, if it needs more
 datasets, its next batch goes out at once, without waiting for the other
 cells. When what the run has spent plus what it still expects to cost is
 more than its budget, it stops and reports what is left (the run-time
-estimate below; `Rscript R/engine/run_time/remaining_time.R` shows the same
+estimate below; `Rscript engine/run_time/remaining_time.R` shows the same
 from outside, at any moment). The
 parts that run once (1a, 2a, 3b.1 and 3b.2) go out first and run
 alongside. Then the pipeline runs once, in minutes: every study's results,
@@ -129,7 +129,7 @@ sbatch run_validation.sbatch
 
 - **Cores.** The pipeline uses the job's allocation (`--cpus-per-task`), not
   all cores of the node (`parallelly::availableCores()`, in
-  `worker_count()` in `R/engine/workers/worker_setup.R`),
+  `worker_count()` in `engine/workers/worker_setup.R`),
   and starts (cores - 1) / 4 workers, rounded down: one core is for the
   pipeline itself. So ask for 4 × workers + 1: 33 cores give 8 workers,
   where 32 would give 7 and leave 3 idle.

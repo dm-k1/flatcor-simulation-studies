@@ -116,7 +116,7 @@ container image of `cluster/Dockerfile`, published by GitHub Actions as
 VALIDATION_SMOKE=1 Rscript run_all.R        # first: a corner of every study, about 10 minutes
 Rscript run_all.R                           # the studies
 VALIDATION_FRESH=1 Rscript run_all.R        # the studies, from scratch
-Rscript R/engine/run_time/remaining_time.R  # during a run, beside it: the time left
+Rscript engine/run_time/remaining_time.R  # during a run, beside it: the time left
 ```
 
 A run has a budget of 2,500 core hours (`VALIDATION_BUDGET_CORE_HOURS`).
@@ -145,12 +145,12 @@ expects but an earlier one no longer writes, a results file that is not
 made.
 
 ```bash
-Rscript R/engine/tests/static_check.R                   # seconds: parses, the pipeline is valid, every function called exists, the rules below
+Rscript engine/tests/static_check.R                   # seconds: parses, the pipeline is valid, every function called exists, the rules below
 VALIDATION_SMOKE=1 VALIDATION_RECORD=1 Rscript run_all.R # once: the smoke test, recording what Stan and bridge sampling returned
 VALIDATION_DRY=1 Rscript run_all.R                      # then, after every change: the dry run
 ```
 
-The dry run ([`R/engine/tests/dry_run.R`](R/engine/tests/dry_run.R)) is the smoke
+The dry run ([`engine/tests/dry_run.R`](engine/tests/dry_run.R)) is the smoke
 test with the calls to Stan and bridge sampling replayed from those
 recordings (in `cache/dry_recordings/`), in one R process, no model
 compiled. It changes no study's code: that file is sourced after the
@@ -171,7 +171,7 @@ Both rest on three rules for the pipeline's code, which the static check
 enforces (it fails, saying which rule and where):
 
 1. Every expensive call (Stan, bridge sampling, SBC) is inside one of the
-   seams listed in `R/project/engine_settings/dry_run_seams.R`, so the dry run can stand in for
+   seams listed in `validation/engine_settings/dry_run_seams.R`, so the dry run can stand in for
    it. A new expensive step either calls one of them or gets a seam of its
    own there.
 2. A step reads and writes files only where it is declared: a study's
@@ -183,7 +183,7 @@ enforces (it fails, saying which rule and where):
    `results_<study>` (`format = "file"`).
 
 Every run ends with a check of its outputs
-([`R/engine/tests/check_results.R`](R/engine/tests/check_results.R)): a results file
+([`engine/tests/check_results.R`](engine/tests/check_results.R)): a results file
 for every study run, all with the run's flatcor; no empty table, no NaN,
 Inf or NA in any table, except blanks that are there by design (each study
 declares its own, with its reason, in its `design.R`). The smoke test, and so every push to
@@ -218,12 +218,12 @@ corner of each design.
 | Path | What it is |
 |---|---|
 | `_targets.R` | The pipeline: collects every study's steps |
-| `run_all.R` | Runs the validation (only the simulation): every study's batches through the scheduler, each cell until it has enough datasets, then the pipeline for the results (`R/engine/full_run.R`) |
-| `R/engine/` | The engine, with no study or package named in it, meant to carry over to another project unchanged: the scheduler and its workers, the pipeline steps, the reports, the four tests and the run-time estimate. Its README explains the words it uses, how a run goes, and what a project and a study provide |
-| `R/project/engine_settings/` | This project's answers to the engine: its settings (the package under test, the packages every step loads, the cores a batch keeps busy), the stopping rule, the dry run's seams, and the timing reference |
-| `R/project/tested_package/` | Compiling and loading flatcor's Stan model |
-| `R/project/shared_by_studies/` | What the studies share: the comparison methods and the data generators (`data/`; what each is and which study needs it: `docs/validation_tests.md`, "The data sets") |
-| `R/studies/` | The six studies, one folder each: `design.R` (the design, and what the study declares), `code.R` and `steps.R` (its pipeline steps): only what makes its results. A new study is a new folder; no other file changes |
+| `run_all.R` | Runs the validation (only the simulation): every study's batches through the scheduler, each cell until it has enough datasets, then the pipeline for the results (`engine/full_run.R`) |
+| `engine/` | The engine, with no study or package named in it, meant to carry over to another project unchanged: the scheduler and its workers, the pipeline steps, the reports, the four tests and the run-time estimate. Its README explains the words it uses, how a run goes, and what a project and a study provide |
+| `validation/engine_settings/` | This project's answers to the engine: its settings (the package under test, the packages every step loads, the cores a batch keeps busy), the stopping rule, the dry run's seams, and the timing reference |
+| `validation/tested_package/` | Compiling and loading flatcor's Stan model |
+| `validation/shared_by_studies/` | What the studies share: the comparison methods and the data generators (`data/`; what each is and which study needs it: `docs/validation_tests.md`, "The data sets") |
+| `validation/studies/` | The six studies, one folder each: `design.R` (the design, and what the study declares), `code.R` and `steps.R` (its pipeline steps): only what makes its results. A new study is a new folder; no other file changes |
 | `results/` | Each study's metrics and setup, `studies/study_<cell>.rds` (layer 2); every dataset's numbers and everything else computed, `per_dataset/` (layer 1, its README lists the files and columns) |
 | `docs/` | What the validation tests, working notes |
 | `cluster/` | The container image, the run-time estimate, and how to run the validation on a cluster |
