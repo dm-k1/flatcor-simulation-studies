@@ -4,21 +4,21 @@
 ##  Every process that runs the validation sources this file first:
 ##  _targets.R (the pipeline), run_all.R (a full run), and the static check.
 ##  It reads which kind of run this is (engine/run_mode.R) and the
-##  project's settings (<project>/engine_settings/settings.R), and sets up
+##  project's settings (<project>/settings/settings.R), and sets up
 ##  the environment the workers inherit (engine/workers/worker_setup.R),
 ##  before any worker starts. code_files() lists the rest; each scheduler
 ##  worker sources them once (engine/workers/scheduler.R).
 ## =====================================================================
 
 source(file.path("engine", "run_mode.R"))
-source(file.path(project, "engine_settings", "settings.R"))
+source(file.path(project, "settings", "settings.R"))
 source(file.path("engine", "workers", "worker_setup.R"))
 
 ## The code, in the order it is sourced:
 ##   1. the engine
-##   2. the project: its settings and stopping rule (<project>/engine_settings/),
-##      the package under test (<project>/tested_package/), what its studies
-##      share (<project>/shared_by_studies/) and the data generators (its data/)
+##   2. the project: its settings and stopping rule (<project>/settings/),
+##      what its studies share (<project>/shared/) and the data generators
+##      (its data/)
 ##   3. every study: the folders of <project>/studies/, each design.R, then each code.R
 ##   4. only to record or replay the expensive calls: the dry run's file,
 ##      which replaces a few of the functions before it (engine/tests/dry_run.R)
@@ -31,7 +31,7 @@ code_files <- function() {
     file.path("workers", "batches.R"),
     file.path("pipeline", "pipeline_steps.R")
   ))
-  settings <- file.path(project, "engine_settings", c("settings.R", "stopping_rule.R"))
+  settings <- file.path(project, "settings", c("settings.R", "stopping_rule.R"))
   r_files_in <- function(...) {
     list.files(file.path(project, ...), pattern = "[.]R$", full.names = TRUE)
   }
@@ -39,8 +39,7 @@ code_files <- function() {
   c(
     engine,
     settings,
-    r_files_in("tested_package"), r_files_in("shared_by_studies"),
-    r_files_in("shared_by_studies", "data"),
+    r_files_in("shared"), r_files_in("shared", "data"),
     file.path(studies, "design.R"),
     file.path(studies, "code.R"),
     if (dry || recording) file.path("engine", "tests", "dry_run.R")

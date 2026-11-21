@@ -65,7 +65,7 @@ above is enough to follow the validation. In this repository:
 | 1 | [`docs/validation_tests.md`](docs/validation_tests.md) | **What the validation tests**: per study its design, what is tested, what is expected and why, with what Monte Carlo error and how many datasets, and the data sets |
 | 2 | [a separate private repository](https://github.com/dm-k1/a separate private repository) | **The results**, shown: per study its question, its estimates against what is expected, and figures (a separate repository that reads this one's results files) |
 
-Working notes: [`docs/working/`](docs/working/) (the plan of the redesign, the
+Working notes: [`docs/notes/`](docs/notes/) (the plan of the redesign, the
 run-time estimate).
 
 ## Names used
@@ -127,9 +127,8 @@ repository's engine, next to it.
 
 | Path | What it is |
 |---|---|
-| `engine_settings/` | This project's answers to the engine: its settings (the package under test, the packages every step loads, the cores a batch keeps busy), the stopping rule, the dry run's seams, and the timing reference |
-| `tested_package/` | Compiling and loading flatcor's Stan model |
-| `shared_by_studies/` | What the studies share: the comparison methods and the data generators (`data/`; what each is and which study needs it: `docs/validation_tests.md`, "The data sets") |
+| `settings/` | This project's answers to the engine: its settings (the package under test, the packages every step loads, the cores a batch keeps busy), the stopping rule, the dry run's seams, and the timing reference |
+| `shared/` | What the studies share: flatcor's Stan model (`flatcor_models.R`), the comparison methods and the data generators (`data/`; what each is and which study needs it: `docs/validation_tests.md`, "The data sets") |
 | `studies/` | The six studies, one folder each: `design.R` (the design, and what the study declares), `code.R` and `steps.R` (its pipeline steps). A new study is a new folder; no other file changes |
 | `results/` | Each study's metrics and setup, `studies/study_<study>.rds` (layer 2); every dataset's numbers and everything else computed, `per_dataset/` (layer 1, its README lists the files and columns); the record of runs, `RUNS.md` |
-| `docs/` | What the validation tests (`validation_tests.md`), working notes |
+| `docs/` | What the validation tests (`validation_tests.md`), and notes (`notes/`: the plan of the redesign, the run-time estimate) |

@@ -8,7 +8,7 @@
 ## ---- The design -------------------------------------------------------------------
 ##   k (2, 10) × n (50, 200) × predictor correlation (0, .7) ×
 ##   other slopes (sparse, dense) = 16 cells; slope of x1 = 0.2
-##   (shared_by_studies/data/known_slopes.R)
+##   (shared/data/known_slopes.R)
 cells_2b <- expand.grid(
   k = c(2, 10),
   n = c(50, 200),

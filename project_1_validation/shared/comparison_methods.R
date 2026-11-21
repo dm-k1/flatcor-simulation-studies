@@ -80,7 +80,7 @@ log_bayes_factor_between <- function(method, predictors_a, predictors_b, outcome
 
   # the three priors: flatcor
   if (method %in% names(contenders)) {
-    # once per worker, one worker at a time (tested_package/flatcor_models.R)
+    # once per worker, one worker at a time (shared/flatcor_models.R)
     compile_flatcor_models()
     models <- models_as_formulas(predictors_a, predictors_b, outcome)
     result <- suppressWarnings(flatcor::bayes_factor_models(

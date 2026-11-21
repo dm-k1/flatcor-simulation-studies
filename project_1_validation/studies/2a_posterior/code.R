@@ -8,7 +8,7 @@
 ## ---- Simulation-based calibration of one batch -------------------------------------
 
 ## One SBC dataset: the true values of R-squared, b[1] and sigma, drawn from
-## the prior (shared_by_studies/data/from_the_prior.R: the predictors,
+## the prior (shared/data/from_the_prior.R: the predictors,
 ## noise, intercept and sigma shared by the three priors), and the data for the
 ## Stan model
 sbc_dataset_2a <- function(setting, replication) {

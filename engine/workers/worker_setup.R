@@ -3,7 +3,7 @@
 ##  inherits. Sourced (by engine/load_code.R) before any worker starts, so
 ##  the scheduler's workers (engine/workers/scheduler.R) and the
 ##  pipeline's (_targets.R) inherit the same settings. The project's own
-##  part comes from <project>/engine_settings/settings.R.
+##  part comes from <project>/settings/settings.R.
 ## =====================================================================
 
 ## Packages that keep compiled code in R's user cache folder (flatcor's
@@ -12,7 +12,7 @@ if (!nzchar(Sys.getenv("R_USER_CACHE_DIR"))) {
   Sys.setenv(R_USER_CACHE_DIR = file.path(getwd(), "cache", "r_user_cache"))
 }
 
-## What this project's workers should inherit (<project>/engine_settings/settings.R)
+## What this project's workers should inherit (<project>/settings/settings.R)
 prepare_workers()
 
 ## One thread per process for linear algebra (BLAS, OpenMP). Each batch
@@ -27,7 +27,7 @@ local({
 })
 
 ## A worker per batch running at once: each batch keeps cores_per_batch
-## cores busy (<project>/engine_settings/settings.R), and one core is left
+## cores busy (<project>/settings/settings.R), and one core is left
 ## for the main process. The cores are those given to this run: on a
 ## cluster, the job's allocation (parallelly reads SLURM, PBS and cgroups),
 ## not all cores of the node.

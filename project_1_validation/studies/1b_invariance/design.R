@@ -7,7 +7,7 @@
 
 ## ---- The design -------------------------------------------------------------------
 ##   prior (3) × dataset (ordinary regression,
-##   shared_by_studies/data/ordinary_regression.R) × change (rescaled, recoded)
+##   shared/data/ordinary_regression.R) × change (rescaled, recoded)
 priors_1b <- data.frame(prior = c("flat_partial_r", "flat_r", "flat_r_squared"))
 
 

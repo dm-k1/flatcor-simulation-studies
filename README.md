@@ -17,7 +17,7 @@ folder of its own:
 | [`project_1_validation/`](project_1_validation/) | Do flatcor's three default priors work within the Bayesian framework? |
 
 The engine ([`engine/`](engine/), its README) names no study and no
-package; a project tells it everything it needs (`<project>/engine_settings/`).
+package; a project tells it everything it needs (`<project>/settings/`).
 A new project is a new folder next to the others.
 
 ## Running a project
@@ -94,7 +94,7 @@ Both rest on three rules for the pipeline's code, which the static check
 enforces (it fails, saying which rule and where):
 
 1. Every expensive call (Stan, bridge sampling, SBC) is inside one of the
-   seams the project lists in `<project>/engine_settings/dry_run_seams.R`,
+   seams the project lists in `<project>/settings/dry_run_seams.R`,
    so the dry run can stand in for it. A new expensive step either calls one of them or gets a seam of its
    own there.
 2. A step reads and writes files only where it is declared: a study's

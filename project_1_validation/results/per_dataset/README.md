@@ -11,7 +11,7 @@ The validation's metrics (layer 2) are exactly those of
 other summaries) is a secondary analysis of these files, outside the
 validation.
 
-**Columns every Bayes factor row has** (1b, 3a, 3b; `project_1_validation/shared_by_studies/comparison_methods.R`):
+**Columns every Bayes factor row has** (1b, 3a, 3b; `project_1_validation/shared/comparison_methods.R`):
 `id` (the name its seed comes from: the dataset can be made again from it),
 `seed` (model B's is `seed + 1`), `n`, `k_a`, `k_b`, `r_squared_a`,
 `r_squared_b` (the data's sample R² under each model), `log_bf`, `error`

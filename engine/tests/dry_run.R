@@ -19,7 +19,7 @@
 ##  files, and only in a recording run or the dry run (_targets.R, run_all.R);
 ##  a normal run never sees it. It replaces a few functions by versions that
 ##  record or replay the original: the seams, which the project lists in
-##  <project>/engine_settings/dry_run_seams.R (replayed_functions).
+##  <project>/settings/dry_run_seams.R (replayed_functions).
 ##  Every expensive call in the studies' code must be inside one of them
 ##  (the static check enforces it: engine/tests/static_check.R).
 ##
@@ -39,7 +39,7 @@
 ## are: `dry`, `recording`, `recordings_folder` (engine/run_mode.R)
 
 ## The seams, the functions the dry run replaces or skips, are the
-## project's: <project>/engine_settings/dry_run_seams.R, sourced at the end of this file.
+## project's: <project>/settings/dry_run_seams.R, sourced at the end of this file.
 
 
 ## ---- Record or replay one call --------------------------------------------------------
@@ -154,9 +154,9 @@ if (dry) {
   })
 }
 
-## The project's seams (<project>/engine_settings/dry_run_seams.R): the expensive calls, replaced
+## The project's seams (<project>/settings/dry_run_seams.R): the expensive calls, replaced
 ## by versions that record or replay them, and what the dry run skips
-sys.source(file.path(project, "engine_settings", "dry_run_seams.R"), envir = overlay_env)
+sys.source(file.path(project, "settings", "dry_run_seams.R"), envir = overlay_env)
 if (dry) {
   for (name in names(skipped_in_dry_run)) {
     replace_function(name, function(original) skipped_in_dry_run[[name]])

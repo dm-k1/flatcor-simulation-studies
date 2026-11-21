@@ -8,7 +8,7 @@
 
 ## ---- The design -------------------------------------------------------------------
 ##   prior (3) × setting (k = 3, n = 50; k = 8, n = 200) = 6 cells,
-##   data from the prior (shared_by_studies/data/from_the_prior.R), half from the model
+##   data from the prior (shared/data/from_the_prior.R), half from the model
 ##   without x1
 cells_3a <- data.frame(
   prior = rep(c("flat_partial_r", "flat_r", "flat_r_squared"), each = 2),

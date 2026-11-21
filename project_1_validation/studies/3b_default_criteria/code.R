@@ -12,7 +12,7 @@ method_of <- function(prior) names(contenders)[contenders == prior]
 
 ## One Bayes factor as the row of its dataset: the design columns `design`
 ## (a one-row data frame), then everything computed
-## (shared_by_studies/comparison_methods.R), then the seconds it took and the machine
+## (shared/comparison_methods.R), then the seconds it took and the machine
 bayes_factor_row <- function(design, method, predictors_a, predictors_b, outcome, name) {
   started <- Sys.time()
   result <- log_bayes_factor_between(method, predictors_a, predictors_b, outcome, name)
@@ -57,7 +57,7 @@ slopes_by_group <- function(grouped, label) {
 
 
 ## ---- 3b.1, 3b.2: datasets with a set sample R-squared -------------------------------
-## (shared_by_studies/data/set_r_squared.R)
+## (shared/data/set_r_squared.R)
 
 ## The log BF of the model against the intercept-only model, for one row of
 ## the design
@@ -75,7 +75,7 @@ formula_check_3b <- function(check) {
 
 ## ---- 3b.3-3b.6: the rates ----------------------------------------------------------
 
-## Dataset `replication` of a rate cell (shared_by_studies/data/nested_models.R), and the
+## Dataset `replication` of a rate cell (shared/data/nested_models.R), and the
 ## log BF of the smaller model against the larger one (log_bf_smaller) and
 ## for the true model (log_bf): the truth is the smaller model, except under
 ## the alternative
@@ -209,7 +209,7 @@ intrinsic_3b <- function(draws) {
 
 ## ---- 3b.8-3b.9: k growing with n -----------------------------------------------------
 
-## For the truth (shared_by_studies/data/growing_k.R): the null against the k-predictor
+## For the truth (shared/data/growing_k.R): the null against the k-predictor
 ## model, or the true 3-predictor model against the full one
 growing_bayes_factor_3b <- function(cell, replication) {
   data <- data_growing_k(cell, cell$truth, replication)

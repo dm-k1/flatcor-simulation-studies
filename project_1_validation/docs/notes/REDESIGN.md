@@ -225,7 +225,7 @@ points of practical advice). What flatcor and the studies take from it:
 2. The full run (`Rscript run_all.R`; `cluster/README.md`).
 3. The docs from the results: `docs/3_results.md` (new), the README's
    findings, and the places marked **TO REFRESH** in the README,
-   `docs/validation_tests.md` and `docs/working/run_time_estimate.md`, and in
+   `docs/validation_tests.md` and `docs/notes/run_time_estimate.md`, and in
    Objective-bayes: `docs/2_the_three_priors.md` and appendices A and B.
 
 **Open questions:**

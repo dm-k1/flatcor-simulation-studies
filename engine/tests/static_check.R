@@ -62,7 +62,7 @@ pipeline_files <- c(
     "workers/scheduler.R"
   ))
 )
-# the packages the pipeline loads (step_packages, <project>/engine_settings/settings.R)
+# the packages the pipeline loads (step_packages, <project>/settings/settings.R)
 for (package in c("targets", step_packages)) {
   suppressPackageStartupMessages(library(package, character.only = TRUE))
 }
@@ -142,7 +142,7 @@ cat(sprintf("3. calls checked in %d functions and the pipeline's steps\n", lengt
 ## call:
 ##   a. every expensive call (expensive_calls) is inside one of the seams
 ##      the dry run replays (replayed_functions), and every seam listed
-##      exists; both lists are the project's (<project>/engine_settings/dry_run_seams.R)
+##      exists; both lists are the project's (<project>/settings/dry_run_seams.R)
 ##   b. files are read and written only where it is declared: a study's results
 ##      file (save_study_results_file(), a "file" step), the plans and the
 ##      batches the scheduler runs (both in the store), the
@@ -160,10 +160,10 @@ allowed_file_use <- c(
   "save_study_results_file", "read_plan", "write_plan", "project_folders",
   "run_batch", "read_batch", "run_parts", "as_read_back", "code_files", "full_run",
   "check_results_file", "check_results", "write_per_dataset", "read_per_dataset",
-  project_file_functions # the project's own (<project>/engine_settings/settings.R)
+  project_file_functions # the project's own (<project>/settings/settings.R)
 )
 
-## The seams, as the project lists them (<project>/engine_settings/dry_run_seams.R, which the dry
+## The seams, as the project lists them (<project>/settings/dry_run_seams.R, which the dry
 ## run's file sources; sourced on their own, they replace nothing)
 overlay <- new.env()
 sys.source(file.path("engine", "tests", "dry_run.R"), envir = overlay)
@@ -172,7 +172,7 @@ expensive_calls <- overlay$expensive_calls
 for (skipped in names(overlay$skipped_in_dry_run)) {
   if (!exists(skipped, envir = code, mode = "function")) {
     note(
-      "the dry run skips %s(), which does not exist (<project>/engine_settings/dry_run_seams.R)",
+      "the dry run skips %s(), which does not exist (<project>/settings/dry_run_seams.R)",
       skipped
     )
   }
@@ -184,7 +184,7 @@ package_seams <- intersect(seams, getNamespaceExports(tested_package))
 for (seam in setdiff(seams, package_seams)) {
   if (!exists(seam, envir = code, mode = "function")) {
     note(
-      "the dry run replays %s(), which does not exist (<project>/engine_settings/dry_run_seams.R)",
+      "the dry run replays %s(), which does not exist (<project>/settings/dry_run_seams.R)",
       seam
     )
   }
@@ -226,7 +226,7 @@ for (name in functions) {
         paste(
           "%s() calls %s() outside the seams the dry run replays: move it into one,",
           "or add %s() to replayed_functions with its replacement",
-          "(<project>/engine_settings/dry_run_seams.R)"
+          "(<project>/settings/dry_run_seams.R)"
         ),
         name, called, name
       )

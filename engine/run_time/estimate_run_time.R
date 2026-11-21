@@ -22,7 +22,7 @@
 ##
 ##  Machines differ: GitHub's runners alone have several processors. Each
 ##  timing run also records the reference task
-##  (<project>/engine_settings/timing_reference.R) on its
+##  (<project>/settings/timing_reference.R) on its
 ##  runner; when all runs have it, every timing is counted in multiples of
 ##  its own runner's reference before the lines are drawn, so a faster or
 ##  slower runner divides out. The result is read off for a target machine:
@@ -154,6 +154,6 @@ cat(
   "in the timing run. A study runs on all its cores at once, so the whole validation on one",
   "machine takes the sum of the column; on several machines, one study each, it takes",
   "about as long as the slowest study. For another machine, run",
-  "<project>/engine_settings/timing_reference.R",
+  "<project>/settings/timing_reference.R",
   "there and give its seconds with --reference.\n"
 )

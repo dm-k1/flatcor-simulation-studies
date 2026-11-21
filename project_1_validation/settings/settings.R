@@ -18,7 +18,7 @@ step_packages <- c("flatcor", "dplyr")
 cores_per_batch <- 4
 
 ## Before any worker starts, once: build what the workers share, flatcor's
-## models (tested_package/flatcor_models.R). The dry run skips it.
+## models (shared/flatcor_models.R). The dry run skips it.
 prepare_models <- function() compile_flatcor_models()
 
 ## What a batch gets as `model` (batch_work(), engine/workers/batches.R):

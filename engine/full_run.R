@@ -41,7 +41,7 @@ full_run <- function(requested = character(0)) {
 
   ## ---- 2. One commit of the package under test per run ----------------------------
   ## The store remembers the commit of the package under test (tested_package,
-  ## <project>/engine_settings/settings.R) it was started with; continuing
+  ## <project>/settings/settings.R) it was started with; continuing
   ## with another would mix two versions in one results file.
   package_commit <- utils::packageDescription(tested_package)$RemoteSha
   if (is.null(package_commit)) package_commit <- "not installed from GitHub"
@@ -61,7 +61,7 @@ full_run <- function(requested = character(0)) {
   }
 
   ## ---- 3. What the workers share, built before any of them starts -------------------
-  ## prepare_models() (<project>/engine_settings/settings.R): done here,
+  ## prepare_models() (<project>/settings/settings.R): done here,
   ## once, so no worker's own compile rebuilds a shared file under another
   prepare_models()
 
@@ -102,7 +102,7 @@ full_run <- function(requested = character(0)) {
     stop(
       "Stopped: what the run still expects to cost does not fit the budget. Every finished ",
       "batch is saved. To go on, raise the budget (VALIDATION_BUDGET_CORE_HOURS) or change a ",
-      "target (<project>/engine_settings/stopping_rule.R, or a study's deltas), and start ",
+      "target (<project>/settings/stopping_rule.R, or a study's deltas), and start ",
       "again: the run continues where it was. The study results are made only when every ",
       "cell is done.",
       call. = FALSE

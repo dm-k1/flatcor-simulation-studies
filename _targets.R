@@ -37,7 +37,7 @@ pipeline_setup()
 ## ---- The steps ------------------------------------------------------------------------
 
 list(
-  ## The model every batch gets (batch_model(), project_1_validation/engine_settings/settings.R),
+  ## The model every batch gets (batch_model(), project_1_validation/settings/settings.R),
   ## made once before the studies that use it
   tar_target(model, batch_model()),
 

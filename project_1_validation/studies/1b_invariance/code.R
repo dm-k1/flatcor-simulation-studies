@@ -6,7 +6,7 @@
 
 
 ## ---- The rescaled and recoded versions of a dataset ----------------------------------
-## (data: shared_by_studies/data/ordinary_regression.R)
+## (data: shared/data/ordinary_regression.R)
 
 ## Other units: x1 -> 100 x1 + 7, x2 -> -0.01 x2, x3 -> x3 - 50, y -> 1000 y - 3
 rescaled_1b <- function(data) {
@@ -28,7 +28,7 @@ recoded_1b <- function(data) {
 ## ---- The log Bayes factors of one dataset -----------------------------------------
 
 ## For one prior and one dataset: the five log Bayes factors, one row each
-## with everything computed (shared_by_studies/comparison_methods.R): the whole model
+## with everything computed (shared/comparison_methods.R): the whole model
 ## against the intercept-only model on the original, rescaled and recoded
 ## data, and x1 (with it against without it) on the original and rescaled
 ## data. The changes are computed from these rows (changes_of_1b()).

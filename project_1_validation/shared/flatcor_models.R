@@ -1,7 +1,7 @@
 ## =====================================================================
 ##  flatcor and Stan: building flatcor's models once, and the model the
 ##  studies sample directly. The engine reaches these only through
-##  engine_settings/settings.R.
+##  settings/settings.R.
 ## =====================================================================
 
 ## ---- flatcor's Stan model and log density, built once ----------------------------

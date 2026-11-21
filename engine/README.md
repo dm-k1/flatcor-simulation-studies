@@ -70,7 +70,7 @@ alone or with any other studies, on any number of workers.
 
 ## What the project provides
 
-These files are in `<project>/engine_settings/`. The engine reads them by
+These files are in `<project>/settings/`. The engine reads them by
 name.
 
 | File | What it gives the engine |
@@ -80,9 +80,10 @@ name.
 | `dry_run_seams.R` | `expensive_calls`, `replayed_functions`, `skipped_in_dry_run`, and the replacements the dry run uses |
 | `timing_reference.R` | `reference_seconds()`: a fixed task that measures how fast a machine is |
 
-Everything else in `<project>/` is the project's own: the package under
-test (`tested_package/`) and what its studies share (`shared_by_studies/`,
-with the data generators in `data/`). The engine loads all of it.
+Everything else in `<project>/` is the project's own: what its studies
+share (`shared/`, with the data generators in `data/`), its studies, its
+results and its docs. The engine loads the code in `settings/`, `shared/`
+and `studies/`.
 
 ## What a study provides
 

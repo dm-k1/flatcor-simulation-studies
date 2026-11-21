@@ -7,7 +7,7 @@
 
 ## ---- One dataset -------------------------------------------------------------------
 
-## Dataset `replication` of a cell (shared_by_studies/data/known_slopes.R),
+## Dataset `replication` of a cell (shared/data/known_slopes.R),
 ## and for each method: x1's estimate and 95% interval, the excess prediction error of the
 ## estimated slopes, (b - beta)' Sigma (b - beta), and everything else
 ## computed: per method the summary of every parameter (list column
@@ -135,7 +135,7 @@ estimates_2b <- function(cell, replication) {
 ## One batch of datasets of one cell. `model`: flatcor's Stan model, compiled
 ## before, so that parallel workers find it instead of compiling it at once.
 estimates_batch_2b <- function(cell, replications, model) {
-  # once per worker, one worker at a time (tested_package/flatcor_models.R)
+  # once per worker, one worker at a time (shared/flatcor_models.R)
   compile_flatcor_models()
   bind_rows(lapply(replications, function(r) estimates_2b(cell, r)))
 }

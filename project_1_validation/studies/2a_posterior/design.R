@@ -7,7 +7,7 @@
 
 ## ---- The design -------------------------------------------------------------------
 ##   prior (3) × setting (k = 8, n = 60; k = 3, n = 50) = 6 cells,
-##   data from the prior (shared_by_studies/data/from_the_prior.R)
+##   data from the prior (shared/data/from_the_prior.R)
 settings_2a <- merge(
   data.frame(prior = c("flat_partial_r", "flat_r", "flat_r_squared")),
   data.frame(k = c(8, 3), n = c(60, 50))

@@ -32,7 +32,7 @@ the slow one. All numbers here are given for the EPYC 7763, the processor
 the Mac below was compared with, so 3a counts as up to 164.
 
 Since this run, every timing run also times a reference task
-(`project_1_validation/engine_settings/timing_reference.R`), which divides out the runner's speed: a
+(`project_1_validation/settings/timing_reference.R`), which divides out the runner's speed: a
 future estimate would not have this problem.
 
 ### 3b, calculated

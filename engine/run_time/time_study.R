@@ -19,10 +19,10 @@ stopifnot(
   "set VALIDATION_TIMING to the fraction of datasets, as in 0.04" = !is.na(fraction)
 )
 
-## the reference task first, on this machine (<project>/engine_settings/timing_reference.R), so
+## the reference task first, on this machine (<project>/settings/timing_reference.R), so
 ## the estimate can divide out how fast this machine is
 source(file.path("engine", "run_mode.R")) # the project (PROJECT)
-source(file.path(project, "engine_settings", "timing_reference.R"))
+source(file.path(project, "settings", "timing_reference.R"))
 reference <- tryCatch(reference_seconds(), error = function(e) NA_real_)
 
 ## Whether the study's size follows the fraction: it does if its design

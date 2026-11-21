@@ -1,5 +1,5 @@
 ## =====================================================================
-##  Estimates against expectations (the reporting rule, docs/working/REDESIGN.md)
+##  Estimates against expectations (the reporting rule, docs/notes/REDESIGN.md)
 ##
 ##  Every study reports each quantity as one row: what is expected (fixed in
 ##  advance), the estimate, its Monte Carlo SE and the distance between them

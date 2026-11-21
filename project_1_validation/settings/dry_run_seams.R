@@ -23,7 +23,7 @@ replayed_functions <- c(
 )
 
 ## Skipped in the dry run, which samples nothing: compiling flatcor's
-## models, with what each gives instead (tested_package/flatcor_models.R).
+## models, with what each gives instead (shared/flatcor_models.R).
 ## The static check fails when one of these no longer exists, so a rename never
 ## silently brings compiling back into the dry run.
 skipped_in_dry_run <- list(

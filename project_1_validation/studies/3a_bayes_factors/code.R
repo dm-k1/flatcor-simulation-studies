@@ -24,7 +24,7 @@ bayes_factor_3a <- function(prior, k, n, replication, purpose, run = 1) {
 
   # the Bayes factor: each model fitted with flatcor's Stan model, the
   # marginal likelihoods by bridge sampling; with everything computed on the
-  # way (shared_by_studies/comparison_methods.R)
+  # way (shared/comparison_methods.R)
   started <- Sys.time()
   result <- log_bayes_factor_between(
     method = names(contenders)[contenders == prior],

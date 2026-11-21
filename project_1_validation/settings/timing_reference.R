@@ -1,7 +1,7 @@
 ## =====================================================================
 ##  The reference task: one fixed flatcor Bayes factor, timed
 ##
-##    Rscript engine_settings/timing_reference.R
+##    Rscript settings/timing_reference.R
 ##
 ##  prints how many seconds this machine takes for it: the median of three
 ##  runs, after one untimed run that compiles the model. Every timing run

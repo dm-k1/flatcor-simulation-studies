@@ -10,7 +10,7 @@
 ##  or, if the scheduler has not run it (a plain tar_make(), a timing run),
 ##  computed in the step itself (batch_rows(), engine/workers/batches.R).
 ##  Every batch gets the pipeline's step `model` (batch_model(),
-##  <project>/engine_settings/settings.R).
+##  <project>/settings/settings.R).
 ## =====================================================================
 
 ## A part that runs until its targets are reached: its plan, its batches and
