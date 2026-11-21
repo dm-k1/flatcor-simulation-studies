@@ -13,18 +13,19 @@
 ##  bootstraps) plus a part proportional to its datasets. Two timing runs at
 ##  different fractions give both, by a straight line through them, read off
 ##  at fraction 1. With one run (or two that used the same number of
-##  datasets) the whole time is scaled up, which overestimates. Study 1a
-##  does not depend on the number of datasets, so its run is the full run.
+##  datasets) the whole time is scaled up, which overestimates. A study
+##  whose design never asks datasets() for its size (time_study.R) runs in
+##  full also in a timing run, so its run is the full run.
 ##  The hours on more cores divide the core hours by the cores, as if every
 ##  study used them all equally well; more cores rarely do, so read them as
 ##  lower bounds.
 ##
 ##  Machines differ: GitHub's runners alone have several processors. Each
-##  timing run also records the reference task (reference_task.R) on its
+##  timing run also records the reference task (R/project/engine_settings/timing_reference.R) on its
 ##  runner; when all runs have it, every timing is counted in multiples of
 ##  its own runner's reference before the lines are drawn, so a faster or
 ##  slower runner divides out. The result is read off for a target machine:
-##  its reference seconds from --reference (run reference_task.R there), or
+##  its reference seconds from --reference (run timing_reference.R there), or
 ##  else the median of the runners'.
 ## =====================================================================
 
@@ -40,9 +41,10 @@ runs <- do.call(rbind, lapply(files, function(file) {
   run <- readRDS(file)
   data.frame(
     study = run$study, fraction = run$fraction, cores = run$cores, cpu_model = run$cpu_model,
-    ## the share of the full run's datasets this run used (1 for study
-    ## 1a, which does not depend on them, and for a run at fraction 1)
-    scale = if (run$study == "1a") 1 else run$fraction,
+    ## the share of the full run's datasets this run used: 1 for a study
+    ## whose size does not follow the fraction (time_study.R), and for a
+    ## run at fraction 1
+    scale = if (isFALSE(run$scales_with_datasets)) 1 else run$fraction,
     elapsed_hours = run$elapsed_seconds / 3600, failed = !is.na(run$error),
     reference_seconds = if (is.null(run$reference_seconds)) NA_real_ else run$reference_seconds
   )

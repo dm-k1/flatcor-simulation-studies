@@ -137,7 +137,7 @@ expects but an earlier one no longer writes, a results file or figure that
 is not made.
 
 ```bash
-Rscript R/engine/tests/static_check.R                         # seconds: parses, the pipeline is valid, every function called exists, the rules below
+Rscript R/engine/tests/static_check.R                   # seconds: parses, the pipeline is valid, every function called exists, the rules below
 VALIDATION_SMOKE=1 VALIDATION_RECORD=1 Rscript run_all.R # once: the smoke test, recording what Stan and bridge sampling returned
 VALIDATION_DRY=1 Rscript run_all.R                      # then, after every change: the dry run
 VALIDATION_DRY=1 Rscript make_figures.R                 # and its figures
@@ -151,8 +151,8 @@ studies, only in a recording run or the dry run, and replaces a few
 functions (the seams: flatcor's Bayes factors and fit, 1a's prior draws of a
 setting, 2a's SBC fits of a batch) by versions that record or replay the
 original. Everything else runs for real: the data, every step, the
-hand-overs between them, the queue with both rounds of each cell, the results files, the check at the
-end and, with `make_figures.R`, the figures. Its results go to `cache/dry_results/` and
+hand-overs between them, the scheduler with two batches for each cell, the
+results files, the check at the end and, with `make_figures.R`, the figures. Its results go to `cache/dry_results/` and
 `cache/dry_figures/`. It does not test the code inside the seams or whether
 the numbers are right: run the smoke test for that, and record again when
 flatcor changes. When the design or a data step has changed since the
@@ -168,19 +168,19 @@ enforces (it fails, saying which rule and where):
    it. A new expensive step either calls one of them or gets a seam of its
    own there.
 2. A step reads and writes files only where it is declared: a study's
-   results file, the plans of the rounds and the queue's finished pieces
-   (both in the store), the recordings. Any other file a
+   results file, the plans and the scheduler's finished batches (both in
+   the store), the recordings. Any other file a
    step needs or makes is a step of its own (`tar_target(..., format =
    "file")`), so targets knows it is there before a step needs it.
-3. Every results file a figure script or `run_all.R` reads is made by a step
+3. Every results file a figure script or a full run reads is made by a step
    `results_<study>` (`format = "file"`), and the figure scripts read them
    only through `read_results()`.
 
 Every run ends with a check of its outputs
 ([`R/engine/tests/check_results.R`](R/engine/tests/check_results.R)): a results file
 for every study run, all with the run's flatcor; no empty table, no NaN,
-Inf or NA in any table, except blanks that are there by design (listed in
-that file, each with its reason). The smoke test, and so every push to
+Inf or NA in any table, except blanks that are there by design (each study
+declares its own, with its reason, in its `design.R`). The smoke test, and so every push to
 `main` or `v2`, fails when the check finds a problem; a real run reports it
 in its log. `make_figures.R` stops with an error when a figure script stops
 (after running the others).
@@ -204,25 +204,22 @@ The smoke test is meant to run the way a real run does, because a bug can
 hide anywhere the two differ. So it runs in the same image (the same
 packages and CmdStan) and with several workers (3, by pretending to have 16
 cores), since workers clashing over shared files only happens with more
-than one. Two differences remain, on purpose: a cell gets at most two
-rounds (round three and later run the same code as round two), and it runs a
+than one. Two differences remain, on purpose: a cell gets at most one
+more batch after its first (later batches run the same code), and it runs a
 corner of each design.
 
 ## What's where
 
 | Path | What it is |
 |---|---|
-| `_targets.R` | The pipeline: the steps of every study, in order |
-| `run_all.R` | Runs the validation (only the simulation): every expensive piece of work through a queue, each cell's rounds on its own, then the pipeline for the results |
+| `_targets.R` | The pipeline: collects every study's steps |
+| `run_all.R` | Runs the validation (only the simulation): every study's batches through the scheduler, each cell until it has enough datasets, then the pipeline for the results (`R/engine/full_run.R`) |
 | `make_figures.R` | Draws the figures from the results files, after `run_all.R` |
-| `R/engine/` | The engine, with no study or package named in it, meant to carry over to another project unchanged: the random streams and the one root seed, the rounds (`rounds.R`) and the queue that runs every piece of work (`queue.R`), what studies declare about themselves (`parts.R`) and the pipeline steps made from that (`steps.R`), what every worker starts with (`workers.R`), the per-dataset and results files, the reporting rule, the check at the end and the static check (`static_check.R`) |
-| `R/project/` | What the engine needs to know about this project (`settings.R`: the package under test, the packages every step loads, the cores a piece keeps busy, building the models), flatcor and Stan (`flatcor.R`), the comparison methods the studies share, and the dry run's seams (`seams.R`) |
-| `R/project/shared_by_studies/data/` | One file per data set, numbered in the order the studies first use them (what each is and which study needs it: `docs/validation_tests.md`, "The data sets") |
-| `R/studies/` | The six studies, one folder per cell, each with `design.R` (the design, and the parts it declares for the queue: `declared_parts`) and `code.R`. A new study is a new folder, its steps in `_targets.R` and its figure script; the engine needs no change |
-| `R/3_figures/` | One script per study that draws its figures from its results file |
-| `R/dry_run/` | The dry run: records the expensive calls in a smoke test, replays them after (`replay.R`); changes no study's code |
-| `R/4_notebook/` | The notebook's helpers: they present the results, they run and compute nothing |
-| `R/timing/` | The run-time estimate: time a study on a fraction of its datasets, scale up to the full run |
+| `R/engine/` | The engine, with no study or package named in it, meant to carry over to another project unchanged: the scheduler and its workers, the pipeline steps, the reports, the four tests and the run-time estimate. Its README explains the words it uses, how a run goes, and what a project and a study provide |
+| `R/project/engine_settings/` | This project's answers to the engine: its settings (the package under test, the packages every step loads, the cores a batch keeps busy), the stopping rule, the dry run's seams, and the timing reference |
+| `R/project/tested_package/` | Compiling and loading flatcor's Stan model |
+| `R/project/shared_by_studies/` | What the studies share: the comparison methods, how the notebook names things, and the data generators (`data/`; what each is and which study needs it: `docs/validation_tests.md`, "The data sets") |
+| `R/studies/` | The six studies, one folder each: `design.R` (the design, and what the study declares), `code.R`, `steps.R` (its pipeline steps) and `figures.R`. A new study is a new folder; no other file changes |
 | `results/` | Each study's metrics and setup, `studies/study_<cell>.rds` (layer 2); every dataset's numbers and everything else computed, `per_dataset/` (layer 1, its README lists the files and columns); the figures, `figures/<cell>_*.png` |
 | `validation.ipynb` | The notebook (R kernel) |
 | `docs/` | What the validation tests, working notes |

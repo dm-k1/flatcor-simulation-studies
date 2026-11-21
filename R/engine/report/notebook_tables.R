@@ -169,7 +169,7 @@ show_text <- function(text) {
   if (isTRUE(getOption("jupyter.in_kernel"))) IRdisplay::display_markdown(text) else cat(text, "\n")
 }
 
-## The figures of a study: the PNGs its script in R/3_figures/ wrote (named
+## The figures of a study: the PNGs its figures.R wrote (named
 ## after the study, as results/figures/3a_*.png). When there are none yet
 ## (results downloaded from a run, say), make_figures.R draws them first.
 show_figures <- function(result) {

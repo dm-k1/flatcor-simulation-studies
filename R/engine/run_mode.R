@@ -56,12 +56,18 @@ figure_folder <- figure_folder_of(dry, smoke)
 
 ## ---- How much to run ---------------------------------------------------------------
 
+## How often datasets() was asked: a study whose design never asks runs in
+## full also in a timing run (R/engine/run_time/time_study.R)
+datasets_asked <- new.env()
+datasets_asked$times <- 0
+
 ## The number of datasets to run: `full` normally, `in_smoke` in the smoke
 ## test, and in a timing run that fraction of `full`, at least 2. The floor
 ## is 2, not more, so that the two fractions of the estimate (4% and 6%)
 ## give different numbers of datasets also for 50 or 100 per cell (2 and 3,
 ## or 4 and 6), and both stay small enough for a 6-hour GitHub runner.
 datasets <- function(full, in_smoke) {
+  datasets_asked$times <- datasets_asked$times + 1
   if (smoke) {
     return(in_smoke)
   }

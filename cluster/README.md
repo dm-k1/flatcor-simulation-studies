@@ -2,7 +2,7 @@
 
 The validation is one pipeline ([`_targets.R`](../_targets.R)); `Rscript
 run_all.R` runs it (only the simulation: the figures come after, from the
-results files, with `Rscript make_figures.R`, on any machine). It saves every finished piece as it
+results files, with `Rscript make_figures.R`, on any machine). It saves every finished batch as it
 goes, so it can run anywhere a run may stop (a laptop, Colab, a cloud
 machine) and continue where it was, as long as the project folder (with its
 `_targets/` store) survives and flatcor stays the same: `run_all.R` refuses
@@ -72,19 +72,19 @@ Rscript R/engine/run_time/estimate_run_time.R timing --reference=8.9
 ## On a cluster
 
 The run uses one machine with many cores: the pipeline starts a worker for
-every 4 cores it is given (each piece of work runs Stan's 4 chains in
-parallel) and keeps every finished piece in `_targets/`. On a cluster that is
+every 4 cores it is given (each batch runs Stan's 4 chains in parallel)
+and keeps every finished batch in `_targets/`. On a cluster that is
 one job on one node, resubmitted until the pipeline is done. (Several nodes
 would need crew's cluster controllers instead; not set up.)
 
-The workers stay busy until the end. Every expensive piece of work goes
-through a queue ([`R/engine/workers/scheduler.R`](../R/engine/workers/scheduler.R)):
+The workers stay busy until the end. Every batch goes through the
+scheduler ([`R/engine/workers/scheduler.R`](../R/engine/workers/scheduler.R)):
 each cell is judged as soon as its own batch is done and, if it needs more
-datasets, its next batch joins the queue at once, without waiting for the
-other cells. A batch that would take the run past its budget is not
-started. The parts with no rounds (1a, 2a, 3b.1 and 3b.2) join the queue
-first and run alongside. Then the pipeline runs once, in minutes: every
-study's results, from the finished pieces.
+datasets, its next batch goes out at once, without waiting for the other
+cells. A batch that would take the run past its budget is not started. The
+parts that run once (1a, 2a, 3b.1 and 3b.2) go out first and run
+alongside. Then the pipeline runs once, in minutes: every study's results,
+from the finished batches.
 
 **1. The project, at the commit to run.** Clone it onto storage that survives
 between jobs (your home or project space, not a node's local scratch):
@@ -133,7 +133,7 @@ sbatch run_validation.sbatch
   where 32 would give 7 and leave 3 idle.
 - **Memory.** Not measured yet for a full run. Bayes factor fits no longer
   keep per-observation draws, so a worker needs well under a gigabyte for
-  most pieces; 2 GB per core is a safe start. After the first job,
+  most batches; 2 GB per core is a safe start. After the first job,
   `sacct -j <job id> --format=MaxRSS,Elapsed` shows what it used.
 - **Time.** The run-time estimate gives the core hours; divided by the cores,
   that is the wall time, longer than most clusters allow for one job. When a

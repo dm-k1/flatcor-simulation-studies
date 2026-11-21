@@ -24,6 +24,21 @@ stopifnot(
 source(file.path("R", "project", "engine_settings", "timing_reference.R"))
 reference <- tryCatch(reference_seconds(), error = function(e) NA_real_)
 
+## Whether the study's size follows the fraction: it does if its design
+## asks datasets() (R/engine/run_mode.R) for its numbers of datasets; a
+## study that never asks runs in full, so its timing run is its full run
+source(file.path("R", "engine", "load_code.R"))
+for (package in step_packages) {
+  suppressPackageStartupMessages(library(package, character.only = TRUE))
+}
+scales_with_datasets <- FALSE
+for (file in code_files()) {
+  asked_before <- datasets_asked$times
+  source(file)
+  of_this_study <- startsWith(basename(dirname(file)), paste0(study, "_"))
+  if (of_this_study && datasets_asked$times > asked_before) scales_with_datasets <- TRUE
+}
+
 store <- file.path("cache", "timing", paste0("store_", study, "_", fraction))
 started <- Sys.time()
 error <- tryCatch(
@@ -56,6 +71,7 @@ saveRDS(
     cpu_model = cpu_model,
     elapsed_seconds = elapsed,
     reference_seconds = reference,
+    scales_with_datasets = scales_with_datasets,
     error = error
   ),
   file.path("cache", "timing", sprintf("time_%s_at_%s.rds", study, fraction))
