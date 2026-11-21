@@ -1,123 +1,45 @@
-# flatcor-validation: do flatcor's three priors work?
+# flatcor-validation: simulation studies of flatcor
 
-The validation of [flatcor](https://github.com/dm-k1/flatcor), an R package
-for objective Bayes factors and estimation in linear regression: whether each
-of its three default priors works correctly within the Bayesian framework.
-The argument for the priors, the priors and their derivations, and the paper
-are in [Objective-bayes](https://github.com/dm-k1/Objective-bayes).
+Simulation studies of [flatcor](https://github.com/dm-k1/flatcor), an R
+package for objective Bayes factors and estimation in linear regression.
+The argument for its priors, the priors and their derivations, and the
+paper are in [Objective-bayes](https://github.com/dm-k1/Objective-bayes).
 
 > **Branch v2: work in progress.** Results here can change at any time. The
 > final validation reported in the paper is on `main`, fixed at tag [`v1-results`](https://github.com/dm-k1/flatcor-validation/tree/v1-results).
 
-## The three priors
+The repository holds an engine, which runs simulation studies on parallel
+workers up to their results files, and the projects that use it, each in a
+folder of its own:
 
-| | What is flat | Implied $R^2$ | One coefficient's prior |
-|---|---|---|---|
-| **flat partial r** (`prior = "flat_partial_r"`) | every valid correlation matrix of $(y, x_1 \ldots x_k)$ | Beta($k/2$, 1), grows with $k$ | a flat partial correlation, for every $k$ |
-| **flat R** (`prior = "flat_r"`) | the multiple correlation $R$ | Beta(½, 1), for every $k$ | its share of the flat total; narrows as $k$ grows |
-| **flat R²** (`prior = "flat_r_squared"`) | $R^2$ | Beta(1, 1), for every $k$ | its share of the flat total; narrows as $k$ grows |
+| Project | What it asks |
+|---|---|
+| [`project_1_validation/`](project_1_validation/) | Do flatcor's three default priors work within the Bayesian framework? |
 
-All three are $R^2$ ~ Beta($a$, 1) with $a$ = $k/2$, ½ or 1, and divide the
-total over the predictors without preference. As a density on the
-coefficients:
+The engine ([`engine/`](engine/), its README) names no study and no
+package; a project tells it everything it needs (`<project>/engine_settings/`).
+A new project is a new folder next to the others.
 
-```
-P(beta) = P(total) x P(this combination | total) x unit conversion
-          R^2 ~ Beta(a, 1)     every split equally likely   noise units -> data units
-```
-
-flatcor does everything with one Stan model, the same for the three priors:
-it draws the prior, gives the posterior, and gives the Bayes factor between
-any two linear models, from each model's marginal likelihood estimated by
-bridge sampling. Why these three, and why the default is flat partial r: the
-paper's repository.
-
-## The validation
-
-What someone needs to trust that each prior works within the Bayesian
-framework: three things for every prior, each checked in two ways, with
-checks the field already uses.
-
-| | 1. Prior sampling | 2. Posterior estimation | 3. Bayes factors |
-|---|---|---|---|
-| **a. Computed correctly?** | 1a: the prior draws against the exact prior | 2a: simulation-based calibration | 3a: calibration of the Bayes factor; bridge sampling's error |
-| **b. Behaves like a default?** | 1b: invariance | 2b: estimation against a known truth | 3b: the Bayarri et al. (2012) criteria |
-
-Every study reports its estimates against what is expected, with their Monte
-Carlo errors; nothing is judged pass or fail per row.
-
-> **TO REFRESH from the full run:** a short summary of the six studies'
-> results for each prior (the figures: a separate private repository).
-
-## Reading order
-
-Background, in [Objective-bayes](https://github.com/dm-k1/Objective-bayes):
-[the three priors](https://github.com/dm-k1/Objective-bayes/blob/main/docs/2_the_three_priors.md)
-(part 2: the family $R^2 \sim$ Beta($a$, 1), what each keeps flat and
-expects, how the total is divided, what the package computes) and
-[their derivations](https://github.com/dm-k1/Objective-bayes/blob/main/docs/appendix/A_derivations.md)
-(appendix A: the density factor by factor, the Stan model, the Bayes factors
-and the g-prior forms behind them, the default-prior criteria). The table
-above is enough to follow the validation. In this repository:
-
-| | Document | What it is |
-|---|---|---|
-| 1 | [`docs/validation_tests.md`](docs/validation_tests.md) | **What the validation tests**: per study its design, what is tested, what is expected and why, with what Monte Carlo error and how many datasets, and the data sets |
-| 2 | [a separate private repository](https://github.com/dm-k1/a separate private repository) | **The results**, shown: per study its question, its estimates against what is expected, and figures (a separate repository that reads this one's results files) |
-
-Working notes: [`docs/working/`](docs/working/) (the plan of the redesign, the
-run-time estimate).
-
-## Names used
-
-| Name used | Means | Also appears as |
-|---|---|---|
-| **total** | the explained variance $R^2$ of the whole model (flat R keeps its square root $R$ flat) | "shared total" |
-| **shape** $a$ | the first parameter of $R^2 \sim$ Beta($a$, 1): $k/2$, ½ or 1 | `r_squared_shape` (Stan), `prior_shape()` |
-| **share** | the fraction of the total that one predictor gets; Beta(½, (k−1)/2) for every $a$ | $c^2$ (squared alignment, appendix A section 7), $B$ (appendix A section 8) |
-| **noise units**, $f$ | an effect divided by the noise SD $\sigma$; $f^2$ is Cohen's $f^2$ | |
-| **Bayes factor for a term** | the model with the term against the model without it, each with its own prior | |
-| **references** | JZS default (Cauchy, scale 0.354) and Zellner–Siow (scale 1) | |
-
-## Using the priors: what to watch out for
-
-- **Choosing the prior.** Without `prior =`, flatcor uses flat partial r and
-  says so once per session. What each prior assumes:
-  [`2_the_three_priors.md`](https://github.com/dm-k1/Objective-bayes/blob/main/docs/2_the_three_priors.md) (in Objective-bayes).
-- **Shrinkage at small $n$.** With several predictors and a small sample, the
-  prior pulls estimates towards zero (study 2b shows how much).
-- **Leaving the null model.** Against the intercept-only model, evidence for
-  the null grows like $a \log n$: ½ log n for flat R and log n for flat
-  R-squared, whatever the number of predictors, and $\tfrac k2 \log n$ for
-  flat partial r.
-- **Under flat partial r the claimed $R^2$ grows with $k$.** The median is .63
-  with 3 predictors and .87 with 10, so a large model with a modest fit is
-  penalised.
-- **Flat R-squared with one predictor is not Jeffreys' prior.** Its prior on
-  $r$ has density $|r|$, which gives little weight to correlations near zero.
-- **Information consistency needs $n \ge k + 3$**, for all three priors.
-- **Bayes factors are estimates.** Each comes with a Monte Carlo error
-  (bridge sampling's approximate error, which can be optimistic), and models
-  up to about 90 predictors stay within the sizes bridge sampling has been
-  shown to work for.
-- **Scope.** Linear regression with a normal outcome, an intercept and fixed
-  effects (continuous predictors, factors tested as one block, interactions,
-  polynomials, splines). Not supported: group-level effects, other families,
-  distributional models, models without an intercept.
-
-## Running the validation
+## Running a project
 
 Restore the environment with `renv::restore()` (it installs flatcor at the
 pinned version, with targets, crew and the other packages), or use the
 container image of `cluster/Dockerfile`, published by GitHub Actions as
-`ghcr.io/dm-k1/flatcor-validation`. Then:
+`ghcr.io/dm-k1/flatcor-validation`. Then, naming the project (a project
+folder; it may be left out while there is only one, or set as
+`PROJECT=<project>`):
 
 ```bash
-VALIDATION_SMOKE=1 Rscript run_all.R        # first: a corner of every study, about 10 minutes
-Rscript run_all.R                           # the studies
-VALIDATION_FRESH=1 Rscript run_all.R        # the studies, from scratch
-Rscript engine/run_time/remaining_time.R  # during a run, beside it: the time left
+VALIDATION_SMOKE=1 Rscript run_all.R project_1_validation   # first: a corner of every study, about 10 minutes
+Rscript run_all.R project_1_validation                      # the studies
+Rscript run_all.R project_1_validation 3a                   # one study
+VALIDATION_FRESH=1 Rscript run_all.R project_1_validation   # the studies, from scratch
+PROJECT=project_1_validation Rscript engine/run_time/remaining_time.R   # during a run, beside it: the time left
 ```
+
+Each project has its own store (`_targets/<project>/`), its own results
+(`<project>/results/`) and its own folder in `cache/` for its smoke test,
+dry run and timing runs, so projects never mix.
 
 A run has a budget of 2,500 core hours (`VALIDATION_BUDGET_CORE_HOURS`).
 It estimates as it goes what is left: every dataset asked for and not yet
@@ -126,16 +48,17 @@ spent plus that estimate is more than the budget, it stops and reports what
 is left per part; raise the budget or change a target, and start again: it
 continues where it was.
 
-A run ends at the results files: each study's results
-(`results/studies/`) and every dataset's rows (`results/per_dataset/`). The
+A run ends at the results files, in the project's `results/`: each study's
+results (`studies/`) and every dataset's rows (`per_dataset/`). The
 smoke test runs every step on a small part of each design, from scratch,
 with its results in `cache/` (never mixed with real ones).
 
 ### Figures and the notebook: another repository
 
 This repository ends at the results files. The figures and the notebook
-that show them live in [a separate private repository](https://github.com/dm-k1/a separate private repository), which only reads
-these files (from a checkout next to it); nothing here knows of it.
+that show project 1's results live in
+[a separate private repository](https://github.com/dm-k1/a separate private repository),
+which only reads those files; nothing here knows of it.
 
 ### Faster checks while working on the code
 
@@ -146,13 +69,13 @@ made.
 
 ```bash
 Rscript engine/tests/static_check.R                   # seconds: parses, the pipeline is valid, every function called exists, the rules below
-VALIDATION_SMOKE=1 VALIDATION_RECORD=1 Rscript run_all.R # once: the smoke test, recording what Stan and bridge sampling returned
-VALIDATION_DRY=1 Rscript run_all.R                      # then, after every change: the dry run
+VALIDATION_SMOKE=1 VALIDATION_RECORD=1 Rscript run_all.R project_1_validation # once: the smoke test, recording what Stan and bridge sampling returned
+VALIDATION_DRY=1 Rscript run_all.R project_1_validation # then, after every change: the dry run
 ```
 
 The dry run ([`engine/tests/dry_run.R`](engine/tests/dry_run.R)) is the smoke
 test with the calls to Stan and bridge sampling replayed from those
-recordings (in `cache/dry_recordings/`), in one R process, no model
+recordings (in `cache/<project>/dry_recordings/`), in one R process, no model
 compiled. It changes no study's code: that file is sourced after the
 studies, only in a recording run or the dry run, and replaces a few
 functions (the seams: flatcor's Bayes factors and fit, 1a's prior draws of a
@@ -160,7 +83,7 @@ setting, 2a's SBC fits of a batch) by versions that record or replay the
 original. Everything else runs for real: the data, every step, the
 hand-overs between them, the scheduler with two batches for each cell, the
 results files and the check at the end. Its results go to
-`cache/dry_results/`. It does not test the code inside the seams or whether
+`cache/<project>/dry_results/`. It does not test the code inside the seams or whether
 the numbers are right: run the smoke test for that, and record again when
 flatcor changes. When the design or a data step has changed since the
 recording, the dry run replays recordings of the same shape (prior, numbers
@@ -171,8 +94,8 @@ Both rest on three rules for the pipeline's code, which the static check
 enforces (it fails, saying which rule and where):
 
 1. Every expensive call (Stan, bridge sampling, SBC) is inside one of the
-   seams listed in `validation/engine_settings/dry_run_seams.R`, so the dry run can stand in for
-   it. A new expensive step either calls one of them or gets a seam of its
+   seams the project lists in `<project>/engine_settings/dry_run_seams.R`,
+   so the dry run can stand in for it. A new expensive step either calls one of them or gets a seam of its
    own there.
 2. A step reads and writes files only where it is declared: a study's
    results file, the plans and the scheduler's finished batches (both in
@@ -217,18 +140,14 @@ corner of each design.
 
 | Path | What it is |
 |---|---|
-| `_targets.R` | The pipeline: collects every study's steps |
-| `run_all.R` | Runs the validation (only the simulation): every study's batches through the scheduler, each cell until it has enough datasets, then the pipeline for the results (`engine/full_run.R`) |
-| `engine/` | The engine, with no study or package named in it, meant to carry over to another project unchanged: the scheduler and its workers, the pipeline steps, the reports, the four tests and the run-time estimate. Its README explains the words it uses, how a run goes, and what a project and a study provide |
-| `validation/engine_settings/` | This project's answers to the engine: its settings (the package under test, the packages every step loads, the cores a batch keeps busy), the stopping rule, the dry run's seams, and the timing reference |
-| `validation/tested_package/` | Compiling and loading flatcor's Stan model |
-| `validation/shared_by_studies/` | What the studies share: the comparison methods and the data generators (`data/`; what each is and which study needs it: `docs/validation_tests.md`, "The data sets") |
-| `validation/studies/` | The six studies, one folder each: `design.R` (the design, and what the study declares), `code.R` and `steps.R` (its pipeline steps): only what makes its results. A new study is a new folder; no other file changes |
-| `results/` | Each study's metrics and setup, `studies/study_<cell>.rds` (layer 2); every dataset's numbers and everything else computed, `per_dataset/` (layer 1, its README lists the files and columns) |
-| `docs/` | What the validation tests, working notes |
-| `cluster/` | The container image, the run-time estimate, and how to run the validation on a cluster |
+| `run_all.R` | Runs a project (only the simulation): every study's batches through the scheduler, each cell until it has enough datasets, then the pipeline for the results (`engine/full_run.R`) |
+| `_targets.R` | The pipeline: collects the chosen project's steps |
+| `engine/` | The engine, with no study or package named in it, meant to carry over to another project unchanged: the scheduler and its workers, the pipeline steps, the results files, the four tests and the run-time estimate. Its README explains the words it uses, how a run goes, and what a project and a study provide |
+| `project_1_validation/` | Project 1, the validation of flatcor's three priors: its settings, studies, results and docs (its README) |
+| `cluster/` | The container image, the run-time estimate, and how to run a project on a cluster or AWS |
+| `ci/` | Helpers for the checks |
 | `.github/workflows/` | The checks on every push (`check.yml`), the image build (`image.yml`) and the run-time estimate, on demand (`timing.yml`) |
-| `renv.lock`, `.lintr` | The pinned packages; the code style |
+| `renv.lock`, `.lintr` | The pinned packages, shared by the projects; the code style |
 
 ## Author
 

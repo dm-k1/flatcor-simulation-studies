@@ -23,7 +23,7 @@ declared_empty_in_smoke <- list()
 
 ## A part that runs until its targets are reached: every cell starts with
 ## first_datasets datasets and gets more, batch by batch, until the stopping
-## rule (validation/engine_settings/stopping_rule.R) says its quantities have
+## rule (<project>/engine_settings/stopping_rule.R) says its quantities have
 ## reached their targets.
 ##   study        the study it belongs to (its folder's first two characters)
 ##   cells        the design: one row per cell

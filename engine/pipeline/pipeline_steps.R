@@ -10,7 +10,7 @@
 ##  or, if the scheduler has not run it (a plain tar_make(), a timing run),
 ##  computed in the step itself (batch_rows(), engine/workers/batches.R).
 ##  Every batch gets the pipeline's step `model` (batch_model(),
-##  validation/engine_settings/settings.R).
+##  <project>/engine_settings/settings.R).
 ## =====================================================================
 
 ## A part that runs until its targets are reached: its plan, its batches and
@@ -53,10 +53,10 @@ steps_once <- function(rows, part, iteration = "vector") {
   )
 }
 
-## Every study's steps: each study's steps.R (validation/studies/<study>/steps.R)
+## Every study's steps: each study's steps.R (<project>/studies/<study>/steps.R)
 ## ends in a list of its steps; this collects them. A new study adds its
 ## folder and nothing here or in _targets.R.
 study_steps <- function() {
-  files <- sort(Sys.glob(file.path("validation", "studies", "*", "steps.R")))
+  files <- sort(Sys.glob(file.path(project, "studies", "*", "steps.R")))
   lapply(files, function(file) source(file, local = new.env(parent = globalenv()))$value)
 }

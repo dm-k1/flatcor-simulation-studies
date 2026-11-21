@@ -2,7 +2,7 @@
 ##  Scales the timing runs up to the full run
 ##
 ##    Rscript engine/run_time/estimate_run_time.R [folder] [--reference=<seconds>]
-##                                                      (default cache/timing)
+##                                              (default cache/<project>/timing)
 ##
 ##  reads the time_<cell>_at_<fraction>.rds files of engine/run_time/time_study.R and
 ##  prints a Markdown table: per study, the core hours of the full run (elapsed
@@ -22,7 +22,7 @@
 ##
 ##  Machines differ: GitHub's runners alone have several processors. Each
 ##  timing run also records the reference task
-##  (validation/engine_settings/timing_reference.R) on its
+##  (<project>/engine_settings/timing_reference.R) on its
 ##  runner; when all runs have it, every timing is counted in multiples of
 ##  its own runner's reference before the lines are drawn, so a faster or
 ##  slower runner divides out. The result is read off for a target machine:
@@ -32,7 +32,10 @@
 
 arguments <- commandArgs(trailingOnly = TRUE)
 folder <- arguments[!startsWith(arguments, "--")][1]
-if (is.na(folder)) folder <- file.path("cache", "timing")
+if (is.na(folder)) {
+  source(file.path("engine", "run_mode.R")) # the project (PROJECT)
+  folder <- file.path(project_cache, "timing")
+}
 reference_argument <- grep("^--reference=", arguments, value = TRUE)
 target_reference <- as.numeric(sub("^--reference=", "", reference_argument))
 files <- list.files(folder, pattern = "^time_.*[.]rds$", recursive = TRUE, full.names = TRUE)
@@ -151,6 +154,6 @@ cat(
   "in the timing run. A study runs on all its cores at once, so the whole validation on one",
   "machine takes the sum of the column; on several machines, one study each, it takes",
   "about as long as the slowest study. For another machine, run",
-  "validation/engine_settings/timing_reference.R",
+  "<project>/engine_settings/timing_reference.R",
   "there and give its seconds with --reference.\n"
 )

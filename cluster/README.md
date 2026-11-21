@@ -4,9 +4,9 @@ The validation is one pipeline ([`_targets.R`](../_targets.R)); `Rscript
 run_all.R` runs it, up to the results files. It saves every
 finished batch as it goes, so it can run anywhere a run may stop (a laptop, Colab, a cloud
 machine) and continue where it was, as long as the project folder (with its
-`_targets/` store) survives and flatcor stays the same: `run_all.R` refuses
+`_targets/<project>/` store) survives and flatcor stays the same: `run_all.R` refuses
 to continue with another flatcor commit than the run started with.
-`VALIDATION_FRESH=1 Rscript run_all.R` starts from scratch. This folder
+`VALIDATION_FRESH=1 Rscript run_all.R <project>` starts from scratch. This folder
 holds what helps with that: a container image with the exact environment,
 the run-time estimate, and how to run it on a cluster.
 
@@ -53,18 +53,18 @@ VALIDATION_TIMING=0.06 Rscript engine/run_time/time_study.R 3a
 Rscript engine/run_time/estimate_run_time.R
 ```
 
-Timing runs write only to `cache/timing/`, so they never mix with a real run.
+Timing runs write only to `cache/<project>/timing/`, so they never mix with a real run.
 
 **For your own machine.** GitHub's runners differ (several processor types),
 so every timing run first times a reference task: one fixed flatcor Bayes
-factor (`validation/engine_settings/timing_reference.R`, about a minute). The estimate counts each
+factor (`project_1_validation/engine_settings/timing_reference.R`, about a minute). The estimate counts each
 timing in multiples of its own runner's reference, so a faster or slower
 runner divides out. To read the estimate off for the machine you plan to
 use, run the reference task there and give its seconds to the estimate (the
 artifact `run-time-estimate` holds the timing runs, in `timing/`):
 
 ```bash
-Rscript validation/engine_settings/timing_reference.R          # e.g. "8.9 seconds" on an M-series Mac
+Rscript project_1_validation/engine_settings/timing_reference.R          # e.g. "8.9 seconds" on an M-series Mac
 Rscript engine/run_time/estimate_run_time.R timing --reference=8.9
 ```
 
@@ -72,7 +72,7 @@ Rscript engine/run_time/estimate_run_time.R timing --reference=8.9
 
 The run uses one machine with many cores: the pipeline starts a worker for
 every 4 cores it is given (each batch runs Stan's 4 chains in parallel)
-and keeps every finished batch in `_targets/`. On a cluster that is
+and keeps every finished batch in `_targets/<project>/`. On a cluster that is
 one job on one node, resubmitted until the pipeline is done. (Several nodes
 would need crew's cluster controllers instead; not set up.)
 
@@ -119,7 +119,7 @@ project; adjust the partition, cores, memory and time to the cluster):
 
 cd "$SLURM_SUBMIT_DIR"
 apptainer exec --bind "$PWD":/project --pwd /project flatcor-validation.sif \
-  Rscript run_all.R
+  Rscript run_all.R project_1_validation
 ```
 
 ```bash
@@ -144,8 +144,8 @@ sbatch run_validation.sbatch
   the run started with (the image fixes flatcor, so this only happens with a
   new `.sif`), and `VALIDATION_FRESH=1` (as `apptainer exec --env
   VALIDATION_FRESH=1 ...`) starts from scratch.
-- **Afterwards.** The results are in `results/studies/` (one file per
-  study) and `results/per_dataset/`. Copy them back and commit them; the
+- **Afterwards.** The results are in the project's `results/studies/` (one
+  file per study) and `results/per_dataset/`. Copy them back and commit them; the
   docs read them from there.
 
 A SLURM array script was here until 17 November 2026 (in the git history);
@@ -154,9 +154,9 @@ one job on one node replaces it.
 ## On AWS
 
 [`aws/user-data.sh`](aws/user-data.sh) runs the validation on one EC2 spot
-instance (Amazon Linux 2023), given to it as user data with five values
-filled in: the S3 bucket, a name for the run, smoke test or not, the studies,
-and a safety cutoff in hours. It installs Docker, clones this repository,
+instance (Amazon Linux 2023), given to it as user data with six values
+filled in: the S3 bucket, a name for the run, smoke test or not, the project,
+the studies, and a safety cutoff in hours. It installs Docker, clones this repository,
 runs `run_all.R` in the published image (only the simulation), copies the
 results and logs to `s3://<bucket>/<run name>/`, and shuts down. Launched
 with shutdown behaviour

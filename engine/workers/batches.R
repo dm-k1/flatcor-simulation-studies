@@ -66,7 +66,7 @@ batch_row <- function(batches, i) vctrs::vec_slice(batches, i)
 ## starts as targets starts a step: seeded, with R's default generator. The
 ## seed's name starts with "piece", the word for a batch when the seeds were
 ## fixed: changing it would change every number. `model`: what batch_model()
-## gives (validation/engine_settings/settings.R).
+## gives (<project>/engine_settings/settings.R).
 batch_work <- function(part, batch, model = NULL) {
   set.seed(
     seed_of("piece", part, batch_id(batch)),

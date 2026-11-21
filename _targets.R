@@ -17,7 +17,7 @@
 ##    Sys.setenv(VALIDATION_SMOKE = "1"); targets::tar_make(store = "cache/targets_smoke")
 ##    Sys.setenv(VALIDATION_DRY = "1"); targets::tar_make(store = "cache/targets_dry")
 ##
-##  This file only collects: every study is a folder in validation/studies/ with its
+##  This file only collects: every study is a folder in project_1_validation/studies/ with its
 ##  design (design.R), its code (code.R) and its steps here (steps.R). What
 ##  each tests, expects and why: docs/validation_tests.md.
 ## =====================================================================
@@ -37,7 +37,7 @@ pipeline_setup()
 ## ---- The steps ------------------------------------------------------------------------
 
 list(
-  ## The model every batch gets (batch_model(), validation/engine_settings/settings.R),
+  ## The model every batch gets (batch_model(), project_1_validation/engine_settings/settings.R),
   ## made once before the studies that use it
   tar_target(model, batch_model()),
 

@@ -4,8 +4,11 @@ The engine runs a simulation validation: it runs the studies' work on
 parallel workers, reports each study's estimates against what is expected,
 and tests itself. It names no study and no package. Another project copies
 this folder and the two root scripts (`_targets.R`, `run_all.R`)
-unchanged, then writes its own `validation/` folder: its settings, what its
-studies share, and the studies themselves (`validation/studies/`). The engine
+unchanged, then writes its own project folder next to the engine,
+`project_<n>_<name>/` (`<project>/` below): its settings, what its studies
+share, the studies themselves (`<project>/studies/`), and its results and
+docs. Several projects can sit side by side; a run names the one it runs
+(`Rscript run_all.R <project>`, or `PROJECT=<project>`). The engine
 ends at the results files; showing them (figures, a notebook) is not its
 concern.
 
@@ -13,7 +16,7 @@ concern.
 
 | Word | Meaning |
 |---|---|
-| study | One folder in `validation/studies/`, such as `2b_estimation`; its code is the folder's first two characters (`2b`) |
+| study | One folder in `<project>/studies/`, such as `2b_estimation`; its code is the folder's first two characters (`2b`) |
 | part | One kind of work a study runs, declared in its `design.R`. A part runs either until its targets are reached (`part_until_target()`) or once (`part_once()`). A study can have several parts (3a has its calibration and its repeats) |
 | cell | One setting of a part's design, such as k = 3, n = 50, ρ = 0.3 |
 | batch | A group of datasets of one cell, run as one task by one worker and saved when it finishes |
@@ -67,7 +70,7 @@ alone or with any other studies, on any number of workers.
 
 ## What the project provides
 
-These files are in `validation/engine_settings/`. The engine reads them by
+These files are in `<project>/engine_settings/`. The engine reads them by
 name.
 
 | File | What it gives the engine |
@@ -77,13 +80,13 @@ name.
 | `dry_run_seams.R` | `expensive_calls`, `replayed_functions`, `skipped_in_dry_run`, and the replacements the dry run uses |
 | `timing_reference.R` | `reference_seconds()`: a fixed task that measures how fast a machine is |
 
-Everything else in `validation/` is the project's own: the package under
+Everything else in `<project>/` is the project's own: the package under
 test (`tested_package/`) and what its studies share (`shared_by_studies/`,
 with the data generators in `data/`). The engine loads all of it.
 
 ## What a study provides
 
-A study is one folder in `validation/studies/`:
+A study is one folder in `<project>/studies/`:
 
 | File | What it holds |
 |---|---|

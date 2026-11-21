@@ -5,7 +5,7 @@
 # datasets, each on its own runner (4 cores). engine/run_time/estimate_run_time.R then
 # fits the fixed part and the part per dataset and reads off the full run; the
 # table appears on the run's summary page and as the artifact run-time-estimate.
-# Each job first times a reference task (validation/engine_settings/timing_reference.R: one fixed
+# Each job first times a reference task (project_1_validation/engine_settings/timing_reference.R: one fixed
 # flatcor Bayes factor), so the estimate can divide out how fast its runner
 # was; GitHub's runners have several kinds of processors.
 # Studies 1a (it does not depend on the number of datasets) and 1b (20 per
@@ -71,7 +71,7 @@ jobs:
       - name: Time the study
         run: |
           docker run --rm -v "$PWD":/project \
-            -e VALIDATION_TIMING=${{ matrix.fraction }} \
+            -e VALIDATION_TIMING=${{ matrix.fraction }} -e PROJECT=project_1_validation \
             "ghcr.io/${{ github.repository_owner }}/flatcor-validation:$(cluster/image_tag.sh)" \
             Rscript engine/run_time/time_study.R ${{ matrix.study }}
 
@@ -79,7 +79,7 @@ jobs:
         if: always()
         with:
           name: time-${{ matrix.study }}-at-${{ matrix.fraction }}
-          path: cache/timing/time_*.rds
+          path: cache/project_1_validation/timing/time_*.rds
           if-no-files-found: ignore
 
   estimate:
@@ -97,7 +97,7 @@ jobs:
 
       - name: Scale up to the full run
         run: |
-          docker run --rm -v "$PWD":/project \
+          docker run --rm -v "$PWD":/project -e PROJECT=project_1_validation \
             "ghcr.io/${{ github.repository_owner }}/flatcor-validation:$(cluster/image_tag.sh)" \
             Rscript engine/run_time/estimate_run_time.R timing | tee run_time_estimate.md
           cat run_time_estimate.md >> "$GITHUB_STEP_SUMMARY"

@@ -21,7 +21,7 @@ save_study_results_file <- function(study, tables) {
     stdout = TRUE, stderr = FALSE
   ))
   # the package under test, in fields named after it (flatcor, flatcor_commit),
-  # and what else the project records (project_setup(), validation/engine_settings/settings.R)
+  # and what else the project records (project_setup(), <project>/engine_settings/settings.R)
   tested <- list(
     as.character(utils::packageVersion(tested_package)),
     utils::packageDescription(tested_package)$RemoteSha

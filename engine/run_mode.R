@@ -1,5 +1,9 @@
 ## =====================================================================
-##  Which kind of run this is, and where its files go
+##  Which project, which kind of run, and where its files go
+##
+##  The project: a folder project_<n>_<name>/ next to the engine, chosen as
+##  the first argument of run_all.R or with PROJECT=<folder>; with only one
+##  project folder, that one.
 ##
 ##    a full run        Rscript run_all.R
 ##    the smoke test    VALIDATION_SMOKE=1  a corner of each design, to test the
@@ -11,9 +15,39 @@
 ##    a timing run      VALIDATION_TIMING=<fraction>  the full design with that
 ##                      fraction of the datasets (engine/run_time/)
 ##
-##  Every process sources this file (engine/load_code.R), so each kind of
-##  run keeps its own store and results and never mixes with a real run.
+##  Every process sources this file (engine/load_code.R), so each project
+##  and each kind of run keeps its own store and results, and none mixes
+##  with another.
 ## =====================================================================
+
+## ---- The project ---------------------------------------------------------------------
+
+## The project folders: project_<n>_<name>/, next to the engine
+project_folders <- function() {
+  folders <- list.files(".", pattern = "^project_")
+  sort(folders[dir.exists(folders)])
+}
+project <- Sys.getenv("PROJECT")
+if (!nzchar(project)) {
+  if (length(project_folders()) != 1) {
+    stop(
+      "Which project? Name it first, as in Rscript run_all.R ", project_folders()[1],
+      ", or set PROJECT. The projects: ", paste(project_folders(), collapse = ", "),
+      call. = FALSE
+    )
+  }
+  project <- project_folders()
+}
+if (!dir.exists(project)) stop("No project folder ", project, call. = FALSE)
+# set, so every process the run starts (the pipeline, the workers) has it
+Sys.setenv(PROJECT = project)
+
+## The project's own folder in cache/: its smoke test, dry run, recordings
+## and timing runs
+project_cache <- file.path("cache", project)
+
+## The dry run's recordings (engine/tests/dry_run.R)
+recordings_folder <- file.path(project_cache, "dry_recordings")
 
 dry <- identical(Sys.getenv("VALIDATION_DRY"), "1")
 recording <- identical(Sys.getenv("VALIDATION_RECORD"), "1")
@@ -26,21 +60,23 @@ timing_fraction <- suppressWarnings(as.numeric(Sys.getenv("VALIDATION_TIMING", N
 
 ## ---- Where the files go ------------------------------------------------------------
 
-## The folder of the results: results/ for a full run, cache/ otherwise
+## The folder of the results: the project's results/ for a full run, its
+## folder in cache/ otherwise
 results_root_of <- function(dry, smoke, timing = FALSE) {
-  if (dry) return(file.path("cache", "dry_results"))
-  if (smoke) return(file.path("cache", "smoke_results"))
-  if (timing) return(file.path("cache", "timing", "results"))
-  "results"
+  if (dry) return(file.path(project_cache, "dry_results"))
+  if (smoke) return(file.path(project_cache, "smoke_results"))
+  if (timing) return(file.path(project_cache, "timing", "results"))
+  file.path(project, "results")
 }
 
-## The targets store (a timing run gives its own, engine/run_time/time_study.R)
+## The targets store, one per project (a timing run gives its own,
+## engine/run_time/time_study.R)
 store <- if (dry) {
-  file.path("cache", "targets_dry")
+  file.path(project_cache, "targets_dry")
 } else if (smoke) {
-  file.path("cache", "targets_smoke")
+  file.path(project_cache, "targets_smoke")
 } else {
-  "_targets"
+  file.path("_targets", project)
 }
 results_root <- results_root_of(dry, smoke, timing = !is.na(timing_fraction))
 

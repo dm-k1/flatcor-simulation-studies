@@ -27,7 +27,7 @@ VALIDATION_SMOKE=1 VALIDATION_RECORD=1 Rscript run_all.R
 Record again when the package under test changes, or when an expensive call
 returns something new. Which calls are expensive, which functions the dry
 run replays, and what it skips are the project's choice:
-`validation/engine_settings/dry_run_seams.R`.
+`<project>/engine_settings/dry_run_seams.R`.
 
 ## The three rules of the static check
 

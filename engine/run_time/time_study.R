@@ -5,8 +5,8 @@
 ##
 ##  runs the study's steps of the pipeline (_targets.R: the targets ending in
 ##  _3a) in timing mode (engine/run_mode.R): the full design, but 4% of the
-##  datasets (at least 2), in its own store under cache/timing/, so it never
-##  mixes with a real run. It writes cache/timing/time_3a_at_0.04.rds with the
+##  datasets (at least 2), in its own store under cache/<project>/timing/, so it
+##  never mixes with a real run. It writes cache/<project>/timing/time_3a_at_0.04.rds with the
 ##  elapsed time and the cores. engine/run_time/estimate_run_time.R scales these up to
 ##  the full run; the "Run-time estimate" workflow (.github/workflows/timing.yml)
 ##  runs both. Studies 1a (it does not depend on the number of datasets) and
@@ -19,9 +19,10 @@ stopifnot(
   "set VALIDATION_TIMING to the fraction of datasets, as in 0.04" = !is.na(fraction)
 )
 
-## the reference task first, on this machine (validation/engine_settings/timing_reference.R), so
+## the reference task first, on this machine (<project>/engine_settings/timing_reference.R), so
 ## the estimate can divide out how fast this machine is
-source(file.path("validation", "engine_settings", "timing_reference.R"))
+source(file.path("engine", "run_mode.R")) # the project (PROJECT)
+source(file.path(project, "engine_settings", "timing_reference.R"))
 reference <- tryCatch(reference_seconds(), error = function(e) NA_real_)
 
 ## Whether the study's size follows the fraction: it does if its design
@@ -39,7 +40,7 @@ for (file in code_files()) {
   if (of_this_study && datasets_asked$times > asked_before) scales_with_datasets <- TRUE
 }
 
-store <- file.path("cache", "timing", paste0("store_", study, "_", fraction))
+store <- file.path(project_cache, "timing", paste0("store_", study, "_", fraction))
 started <- Sys.time()
 error <- tryCatch(
   {
@@ -54,7 +55,7 @@ error <- tryCatch(
 )
 elapsed <- as.numeric(difftime(Sys.time(), started, units = "secs"))
 
-dir.create(file.path("cache", "timing"), recursive = TRUE, showWarnings = FALSE)
+dir.create(file.path(project_cache, "timing"), recursive = TRUE, showWarnings = FALSE)
 cpu_model <- tryCatch(
   {
     model_line <- grep("model name", readLines("/proc/cpuinfo"), value = TRUE)[1]
@@ -74,7 +75,7 @@ saveRDS(
     scales_with_datasets = scales_with_datasets,
     error = error
   ),
-  file.path("cache", "timing", sprintf("time_%s_at_%s.rds", study, fraction))
+  file.path(project_cache, "timing", sprintf("time_%s_at_%s.rds", study, fraction))
 )
 cat(sprintf(
   "\nStudy %s at fraction %s: %.1f minutes elapsed%s\n", study, fraction, elapsed / 60,

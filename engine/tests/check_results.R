@@ -3,7 +3,7 @@
 ##  and is every number in them a number?
 ##
 ##    - a results file for every study that was run, all with the commit of
-##      the package under test the run used (tested_package, validation/engine_settings/settings.R)
+##      the package under test the run used (tested_package, <project>/engine_settings/settings.R)
 ##    - every table of every file: no NaN, no Inf, no NA except the blanks
 ##      its study declares (each with its reason), and no empty table except
 ##      those its study declares for the smoke test

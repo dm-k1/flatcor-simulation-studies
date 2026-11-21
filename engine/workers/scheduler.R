@@ -6,7 +6,7 @@
 ##  computed over: one cell of the design, or the cells of a slope over n
 ##  together.) Its batches wait in line for a free worker; as soon as the
 ##  last of them is back, the cell is judged on its own results by the
-##  project's stopping rule (next_plan(), validation/engine_settings/stopping_rule.R),
+##  project's stopping rule (next_plan(), <project>/engine_settings/stopping_rule.R),
 ##  and if a quantity is short of its target, the datasets it lacks join the
 ##  line at once. No cell waits for another, so the workers stay busy until
 ##  the last cell is done. The parts that run once join the line first, so
@@ -205,7 +205,7 @@ run_parts <- function(until_target, once, store, budget_core_hours, workers, spe
 
   ## ---- The estimate ----
   # core hours: every batch keeps cores_per_batch cores busy
-  # (validation/engine_settings/settings.R)
+  # (<project>/engine_settings/settings.R)
   spent <- function() spent_elsewhere + sum(unlist(run$seconds)) * cores_per_batch / 3600
   # a part's core hours per dataset, from its finished batches: the median,
   # so one slow batch does not throw it; unknown (NA) before two are back
