@@ -19,8 +19,10 @@
 ##    BUCKET      the S3 bucket for the log and the results
 ##    RUN_NAME    a folder in the bucket for this run
 ##    SMOKE       1 for the smoke test, 0 for a real run
-##    CHECKOUT    the commit to run (or a branch, as v2): every machine of
-##                a run should run the same commit, so pin one
+##    REPOSITORY  where to download the code from (a git address, as
+##                https://github.com/dm-k1/flatcor-validation.git)
+##    CHECKOUT    which version of it to run: a commit (or a branch); every
+##                machine of a run should run the same commit, so pin one
 ##    PROJECT     the project folder to run, as project_1_validation
 ##    STUDIES     the studies to run ("" for all), as for run_all.R
 ##    MAX_HOURS   the safety cutoff
@@ -28,6 +30,7 @@
 BUCKET="__BUCKET__"
 RUN_NAME="__RUN_NAME__"
 SMOKE="__SMOKE__"
+REPOSITORY="__REPOSITORY__"
 CHECKOUT="__CHECKOUT__"
 PROJECT="__PROJECT__"
 STUDIES="__STUDIES__"
@@ -40,7 +43,7 @@ set -x
 ## every value filled in, or stop here (cluster/aws/keep_running.sh then
 ## stops too, instead of launching new machines that would stop the same way)
 unfilled=""
-for name in BUCKET RUN_NAME SMOKE CHECKOUT PROJECT STUDIES MAX_HOURS; do
+for name in BUCKET RUN_NAME SMOKE REPOSITORY CHECKOUT PROJECT STUDIES MAX_HOURS; do
   case "${!name}" in __*__) unfilled="$unfilled $name" ;; esac
 done
 if [ -n "$unfilled" ]; then
@@ -73,10 +76,10 @@ backup_store() {
     --exclude "scratch/*" --only-show-errors || true
 }
 
-## Docker, git and the project
+## Docker, git and the code, from where the launch says, at the version it says
 dnf install -y docker git
 systemctl start docker
-git clone https://github.com/dm-k1/flatcor-validation.git /opt/flatcor-validation
+git clone "$REPOSITORY" /opt/flatcor-validation || { echo "Cannot download the code from $REPOSITORY"; exit 1; }
 cd /opt/flatcor-validation || exit 1
 git checkout --quiet "$CHECKOUT" || { echo "No such commit or branch: $CHECKOUT"; exit 1; }
 git log --oneline -1

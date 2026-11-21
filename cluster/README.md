@@ -154,11 +154,12 @@ one job on one node replaces it.
 ## On AWS
 
 [`aws/user-data.sh`](aws/user-data.sh) runs the validation on one EC2 spot
-instance (Amazon Linux 2023), given to it as user data with seven values
-filled in: the S3 bucket, a name for the run, smoke test or not, the commit
-to run (or a branch), the project, the studies, and a safety cutoff in
-hours; a value left unfilled stops it at once, saying which. It installs
-Docker, clones this repository, checks out that commit,
+instance (Amazon Linux 2023), given to it as user data with eight values
+filled in: the S3 bucket, a name for the run, smoke test or not, where to
+download the code from and which commit of it (or a branch), the project,
+the studies, and a safety cutoff in hours; the script itself names no
+repository and no branch, and a value left unfilled stops it at once,
+saying which. It installs Docker, downloads the code at that commit,
 runs `run_all.R` in the published image (only the simulation), copies the
 results and logs to `s3://<bucket>/<run name>/`, and shuts down. Launched
 with shutdown behaviour
