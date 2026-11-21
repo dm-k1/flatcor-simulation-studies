@@ -3,9 +3,10 @@
 The engine runs a simulation validation: it runs the studies' work on
 parallel workers, reports each study's estimates against what is expected,
 and tests itself. It names no study and no package. Another project copies
-this folder and the three root scripts (`_targets.R`, `run_all.R`,
-`make_figures.R`) unchanged, then writes its own `R/project/` and
-`R/studies/`.
+this folder and the two root scripts (`_targets.R`, `run_all.R`)
+unchanged, then writes its own `R/project/` and `R/studies/`. The engine
+ends at the results files; showing them (figures, a notebook) is the
+project's own (here `R/project/report/`).
 
 ## Words
 
@@ -35,8 +36,8 @@ this folder and the three root scripts (`_targets.R`, `run_all.R`,
    run continues where it was.
 5. When every cell is done, the pipeline (`pipeline/`, targets) makes each
    study's results from the saved batches. It writes the results files
-   (`report/results_files.R`) and the per-dataset files
-   (`report/per_dataset_files.R`).
+   (`results/results_files.R`) and the per-dataset files
+   (`results/per_dataset_files.R`).
 6. `tests/check_results.R` checks those files.
 
 A dataset's random numbers come from its name (`seeds.R`). A cell is judged
@@ -57,11 +58,9 @@ alone or with any other studies, on any number of workers.
 | `workers/worker_setup.R` | How many workers, and what each inherits |
 | `workers/scheduler.R` | Hands out batches, asks the stopping rule, keeps the budget |
 | `workers/batches.R` | A cell's plan and batches; runs one batch, saves it, reads it back |
-| `report/estimates_vs_expectations.R` | Each estimate against what is expected, in Monte Carlo SEs |
-| `report/results_files.R` | Writing a study's results file |
-| `report/per_dataset_files.R` | Writing and reading every dataset's rows |
-| `report/figure_files.R` | What a figure script needs; drawing all figures |
-| `report/notebook_tables.R` | The notebook's tables and figures |
+| `results/estimates_vs_expectations.R` | Each estimate against what is expected, in Monte Carlo SEs |
+| `results/results_files.R` | Writing a study's results file (layer 2) |
+| `results/per_dataset_files.R` | Writing and reading every dataset's rows (layer 1) |
 | `tests/` | The four tests (`tests/README.md`) |
 | `run_time/` | Before a run: time a study on a share of its datasets (`time_study.R`), and scale that up to the full run (`estimate_run_time.R`). During a run: the time left, per part, per study and in all (`remaining_time.R`) |
 
@@ -90,7 +89,6 @@ A study is one folder in `R/studies/`:
 | `design.R` | The design, and at its end what the study declares: its parts (`declared_parts`), blanks by design (`declared_blanks`), tables empty in the smoke test (`declared_empty_in_smoke`) |
 | `code.R` | The functions that compute the study |
 | `steps.R` | Its steps in the pipeline, ending in a `list()`. Every step's name ends in `_<study>`, and the results step is `results_<study>` (`format = "file"`) |
-| `figures.R` | Its figures, from its results file (optional) |
-| `present.R` | Anything extra the notebook needs for this study (optional) |
 
-A new study is a new folder. No other file changes.
+A new study is a new folder. No engine file changes; only what the project
+shows of it (its figures, in this project `R/project/report/`) is added there.

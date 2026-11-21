@@ -7,7 +7,7 @@ validation itself reports.
 | Test | How to start it | Time | What it catches |
 |---|---|---|---|
 | Static check | `Rscript R/engine/tests/static_check.R` | seconds | A file that doesn't parse, an invalid pipeline, a function called that doesn't exist, and code that breaks the three rules below |
-| Dry run | `VALIDATION_DRY=1 Rscript run_all.R` | a minute or two | Everything around the expensive calls: every step, every hand-over of a table between steps, the scheduler, every results file, the check at the end; with `VALIDATION_DRY=1 Rscript make_figures.R`, every figure |
+| Dry run | `VALIDATION_DRY=1 Rscript run_all.R` | a minute or two | Everything around the expensive calls: every step, every hand-over of a table between steps, the scheduler, every results file, the check at the end; with `VALIDATION_DRY=1 Rscript R/project/report/make_figures.R`, every figure |
 | Smoke test | `VALIDATION_SMOKE=1 Rscript run_all.R` | about 10 minutes | The whole run for real, on a corner of each design, with several workers and the real expensive calls |
 | Check of the results | runs at the end of every run | seconds | A missing results file, an empty table, a NaN, Inf or NA that isn't a declared blank, a results file made with another commit of the package under test |
 

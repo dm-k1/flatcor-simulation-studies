@@ -19,7 +19,7 @@
 ## =====================================================================
 
 
-## ---- Method names and colours (the same in every study) -----------------------------
+## ---- Method names (the same in every study; their colours: R/project/report/method_colours.R)
 
 contenders <- c(
   `flat partial r` = "flat_partial_r",
@@ -27,37 +27,6 @@ contenders <- c(
   `flat R-squared` = "flat_r_squared"
 )
 model_methods <- c(names(contenders), "JZS default", "Zellner-Siow")
-
-## Colour for the figures: one colour per prior, the references in grey
-method_colours <- c(
-  `flat partial r` = "#0072B2",
-  `flat R-squared` = "#009E73",
-  `flat R` = "#D55E00",
-  `JZS` = "grey25",
-  `Zellner` = "grey60"
-)
-method_colour_of <- function(method) {
-  starts <- names(method_colours)[startsWith(method, names(method_colours))]
-  if (length(starts) == 0) "black" else method_colours[[starts[1]]]
-}
-
-## The colour scale for a figure, with the methods in a fixed order
-method_scales <- function(methods) {
-  methods <- unique(as.character(methods))
-  order_of_colours <- c("#0072B2", "#D55E00", "#009E73", "grey25", "grey60", "black")
-  methods <- methods[order(match(sapply(methods, method_colour_of), order_of_colours))]
-
-  list(
-    scale_colour_manual(
-      values = setNames(sapply(methods, method_colour_of), methods),
-      breaks = methods,
-      name = NULL
-    ),
-    theme(legend.position = "bottom", legend.key.width = unit(2.5, "lines")),
-    guides(colour = guide_legend(nrow = 1, override.aes = list(alpha = 1)))
-  )
-}
-
 
 ## ---- The Bayes factor between two models -------------------------------------------
 
@@ -83,7 +52,7 @@ models_as_formulas <- function(predictors_a, predictors_b, outcome) {
 
 ## The log BF of model A (columns predictors_a) against model B
 ## (predictors_b), for one method, with everything computed on the way, as
-## one row (a tibble) for the per-dataset files (R/engine/report/per_dataset_files.R):
+## one row (a tibble) for the per-dataset files (R/engine/results/per_dataset_files.R):
 ##   id, seed        the name the Stan fits and bridge sampling are seeded
 ##                   from, and the seed (model B's is seed + 1)
 ##   log_bf, error   the log BF and its approximate Monte Carlo SE

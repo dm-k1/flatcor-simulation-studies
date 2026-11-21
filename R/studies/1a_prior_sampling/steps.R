@@ -10,7 +10,8 @@ list(
   # steps_once(), R/engine/pipeline/pipeline_steps.R)
   steps_once("samples_1a", "1a", iteration = "list"),
   tar_target(predictors_1a, data_prior_only_designs()),
-  # layer 1: the draws, the recipe's draws, each setting's run (R/engine/report/per_dataset_files.R)
+  # layer 1: the draws, the recipe's draws, each setting's run
+  # (R/engine/results/per_dataset_files.R)
   tar_target(
     per_dataset_draws_1a,
     write_per_dataset(draws_table_1a(samples_1a), "1a_prior_draws", gzip = TRUE),

@@ -9,7 +9,7 @@ list(
   # the log Bayes factors, until their targets are reached: the part 1b declares (its design.R;
   # steps_until_target(), R/engine/pipeline/pipeline_steps.R)
   steps_until_target("log_bfs_1b", "1b"),
-  # layer 1: every log Bayes factor's row (R/engine/report/per_dataset_files.R)
+  # layer 1: every log Bayes factor's row (R/engine/results/per_dataset_files.R)
   tar_target(
     per_dataset_1b,
     write_per_dataset(log_bfs_1b, "1b_log_bayes_factors"),

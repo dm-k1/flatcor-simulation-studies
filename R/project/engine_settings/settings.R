@@ -26,7 +26,7 @@ prepare_models <- function() compile_flatcor_models()
 batch_model <- function() flatcor_stan_model()
 
 ## What a results file records about the run besides the engine's own
-## fields (R/engine/report/results_files.R)
+## fields (R/engine/results/results_files.R)
 project_setup <- function() {
   list(CmdStan = tryCatch(
     as.character(cmdstanr::cmdstan_version()),

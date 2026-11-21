@@ -119,7 +119,7 @@ replace_function <- function(name, make) {
 }
 
 ## The dry run's results files go to cache/dry_results/, never over the smoke
-## test's, and are marked as dry. Done here, not in R/engine/report/results_files.R, so a
+## test's, and are marked as dry. Done here, not in R/engine/results/results_files.R, so a
 ## normal run sees save_study_results_file() unchanged and a finished store's
 ## results steps stay valid: the original writes the file in a scratch
 ## folder, and it is moved from there.

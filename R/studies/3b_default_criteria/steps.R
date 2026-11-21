@@ -15,7 +15,7 @@ list(
   # 3b.7: the prior's draws with the sample and the population covariance
   tar_target(draws_intrinsic_3b, intrinsic_draws_of_3b()),
 
-  # layer 1: every Bayes factor's row and the draws (R/engine/report/per_dataset_files.R)
+  # layer 1: every Bayes factor's row and the draws (R/engine/results/per_dataset_files.R)
   tar_target(per_dataset_formula_3b, write_per_dataset(formula_3b, "3b_formula"), format = "file"),
   tar_target(per_dataset_rates_3b, write_per_dataset(rates_3b, "3b_rates"), format = "file"),
   tar_target(

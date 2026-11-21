@@ -8,7 +8,7 @@
 list(
   # part A, calibration, until their targets are reached: the part "3a" its design.R declares
   steps_until_target("calibration_runs_3a", "3a"),
-  # layer 1: every dataset's row (R/engine/report/per_dataset_files.R)
+  # layer 1: every dataset's row (R/engine/results/per_dataset_files.R)
   tar_target(
     per_dataset_calibration_3a,
     write_per_dataset(calibration_runs_3a, "3a_calibration"),

@@ -1,6 +1,6 @@
 ## =====================================================================
 ##  How the notebook names things: each study's question, the priors and
-##  the columns of the tables (R/engine/report/notebook_tables.R)
+##  the columns of the tables (R/project/report/notebook.R)
 ## =====================================================================
 
 ## The question each study answers, one per cell of the table in

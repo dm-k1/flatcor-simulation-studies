@@ -3,7 +3,7 @@
 One row per dataset (and prior or method) of every study, with everything
 the run computed: the numbers the metrics in `../studies/` are made from,
 and what else came out on the way. Written by the pipeline, one step per
-file (`R/engine/report/per_dataset_files.R`); the metrics are then computed from these
+file (`R/engine/results/per_dataset_files.R`); the metrics are then computed from these
 files as they are written here, so they can be redone from them.
 
 The validation's metrics (layer 2) are exactly those of

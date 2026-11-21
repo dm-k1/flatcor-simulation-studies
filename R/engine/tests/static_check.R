@@ -60,9 +60,8 @@ pipeline_files <- c(
     "workers/scheduler.R"
   ))
 )
-# packages the pipeline loads (step_packages, R/project/engine_settings/settings.R), and
-# those only the figures load, whose helpers live in the project's shared code
-for (package in c("targets", step_packages, "ggplot2", "grid")) {
+# the packages the pipeline loads (step_packages, R/project/engine_settings/settings.R)
+for (package in c("targets", step_packages)) {
   suppressPackageStartupMessages(library(package, character.only = TRUE))
 }
 code <- new.env()
@@ -247,7 +246,7 @@ if (!is.null(manifest)) {
     nrow(step) == 1 && identical(step$format[[1]], "file")
   }
   figure_scripts <- list.files(
-    file.path("R", "studies"), pattern = "^figures[.]R$", recursive = TRUE, full.names = TRUE
+    file.path("R", "project", "report", "figures"), pattern = "[.]R$", full.names = TRUE
   )
   for (script in figure_scripts) {
     for (call in calls_with_context(as.call(c(as.name("{"), as.list(parse(script)))))) {

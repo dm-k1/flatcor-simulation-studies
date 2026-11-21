@@ -11,7 +11,7 @@
 #   links       every link in the README, the docs and the notebook (seconds)
 #   workflows   actionlint on these workflow files (seconds)
 #   smoke       the smoke test (VALIDATION_SMOKE=1: Rscript run_all.R, a corner
-#               of every study from scratch, then Rscript make_figures.R, every
+#               of every study from scratch, then Rscript R/project/report/make_figures.R, every
 #               figure) inside the
 #               published image, so with exactly the packages and CmdStan of
 #               the real run (about 40 minutes); skipped when an image build
@@ -161,4 +161,4 @@ jobs:
           docker run --rm -v "$PWD":/project \
             -e VALIDATION_SMOKE=1 -e R_PARALLELLY_AVAILABLECORES_SYSTEM=16 \
             "$IMAGE:$(cluster/image_tag.sh)" \
-            sh -c "Rscript run_all.R && Rscript make_figures.R"
+            sh -c "Rscript run_all.R && Rscript R/project/report/make_figures.R"

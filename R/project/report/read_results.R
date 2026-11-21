@@ -1,7 +1,7 @@
 ## =====================================================================
-##  Figure files: what each study's figures.R needs (where its results file
-##  and per-dataset files are, where its figures go), and drawing them all
-##  (make_figures.R calls draw_figures())
+##  Reading the results: what every figure script (R/project/report/figures/)
+##  needs (where a study's results file and per-dataset files are, where its
+##  figures go), and drawing them all (make_figures.R calls draw_figures())
 ##
 ##  A figure script reads one study's results file, computes nothing, and
 ##  writes its figures to results/figures/ (cache/ for the smoke test and
@@ -17,7 +17,7 @@ read_results <- function(study) {
 }
 
 ## A per-dataset file of a study (results/per_dataset/study_<file>.csv or
-## .csv.gz, R/engine/report/per_dataset_files.R)
+## .csv.gz, R/engine/results/per_dataset_files.R)
 read_per_dataset_file <- function(file) {
   path <- list.files(
     file.path(results_root, "per_dataset"),
@@ -27,13 +27,13 @@ read_per_dataset_file <- function(file) {
   as.data.frame(data.table::fread(path, na.strings = c("", "NA")))
 }
 
-## The figure script of every study in R/studies/ that has one, by study
-## code (the folder's first two characters)
+## The figure script of every study that has one (R/project/report/figures/<study>.R),
+## named by study code
 figure_scripts <- function() {
   scripts <- list.files(
-    file.path("R", "studies"), pattern = "^figures[.]R$", recursive = TRUE, full.names = TRUE
+    file.path("R", "project", "report", "figures"), pattern = "[.]R$", full.names = TRUE
   )
-  names(scripts) <- substr(basename(dirname(scripts)), 1, 2)
+  names(scripts) <- sub("[.]R$", "", basename(scripts))
   scripts
 }
 

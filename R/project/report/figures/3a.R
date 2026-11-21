@@ -1,10 +1,10 @@
 ## =====================================================================
 ##  Figures of study 3a, from its results file. Nothing is computed here.
-##    Rscript R/studies/3a_bayes_factors/figures.R
+##    Rscript R/project/report/figures/3a.R
 ##  What the figure shows and why: docs/validation_tests.md, study 3a.
 ## =====================================================================
 library(ggplot2)
-source("R/engine/report/figure_files.R") # read_results(), figure_folder
+source("R/project/report/read_results.R") # read_results(), figure_folder
 
 results <- read_results("3a")
 bins <- results$tables$calibration_bins

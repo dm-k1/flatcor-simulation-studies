@@ -9,7 +9,7 @@
 ##  Rscript run_all.R runs the studies' batches through the scheduler first,
 ##  then this pipeline once, which makes every study's results from the
 ##  saved batches (R/engine/full_run.R). Each study writes its tables to
-##  results/studies/study_<study>.rds; Rscript make_figures.R draws the
+##  results/studies/study_<study>.rds; Rscript R/project/report/make_figures.R draws the
 ##  figures from those files afterwards. Every finished step is saved in
 ##  _targets/, so a run that stops continues where it was.
 ##
@@ -18,9 +18,9 @@
 ##    Sys.setenv(VALIDATION_DRY = "1"); targets::tar_make(store = "cache/targets_dry")
 ##
 ##  This file only collects: every study is a folder in R/studies/ with its
-##  design (design.R), its code (code.R), its steps here (steps.R) and its
-##  figures (figures.R). What each tests, expects and why:
-##  docs/validation_tests.md.
+##  design (design.R), its code (code.R) and its steps here (steps.R). Its
+##  figures are drawn from its results file, apart (R/project/report/). What
+##  each tests, expects and why: docs/validation_tests.md.
 ## =====================================================================
 library(targets)
 

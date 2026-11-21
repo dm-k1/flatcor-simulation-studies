@@ -22,7 +22,7 @@
 ##  Each study writes results/studies/study_<study>.rds.
 ##
 ##  Only the simulation runs here, so a cloud machine does nothing else. The
-##  figures come after, from those files: Rscript make_figures.R (with the
+##  figures come after, from those files: Rscript R/project/report/make_figures.R (with the
 ##  same VALIDATION_SMOKE or VALIDATION_DRY), on any machine, also after
 ##  downloading the results.
 ## =====================================================================

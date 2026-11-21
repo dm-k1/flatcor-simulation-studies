@@ -114,9 +114,9 @@ container image of `cluster/Dockerfile`, published by GitHub Actions as
 
 ```bash
 VALIDATION_SMOKE=1 Rscript run_all.R        # first: a corner of every study, about 10 minutes
-VALIDATION_SMOKE=1 Rscript make_figures.R   # and its figures
+VALIDATION_SMOKE=1 Rscript R/project/report/make_figures.R   # and its figures
 Rscript run_all.R                           # the studies
-Rscript make_figures.R                      # then the figures, from the results files
+Rscript R/project/report/make_figures.R                      # then the figures, from the results files
 VALIDATION_FRESH=1 Rscript run_all.R        # the studies, from scratch
 Rscript R/engine/run_time/remaining_time.R  # during a run, beside it: the time left
 ```
@@ -129,7 +129,7 @@ is left per part; raise the budget or change a target, and start again: it
 continues where it was.
 
 `run_all.R` only simulates, so a cloud machine spends its time on the
-studies alone; `make_figures.R` draws the figures from the results files
+studies alone; `R/project/report/make_figures.R` draws the figures from the results files
 afterwards, on any machine (also after downloading the results). The
 notebook ([`validation.ipynb`](validation.ipynb)) runs nothing: it presents
 the results, each study's deciding tables, figures and result in a line, the
@@ -148,7 +148,7 @@ is not made.
 Rscript R/engine/tests/static_check.R                   # seconds: parses, the pipeline is valid, every function called exists, the rules below
 VALIDATION_SMOKE=1 VALIDATION_RECORD=1 Rscript run_all.R # once: the smoke test, recording what Stan and bridge sampling returned
 VALIDATION_DRY=1 Rscript run_all.R                      # then, after every change: the dry run
-VALIDATION_DRY=1 Rscript make_figures.R                 # and its figures
+VALIDATION_DRY=1 Rscript R/project/report/make_figures.R                 # and its figures
 ```
 
 The dry run ([`R/engine/tests/dry_run.R`](R/engine/tests/dry_run.R)) is the smoke
@@ -160,7 +160,7 @@ functions (the seams: flatcor's Bayes factors and fit, 1a's prior draws of a
 setting, 2a's SBC fits of a batch) by versions that record or replay the
 original. Everything else runs for real: the data, every step, the
 hand-overs between them, the scheduler with two batches for each cell, the
-results files, the check at the end and, with `make_figures.R`, the figures. Its results go to `cache/dry_results/` and
+results files, the check at the end and, with `R/project/report/make_figures.R`, the figures. Its results go to `cache/dry_results/` and
 `cache/dry_figures/`. It does not test the code inside the seams or whether
 the numbers are right: run the smoke test for that, and record again when
 flatcor changes. When the design or a data step has changed since the
@@ -190,7 +190,7 @@ for every study run, all with the run's flatcor; no empty table, no NaN,
 Inf or NA in any table, except blanks that are there by design (each study
 declares its own, with its reason, in its `design.R`). The smoke test, and so every push to
 `main` or `v2`, fails when the check finds a problem; a real run reports it
-in its log. `make_figures.R` stops with an error when a figure script stops
+in its log. `R/project/report/make_figures.R` stops with an error when a figure script stops
 (after running the others).
 
 A stopped run continues where it was. It refuses to
@@ -222,12 +222,12 @@ corner of each design.
 |---|---|
 | `_targets.R` | The pipeline: collects every study's steps |
 | `run_all.R` | Runs the validation (only the simulation): every study's batches through the scheduler, each cell until it has enough datasets, then the pipeline for the results (`R/engine/full_run.R`) |
-| `make_figures.R` | Draws the figures from the results files, after `run_all.R` |
 | `R/engine/` | The engine, with no study or package named in it, meant to carry over to another project unchanged: the scheduler and its workers, the pipeline steps, the reports, the four tests and the run-time estimate. Its README explains the words it uses, how a run goes, and what a project and a study provide |
 | `R/project/engine_settings/` | This project's answers to the engine: its settings (the package under test, the packages every step loads, the cores a batch keeps busy), the stopping rule, the dry run's seams, and the timing reference |
 | `R/project/tested_package/` | Compiling and loading flatcor's Stan model |
-| `R/project/shared_by_studies/` | What the studies share: the comparison methods, how the notebook names things, and the data generators (`data/`; what each is and which study needs it: `docs/validation_tests.md`, "The data sets") |
-| `R/studies/` | The six studies, one folder each: `design.R` (the design, and what the study declares), `code.R`, `steps.R` (its pipeline steps) and `figures.R`. A new study is a new folder; no other file changes |
+| `R/project/shared_by_studies/` | What the studies share: the comparison methods and the data generators (`data/`; what each is and which study needs it: `docs/validation_tests.md`, "The data sets") |
+| `R/project/report/` | Everything that shows the results, and only reads them: `make_figures.R` draws every study's figures (one script per study in `figures/`), `notebook.R` holds the notebook's helpers, with the methods' colours and how the notebook names things |
+| `R/studies/` | The six studies, one folder each: `design.R` (the design, and what the study declares), `code.R` and `steps.R` (its pipeline steps): only what makes its results. A new study is a new folder, plus a figure script in `R/project/report/figures/` if it has figures |
 | `results/` | Each study's metrics and setup, `studies/study_<cell>.rds` (layer 2); every dataset's numbers and everything else computed, `per_dataset/` (layer 1, its README lists the files and columns); the figures, `figures/<cell>_*.png` |
 | `validation.ipynb` | The notebook (R kernel) |
 | `docs/` | What the validation tests, working notes |

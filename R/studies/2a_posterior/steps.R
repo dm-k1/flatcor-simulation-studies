@@ -8,7 +8,7 @@
 list(
   # the SBC fits, a batch of a setting per batch: the part 2a declares
   steps_once("sbc_2a", "2a", iteration = "list"),
-  # layer 1: every fit's rows (R/engine/report/per_dataset_files.R)
+  # layer 1: every fit's rows (R/engine/results/per_dataset_files.R)
   tar_target(
     per_dataset_fits_2a,
     write_per_dataset(bind_rows(lapply(sbc_2a, `[[`, "stats")), "2a_sbc_fits"),

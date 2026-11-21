@@ -1,9 +1,9 @@
 ## =====================================================================
 ##  Figures of study 2a, from its per-dataset file. Nothing is computed here.
-##    Rscript R/studies/2a_posterior/figures.R
+##    Rscript R/project/report/figures/2a.R
 ## =====================================================================
 library(ggplot2)
-source("R/engine/report/figure_files.R") # read_per_dataset_file(), figure_folder
+source("R/project/report/read_results.R") # read_per_dataset_file(), figure_folder
 
 stats <- read_per_dataset_file("2a_sbc_fits") # one row per variable of each SBC fit
 

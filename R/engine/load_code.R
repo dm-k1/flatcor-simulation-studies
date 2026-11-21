@@ -25,7 +25,9 @@ source(file.path("R", "engine", "workers", "worker_setup.R"))
 code_files <- function() {
   engine <- file.path("R", "engine", c(
     "run_mode.R", "seeds.R", "study_form.R",
-    file.path("report", c("estimates_vs_expectations.R", "results_files.R", "per_dataset_files.R")),
+    file.path(
+      "results", c("estimates_vs_expectations.R", "results_files.R", "per_dataset_files.R")
+    ),
     file.path("workers", "batches.R"),
     file.path("pipeline", "pipeline_steps.R")
   ))

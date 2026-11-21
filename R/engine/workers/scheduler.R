@@ -126,7 +126,7 @@ start_workers <- function(workers) {
 cells_of <- function(plan, by) split(seq_len(nrow(plan)), do.call(paste, plan[by]))
 
 ## A table as the per-dataset file gives it back (write_per_dataset(), then
-## read_per_dataset(), R/engine/report/per_dataset_files.R): a cell is
+## read_per_dataset(), R/engine/results/per_dataset_files.R): a cell is
 ## judged on exactly the numbers its study's results are computed from.
 ## Text columns stay text: read alone, a cell's column of only "true" would
 ## come back as TRUE, where the study's whole file, with other values in

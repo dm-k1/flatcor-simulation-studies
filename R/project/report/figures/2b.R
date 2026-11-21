@@ -1,11 +1,12 @@
 ## =====================================================================
 ##  Figures of study 2b, from its results file. Nothing is computed here.
-##    Rscript R/studies/2b_estimation/figures.R
+##    Rscript R/project/report/figures/2b.R
 ## =====================================================================
 library(ggplot2)
-source("R/engine/report/figure_files.R") # read_results(), figure_folder
-# method_scales(): the colours of the methods
+source("R/project/report/read_results.R") # read_results(), figure_folder
+# contenders: the methods' names
 source("R/project/shared_by_studies/comparison_methods.R")
+source("R/project/report/method_colours.R") # method_scales(): their colours
 
 results <- read_results("2b")
 table <- results$tables$estimates

@@ -11,12 +11,10 @@
 ## =====================================================================
 library(gt)
 
-## The project's settings (the package under test), how it names things,
-## and what single studies add for the notebook (their present.R)
+## The project's settings (the package under test) and how it names things
 source(file.path("R", "project", "engine_settings", "settings.R"))
 source(file.path("R", "engine", "run_mode.R"))
-source(file.path("R", "project", "shared_by_studies", "display_labels.R"))
-for (file in Sys.glob(file.path("R", "studies", "*", "present.R"))) source(file)
+source(file.path("R", "project", "report", "display_labels.R"))
 
 ## Jupyter may start R in an ASCII locale; the results contain names such as
 ## García-Donato, so use UTF-8 here and in the figure scripts started from here
@@ -169,17 +167,18 @@ show_text <- function(text) {
   if (isTRUE(getOption("jupyter.in_kernel"))) IRdisplay::display_markdown(text) else cat(text, "\n")
 }
 
-## The figures of a study: the PNGs its figures.R wrote (named
+## The figures of a study: the PNGs its script in R/project/report/figures/ wrote (named
 ## after the study, as results/figures/3a_*.png). When there are none yet
 ## (results downloaded from a run, say), make_figures.R draws them first.
 show_figures <- function(result) {
   smoke <- isTRUE(result$setup$smoke)
   folder <- figure_folder_of(dry = FALSE, smoke = smoke)
   pattern <- paste0("^", result$study, "_.*[.]png$")
-  script <- Sys.glob(file.path("R", "studies", paste0(result$study, "_*"), "figures.R"))
-  has_script <- length(script) > 0
+  script <- file.path("R", "project", "report", "figures", paste0(result$study, ".R"))
+  has_script <- file.exists(script)
   if (has_script && length(list.files(folder, pattern = pattern)) == 0) {
-    status <- system2(file.path(R.home("bin"), "Rscript"), c("make_figures.R", result$study),
+    make_figures <- file.path("R", "project", "report", "make_figures.R")
+    status <- system2(file.path(R.home("bin"), "Rscript"), c(make_figures, result$study),
       env = c(
         paste0("VALIDATION_SMOKE=", if (smoke) "1" else "0"),
         paste0("LC_CTYPE=", Sys.getlocale("LC_CTYPE"))
@@ -209,6 +208,17 @@ divergence_sentence <- function(table, total, with, what = "fits") {
   )
 }
 
+
+## 2b in short: per method and quantity, the mean and the range of the
+## estimates over the cells (the full table is under Details)
+summary_2b <- function(tables) {
+  as.data.frame(tables$estimates) |>
+    dplyr::summarise(
+      cells = dplyr::n(), mean = mean(estimate), lowest = min(estimate), highest = max(estimate),
+      .by = c(quantity, method)
+    ) |>
+    dplyr::arrange(quantity, method)
+}
 
 ## Everything of one study: the run it comes from, the chosen tables, a
 ## sentence or two and its figures. `tables` maps a title to the name of a

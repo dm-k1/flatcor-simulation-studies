@@ -10,7 +10,7 @@ list(
   # design.R; steps_until_target(), R/engine/pipeline/pipeline_steps.R: the
   # plan, its batches and their rows)
   steps_until_target("fits_2b", "2b"),
-  # layer 1: every fit's row (R/engine/report/per_dataset_files.R)
+  # layer 1: every fit's row (R/engine/results/per_dataset_files.R)
   tar_target(per_dataset_2b, write_per_dataset(fits_2b, "2b_fits"), format = "file"),
   tar_target(results_2b, save_results_2b(read_per_dataset(per_dataset_2b)), format = "file")
 )
