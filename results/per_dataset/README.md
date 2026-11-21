@@ -3,7 +3,7 @@
 One row per dataset (and prior or method) of every study, with everything
 the run computed: the numbers the metrics in `../studies/` are made from,
 and what else came out on the way. Written by the pipeline, one step per
-file (`R/engine/per_dataset.R`); the metrics are then computed from these
+file (`R/engine/report/per_dataset_files.R`); the metrics are then computed from these
 files as they are written here, so they can be redone from them.
 
 The validation's metrics (layer 2) are exactly those of
@@ -11,7 +11,7 @@ The validation's metrics (layer 2) are exactly those of
 other summaries) is a secondary analysis of these files, outside the
 validation.
 
-**Columns every Bayes factor row has** (1b, 3a, 3b; `R/project/comparison_methods.R`):
+**Columns every Bayes factor row has** (1b, 3a, 3b; `R/project/shared_by_studies/comparison_methods.R`):
 `id` (the name its seed comes from: the dataset can be made again from it),
 `seed` (model B's is `seed + 1`), `n`, `k_a`, `k_b`, `r_squared_a`,
 `r_squared_b` (the data's sample R² under each model), `log_bf`, `error`

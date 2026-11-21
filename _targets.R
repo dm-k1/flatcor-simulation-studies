@@ -20,10 +20,10 @@
 ##
 ##  Dry run (the smoke test's design with Stan and bridge sampling replayed
 ##  from a recorded smoke test, in one R process: tests the plumbing in a
-##  minute or two; R/dry_run/replay.R):
+##  minute or two; R/engine/tests/dry_run.R):
 ##    Sys.setenv(VALIDATION_DRY = "1"); targets::tar_make(store = "cache/targets_dry")
 ##
-##  Each study is a folder in R/2_studies/: design.R (the design) and code.R (the
+##  Each study is a folder in R/studies/: design.R (the design) and code.R (the
 ##  steps). What each tests, expects and why: docs/validation_tests.md.
 ## =====================================================================
 library(targets)
@@ -32,23 +32,23 @@ library(crew)
 
 ## ---- Setup ------------------------------------------------------------------------
 
-## The dry run uses the smoke test's design (R/dry_run/replay.R)
+## The dry run uses the smoke test's design (R/engine/tests/dry_run.R)
 dry_run <- identical(Sys.getenv("VALIDATION_DRY"), "1")
 if (dry_run) Sys.setenv(VALIDATION_SMOKE = "1")
 
 ## Every worker's environment (the cache folder, a copy of the TBB library,
 ## one BLAS thread), set before any worker starts, so they inherit it, and
-## the validation's code, in order (R/engine/workers.R)
-source(file.path("R", "engine", "workers.R"))
+## the validation's code, in order (R/engine/workers/worker_setup.R)
+source(file.path("R", "engine", "workers", "worker_setup.R"))
 tar_source(code_files())
 
-## A worker per 4 cores (worker_count(), R/engine/workers.R). The dry run
+## A worker per 4 cores (worker_count(), R/engine/workers/worker_setup.R). The dry run
 ## samples nothing, so it runs every step in this one process: starting
 ## workers would take longer than the steps.
 tar_option_set(
   packages = c("flatcor", "dplyr"),
   # targets seeds R before each step from the step's name and this seed;
-  # every draw that matters has its own seed (R/engine/random_streams.R),
+  # every draw that matters has its own seed (R/engine/seeds.R),
   # but whatever is left follows the same root seed
   seed = root_seed,
   controller = if (dry_run) NULL else crew_controller_local(
@@ -63,17 +63,17 @@ tar_option_set(
 ## ---- The steps ------------------------------------------------------------------------
 
 list(
-  ## The model every piece of work gets (piece_model(), R/project/settings.R):
+  ## The model every piece of work gets (piece_model(), R/project/engine_settings/settings.R):
   ## flatcor's Stan model, compiled once before the studies that sample it
   tar_target(model, piece_model()),
 
 
   ## ---- 1a. Does the software draw the prior it claims? ----
   # the draws of each setting: the part 1a declares (its design.R;
-  # once_steps(), R/engine/steps.R)
+  # once_steps(), R/engine/pipeline/pipeline_steps.R)
   once_steps("samples_1a", "1a", iteration = "list"),
   tar_target(predictors_1a, data_prior_only_designs()),
-  # layer 1: the draws, the recipe's draws, each setting's run (R/engine/per_dataset.R)
+  # layer 1: the draws, the recipe's draws, each setting's run (R/engine/report/per_dataset_files.R)
   tar_target(
     per_dataset_draws_1a,
     write_per_dataset(draws_table_1a(samples_1a), "1a_prior_draws", gzip = TRUE),
@@ -103,9 +103,9 @@ list(
 
   ## ---- 1b. Is the Bayes factor invariant to units and coding? ----
   # the log Bayes factors, in rounds: the part 1b declares (its design.R;
-  # round_steps(), R/engine/steps.R)
+  # round_steps(), R/engine/pipeline/pipeline_steps.R)
   round_steps("log_bfs_1b", "1b"),
-  # layer 1: every log Bayes factor's row (R/engine/per_dataset.R)
+  # layer 1: every log Bayes factor's row (R/engine/report/per_dataset_files.R)
   tar_target(
     per_dataset_1b,
     write_per_dataset(log_bfs_1b, "1b_log_bayes_factors"),
@@ -120,7 +120,7 @@ list(
   ## ---- 2a. Is the posterior computed correctly? ----
   # the SBC fits, a batch of a setting per piece: the part 2a declares
   once_steps("sbc_2a", "2a", iteration = "list"),
-  # layer 1: every fit's rows (R/engine/per_dataset.R)
+  # layer 1: every fit's rows (R/engine/report/per_dataset_files.R)
   tar_target(
     per_dataset_fits_2a,
     write_per_dataset(bind_rows(lapply(sbc_2a, `[[`, "stats")), "2a_sbc_fits"),
@@ -142,9 +142,9 @@ list(
 
   ## ---- 2b. How close are the estimates to a known truth? ----
   # the fits, in rounds: the part 2b declares (its design.R; round_steps(),
-  # R/engine/steps.R: the plan, its pieces and their rows)
+  # R/engine/pipeline/pipeline_steps.R: the plan, its pieces and their rows)
   round_steps("fits_2b", "2b"),
-  # layer 1: every fit's row (R/engine/per_dataset.R)
+  # layer 1: every fit's row (R/engine/report/per_dataset_files.R)
   tar_target(per_dataset_2b, write_per_dataset(fits_2b, "2b_fits"), format = "file"),
   tar_target(results_2b, save_results_2b(read_per_dataset(per_dataset_2b)), format = "file"),
 
@@ -153,7 +153,7 @@ list(
 
   # part A, calibration, in rounds: the part "3a" its design.R declares
   round_steps("calibration_runs_3a", "3a"),
-  # layer 1: every dataset's row (R/engine/per_dataset.R)
+  # layer 1: every dataset's row (R/engine/report/per_dataset_files.R)
   tar_target(
     per_dataset_calibration_3a,
     write_per_dataset(calibration_runs_3a, "3a_calibration"),
@@ -202,7 +202,7 @@ list(
   # 3b.7: the prior's draws with the sample and the population covariance
   tar_target(draws_intrinsic_3b, intrinsic_draws_of_3b()),
 
-  # layer 1: every Bayes factor's row and the draws (R/engine/per_dataset.R)
+  # layer 1: every Bayes factor's row and the draws (R/engine/report/per_dataset_files.R)
   tar_target(per_dataset_formula_3b, write_per_dataset(formula_3b, "3b_formula"), format = "file"),
   tar_target(per_dataset_rates_3b, write_per_dataset(rates_3b, "3b_rates"), format = "file"),
   tar_target(

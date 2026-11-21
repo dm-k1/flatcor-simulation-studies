@@ -137,13 +137,13 @@ expects but an earlier one no longer writes, a results file or figure that
 is not made.
 
 ```bash
-Rscript R/engine/static_check.R                         # seconds: parses, the pipeline is valid, every function called exists, the rules below
+Rscript R/engine/tests/static_check.R                         # seconds: parses, the pipeline is valid, every function called exists, the rules below
 VALIDATION_SMOKE=1 VALIDATION_RECORD=1 Rscript run_all.R # once: the smoke test, recording what Stan and bridge sampling returned
 VALIDATION_DRY=1 Rscript run_all.R                      # then, after every change: the dry run
 VALIDATION_DRY=1 Rscript make_figures.R                 # and its figures
 ```
 
-The dry run ([`R/dry_run/replay.R`](R/dry_run/replay.R)) is the smoke
+The dry run ([`R/engine/tests/dry_run.R`](R/engine/tests/dry_run.R)) is the smoke
 test with the calls to Stan and bridge sampling replayed from those
 recordings (in `cache/dry_recordings/`), in one R process, no model
 compiled. It changes no study's code: that file is sourced after the
@@ -164,7 +164,7 @@ Both rest on three rules for the pipeline's code, which the static check
 enforces (it fails, saying which rule and where):
 
 1. Every expensive call (Stan, bridge sampling, SBC) is inside one of the
-   seams listed in `R/project/seams.R`, so the dry run can stand in for
+   seams listed in `R/project/engine_settings/dry_run_seams.R`, so the dry run can stand in for
    it. A new expensive step either calls one of them or gets a seam of its
    own there.
 2. A step reads and writes files only where it is declared: a study's
@@ -177,7 +177,7 @@ enforces (it fails, saying which rule and where):
    only through `read_results()`.
 
 Every run ends with a check of its outputs
-([`R/engine/check_results.R`](R/engine/check_results.R)): a results file
+([`R/engine/tests/check_results.R`](R/engine/tests/check_results.R)): a results file
 for every study run, all with the run's flatcor; no empty table, no NaN,
 Inf or NA in any table, except blanks that are there by design (listed in
 that file, each with its reason). The smoke test, and so every push to
@@ -217,8 +217,8 @@ corner of each design.
 | `make_figures.R` | Draws the figures from the results files, after `run_all.R` |
 | `R/engine/` | The engine, with no study or package named in it, meant to carry over to another project unchanged: the random streams and the one root seed, the rounds (`rounds.R`) and the queue that runs every piece of work (`queue.R`), what studies declare about themselves (`parts.R`) and the pipeline steps made from that (`steps.R`), what every worker starts with (`workers.R`), the per-dataset and results files, the reporting rule, the check at the end and the static check (`static_check.R`) |
 | `R/project/` | What the engine needs to know about this project (`settings.R`: the package under test, the packages every step loads, the cores a piece keeps busy, building the models), flatcor and Stan (`flatcor.R`), the comparison methods the studies share, and the dry run's seams (`seams.R`) |
-| `R/1_data/` | One file per data set, numbered in the order the studies first use them (what each is and which study needs it: `docs/validation_tests.md`, "The data sets") |
-| `R/2_studies/` | The six studies, one folder per cell, each with `design.R` (the design, and the parts it declares for the queue: `declared_parts`) and `code.R`. A new study is a new folder, its steps in `_targets.R` and its figure script; the engine needs no change |
+| `R/project/shared_by_studies/data/` | One file per data set, numbered in the order the studies first use them (what each is and which study needs it: `docs/validation_tests.md`, "The data sets") |
+| `R/studies/` | The six studies, one folder per cell, each with `design.R` (the design, and the parts it declares for the queue: `declared_parts`) and `code.R`. A new study is a new folder, its steps in `_targets.R` and its figure script; the engine needs no change |
 | `R/3_figures/` | One script per study that draws its figures from its results file |
 | `R/dry_run/` | The dry run: records the expensive calls in a smoke test, replays them after (`replay.R`); changes no study's code |
 | `R/4_notebook/` | The notebook's helpers: they present the results, they run and compute nothing |

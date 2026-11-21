@@ -26,12 +26,12 @@ behave the way a default prior should?
 | **Computed correctly?** | Stan's prior-only draws against the exact prior: R ~ Beta(2a, 1), direction uniform (prior check) | SBC (Talts et al., 2018; `SBC` package, Modrák et al., 2023), with Stan's diagnostics: divergent transitions, R-hat, effective sample size (Vehtari et al., 2021) | bridge sampling with its own error estimate and repeated runs (Gronau et al., 2017, 2020); Bayes factor calibration on data from each prior (Schad et al., 2023) |
 | **Behaves like a default?** | invariance: rescaling or recoding the predictors changes nothing (Bayarri et al., 2012) | behaviour in estimation: bias and coverage of a slope, prediction error against OLS, on data with a known truth | predictive matching, information consistency, intrinsic consistency, model-selection consistency (Bayarri et al., 2012) |
 
-Each cell is one study folder in `R/2_studies/`, named after its heading (1-3)
+Each cell is one study folder in `R/studies/`, named after its heading (1-3)
 and row (a: computed correctly; b: behaves like a default), so the folder
 reads like the table:
 
 ```
-R/2_studies/
+R/studies/
   1a_prior_sampling/      prior, computed correctly: Stan's prior-only draws = the exact prior
   1b_invariance/          prior, behaves like a default: rescaling or recoding changes nothing
   2a_posterior/           posterior, computed correctly: SBC and Stan's diagnostics
@@ -218,7 +218,7 @@ points of practical advice). What flatcor and the studies take from it:
 1. Done (18 November 2026): the numbers of datasets as
    `docs/validation_tests.md` defines them. 2a has 131 fits per cell
    (computed); 1b, 2b, 3a (parts A and B) and 3b (rates, growing k) run in
-   rounds (`R/engine/rounds.R`, the loop in `run_all.R`): a first round,
+   rounds (`R/engine/workers/batches.R`, the loop in `run_all.R`): a first round,
    then every unit short of its target gets the datasets it is estimated to
    lack; 1a lengthens its chains until every percentile reaches its target.
    A fresh smoke run passes through two rounds.

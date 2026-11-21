@@ -23,7 +23,7 @@ if (dry) Sys.setenv(VALIDATION_SMOKE = "1")
 smoke <- identical(Sys.getenv("VALIDATION_SMOKE"), "1")
 requested <- commandArgs(trailingOnly = TRUE)
 
-## the same folders as run_all.R and R/engine/figures.R
+## the same folders as run_all.R and R/engine/report/figure_files.R
 results_root <- if (dry) {
   file.path("cache", "dry_results")
 } else if (smoke) {
@@ -33,11 +33,13 @@ results_root <- if (dry) {
 }
 results_folder <- file.path(results_root, "studies")
 
-scripts <- list.files(file.path("R", "3_figures"), pattern = "[.]R$", full.names = TRUE)
+scripts <- list.files(
+  file.path("R", "studies"), pattern = "^figures[.]R$", recursive = TRUE, full.names = TRUE
+)
 failed <- character(0)
 drawn <- 0
 for (script in scripts) {
-  study <- sub("^([0-9][a-z]).*", "\\1", basename(script))
+  study <- sub("^([0-9][a-z]).*", "\\1", basename(dirname(script)))
   if (length(requested) > 0 && !(study %in% requested)) next
   if (!file.exists(file.path(results_folder, sprintf("study_%s.rds", study)))) {
     message(sprintf("%s: no results file for %s in %s, skipped", script, study, results_folder))

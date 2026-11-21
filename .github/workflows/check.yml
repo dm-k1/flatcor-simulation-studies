@@ -2,7 +2,7 @@
 # start at the same time, written from the quickest to the slowest.
 #
 #   lint        lintr, in the style of .lintr (seconds)
-#   static      the static check (R/engine/static_check.R): the pipeline is
+#   static      the static check (R/engine/tests/static_check.R): the pipeline is
 #               valid, every function called exists, and the code keeps to
 #               the declared way (expensive calls replayable, files declared
 #               as steps); inside the published image, for its packages,
@@ -16,7 +16,7 @@
 #               published image, so with exactly the packages and CmdStan of
 #               the real run (about 40 minutes); skipped when an image build
 #               runs it, or ran it on the same code (see the smoke job). It fails
-#               when the outputs check (R/engine/check_results.R) finds a
+#               when the outputs check (R/engine/tests/check_results.R) finds a
 #               missing file, an empty table, or NA/NaN/Inf, or when a figure
 #               script stops (make_figures.R). It runs
 #               with 3 workers (16 cores pretended: (16 - 1) %/% 4), as a
@@ -72,7 +72,7 @@ jobs:
         run: |
           docker run --rm -v "$PWD":/project \
             "ghcr.io/${{ github.repository_owner }}/flatcor-validation:$(cluster/image_tag.sh)" \
-            Rscript R/engine/static_check.R
+            Rscript R/engine/tests/static_check.R
 
   links:
     runs-on: ubuntu-latest

@@ -7,7 +7,8 @@
 ##    VALIDATION_SMOKE=1 VALIDATION_RECORD=1 Rscript run_all.R
 ##                                       the smoke test, recording the expensive calls
 ##    VALIDATION_DRY=1 Rscript run_all.R     the dry run: the smoke test's design with
-##                                       those calls replayed, a minute or two (R/dry_run/replay.R)
+##                                       those calls replayed, a minute or two
+##                                       (R/engine/tests/dry_run.R)
 ##    VALIDATION_FRESH=1 Rscript run_all.R   the whole validation from scratch
 ##    VALIDATION_BUDGET_CORE_HOURS=3000 Rscript run_all.R   with a raised budget
 ##
@@ -17,8 +18,8 @@
 ##  from scratch then. VALIDATION_FRESH=1 deletes the store, the results and
 ##  the figures first. The smoke test always starts from scratch.
 ##  Studies that measure their numbers of datasets run in rounds
-##  (R/engine/rounds.R; docs/validation_tests.md, "How many datasets"),
-##  each cell on its own: a queue (R/engine/queue.R) runs their pieces of
+##  (R/engine/workers/batches.R; docs/validation_tests.md, "How many datasets"),
+##  each cell on its own: a queue (R/engine/workers/scheduler.R) runs their pieces of
 ##  work and gives a cell its next batch as soon as its own batch is done,
 ##  without waiting for the other cells, until every cell reaches its
 ##  targets or its next batch would take the run past the budget; in the
@@ -83,23 +84,23 @@ if (smoke || fresh) {
   unlink(c(store, file.path(results_root, "studies"), figure_folder), recursive = TRUE)
 }
 ## A recording run replaces every recording, so none is left from an older
-## design or flatcor (R/dry_run/replay.R)
+## design or flatcor (R/engine/tests/dry_run.R)
 if (recording) unlink(file.path("cache", "dry_recordings"), recursive = TRUE)
 
 ## ---- The code ---------------------------------------------------------------------
-## Every worker's environment and the code (R/engine/workers.R, which reads
-## the project's settings, R/project/settings.R), the same as the
+## Every worker's environment and the code (R/engine/workers/worker_setup.R, which reads
+## the project's settings, R/project/engine_settings/settings.R), the same as the
 ## pipeline's (_targets.R), with the packages every step loads; and the
-## queue (R/engine/queue.R)
-source(file.path("R", "engine", "workers.R"))
+## queue (R/engine/workers/scheduler.R)
+source(file.path("R", "engine", "workers", "worker_setup.R"))
 for (package in step_packages) {
   suppressPackageStartupMessages(library(package, character.only = TRUE))
 }
-for (script in c(code_files(), file.path("R", "engine", "queue.R"))) source(script)
+for (script in c(code_files(), file.path("R", "engine", "workers", "scheduler.R"))) source(script)
 
 ## ---- One commit of the package under test per run ----------------------------------
 ## The store remembers the commit of the package under test (tested_package,
-## R/project/settings.R: flatcor) it was started with; continuing with
+## R/project/engine_settings/settings.R: flatcor) it was started with; continuing with
 ## another would mix two versions in one results file.
 package_commit <- utils::packageDescription(tested_package)$RemoteSha
 if (is.null(package_commit)) package_commit <- "not installed from GitHub"
@@ -119,7 +120,7 @@ if (file.exists(commit_file)) {
 }
 
 ## ---- What the workers share, built before any of them starts -----------------------
-## prepare_models() (R/project/settings.R): here, flatcor's models. The first
+## prepare_models() (R/project/engine_settings/settings.R): here, flatcor's models. The first
 ## compile in a fresh CmdStan also builds the files every model shares
 ## (main.o, the TBB library). Done here, once, those files exist before the
 ## workers start, so a worker's own compile only writes its own files and
@@ -127,7 +128,8 @@ if (file.exists(commit_file)) {
 ## compile_flatcor_models() stays as a second guard.
 prepare_models()
 
-## ---- The queue: every part the studies declare (R/engine/parts.R, R/engine/queue.R) --
+## ---- The queue: every part the studies declare ---------------------------------------
+## (R/engine/study_form.R, R/engine/workers/scheduler.R)
 ## Each study declares its parts in its design.R: the parts that run in
 ## rounds, and those that run once. A study run alone brings along the parts
 ## its results also use (`needs`: 1b and 3b use 3a part B's measured bridge
@@ -166,7 +168,7 @@ run_rounds(
 
 ## ---- The pipeline: every study's results ---------------------------------------
 ## The pieces the queue ran are read from the store (piece_rows(),
-## R/engine/rounds.R), not run again; what is left takes seconds
+## R/engine/workers/batches.R), not run again; what is left takes seconds
 if (length(requested) == 0) {
   targets::tar_make(store = store)
 } else {
@@ -185,10 +187,10 @@ for (file in sort(list.files(results_folder, pattern = "^study_.*[.]rds$", full.
   ))
 }
 
-## ---- Every output there, every number a number (R/engine/check_results.R) -----------
-source(file.path("R", "engine", "check_results.R"))
+## ---- Every output there, every number a number (R/engine/tests/check_results.R) -----------
+source(file.path("R", "engine", "tests", "check_results.R"))
 studies_run <- if (length(requested) > 0) requested else
-  sub("^([0-9][a-z]).*", "\\1", list.files(file.path("R", "2_studies")))
+  sub("^([0-9][a-z]).*", "\\1", list.files(file.path("R", "studies")))
 check_results(results_folder, studies_run, package_commit, smoke)
 
 cat(sprintf("Run took %.1f minutes.\n", as.numeric(difftime(Sys.time(), started, units = "mins"))))
