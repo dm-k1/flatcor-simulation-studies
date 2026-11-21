@@ -218,7 +218,7 @@ points of practical advice). What flatcor and the studies take from it:
 1. Done (18 November 2026): the numbers of datasets as
    `docs/validation_tests.md` defines them. 2a has 131 fits per cell
    (computed); 1b, 2b, 3a (parts A and B) and 3b (rates, growing k) run in
-   rounds (`R/shared/rounds.R`, the loop in `run_all.R`): a first round,
+   rounds (`R/engine/rounds.R`, the loop in `run_all.R`): a first round,
    then every unit short of its target gets the datasets it is estimated to
    lack; 1a lengthens its chains until every percentile reaches its target.
    A fresh smoke run passes through two rounds.

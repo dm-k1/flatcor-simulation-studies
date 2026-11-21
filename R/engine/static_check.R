@@ -2,7 +2,7 @@
 ##  The static check: seconds, nothing sampled, nothing run but the
 ##  definitions.
 ##
-##    Rscript R/shared/static_check.R
+##    Rscript R/engine/static_check.R
 ##
 ##    1. every R file parses
 ##    2. the pipeline is valid (targets::tar_validate()) and its steps can be
@@ -47,21 +47,18 @@ manifest <- tryCatch(
 if (!is.null(manifest)) cat(sprintf("2. the pipeline is valid: %d steps\n", nrow(manifest)))
 
 ## ---- 3. Every function called exists ------------------------------------------------
-## The pipeline's code as the workers have it: the files _targets.R sources,
-## with the packages it loads
-studies <- basename(list.dirs(file.path("R", "2_studies"), recursive = FALSE))
+## The pipeline's code as the workers have it: the files _targets.R sources
+## (code_files(), R/engine/workers.R, which also reads the project's
+## settings), the engine's files only run_all.R uses, and the packages
+## every step loads
+source(file.path("R", "engine", "workers.R"))
 pipeline_files <- c(
-  file.path("R", "shared", c(
-    "random_streams.R", "pipeline.R", "expectations.R", "results.R", "per_dataset.R",
-    "comparison_methods.R", "rounds.R", "check_results.R", "workers.R", "queue.R"
-  )),
-  list.files(file.path("R", "1_data"), pattern = "[.]R$", full.names = TRUE),
-  file.path("R", "2_studies", studies, "design.R"),
-  file.path("R", "2_studies", studies, "code.R")
+  code_files(),
+  file.path("R", "engine", c("check_results.R", "workers.R", "queue.R"))
 )
-# packages the pipeline loads (_targets.R), and those only the figures load,
-# whose helpers live in comparison_methods.R
-for (package in c("targets", "flatcor", "dplyr", "ggplot2", "grid")) {
+# packages the pipeline loads (step_packages, R/project/settings.R), and those
+# only the figures load, whose helpers live in the project's shared code
+for (package in c("targets", step_packages, "ggplot2", "grid")) {
   suppressPackageStartupMessages(library(package, character.only = TRUE))
 }
 code <- new.env()
@@ -91,8 +88,9 @@ calls_in <- function(expression) {
       }
       if (name == "function") defined <<- c(defined, names(e[[2]]))
       if (name == "for") defined <<- c(defined, as.character(e[[2]]))
-      # inside a formula, names are columns, not calls
-      if (name == "~") return()
+      # inside a formula, names are columns, not calls; quoted code is a
+      # step's command (R/engine/steps.R), checked as such from the manifest
+      if (name %in% c("~", "quote", "bquote")) return()
       called <<- c(called, name)
     } else if (is.call(head) && deparse(head[[1]]) %in% c("::", ":::")) {
       namespaced[[length(namespaced) + 1]] <<- c(as.character(head[[2]]), as.character(head[[3]]))
@@ -139,7 +137,7 @@ cat(sprintf("3. calls checked in %d functions and the pipeline's steps\n", lengt
 ## call:
 ##   a. every expensive call (Stan, bridge sampling, SBC) is inside one of
 ##      the seams the dry run replays (replayed_functions in
-##      R/dry_run/replay.R), and every seam listed there exists
+##      R/project/seams.R), and every seam listed there exists
 ##   b. files are read and written only where it is declared: a study's results
 ##      file (save_study_results_file(), a "file" step), the plans of the
 ##      rounds and the pieces the queue runs (both in the store), the
@@ -161,26 +159,27 @@ file_calls <- c(
 allowed_file_use <- c(
   "save_study_results_file", "read_plan", "write_plan",
   "run_piece", "read_piece", "run_rounds", "as_read_back", "code_files",
-  "compile_flatcor_models", "check_results_file", "check_results",
-  "write_per_dataset", "read_per_dataset"
+  "check_results_file", "check_results", "write_per_dataset", "read_per_dataset",
+  project_file_functions # the project's own (R/project/settings.R)
 )
 
-## The seams, as the dry run's file lists them (sourced on its own, it
-## replaces nothing)
+## The seams, as the project lists them (R/project/seams.R, which the dry
+## run's file sources; sourced on their own, they replace nothing)
 overlay <- new.env()
 sys.source(file.path("R", "dry_run", "replay.R"), envir = overlay)
 seams <- overlay$replayed_functions
-for (skipped in overlay$skipped_in_dry_run) {
+for (skipped in names(overlay$skipped_in_dry_run)) {
   if (!exists(skipped, envir = code, mode = "function")) {
-    note("the dry run skips %s(), which no longer exists (R/dry_run/replay.R)", skipped)
+    note("the dry run skips %s(), which no longer exists (R/project/seams.R)", skipped)
   }
 }
-# flatcor's fit is replaced by name: called as fit_regression(), never as
-# flatcor::fit_regression(), which would pass the replacement by
-flatcor_seams <- intersect(seams, getNamespaceExports("flatcor"))
-for (seam in setdiff(seams, flatcor_seams)) {
+# a function of the package under test may be replaced by name (flatcor's
+# fit): called as fit_regression(), never as flatcor::fit_regression(),
+# which would pass the replacement by
+package_seams <- intersect(seams, getNamespaceExports(tested_package))
+for (seam in setdiff(seams, package_seams)) {
   if (!exists(seam, envir = code, mode = "function")) {
-    note("the dry run replays %s(), which no longer exists (R/dry_run/replay.R)", seam)
+    note("the dry run replays %s(), which no longer exists (R/project/seams.R)", seam)
   }
 }
 
@@ -213,13 +212,13 @@ for (name in functions) {
     how <- call[["how"]]
     # the base sample() also exists: only x$sample() is Stan's
     stan_sample <- called == "sample" && how == "$"
-    replaced_by_name <- called %in% flatcor_seams && how == "plain"
+    replaced_by_name <- called %in% package_seams && how == "plain"
     is_expensive <- called %in% setdiff(expensive_calls, "sample") || stan_sample
     if (is_expensive && !(name %in% seams) && !replaced_by_name) {
       note(
         paste(
           "%s() calls %s() outside the seams the dry run replays: move it into one,",
-          "or add %s() to replayed_functions with its replacement (R/dry_run/replay.R)"
+          "or add %s() to replayed_functions with its replacement (R/project/seams.R)"
         ),
         name, called, name
       )

@@ -11,7 +11,7 @@
 method_of <- function(prior) names(contenders)[contenders == prior]
 
 ## One Bayes factor as the row of its dataset: the design columns `design`
-## (a one-row data frame), then everything computed (R/shared/comparison_methods.R),
+## (a one-row data frame), then everything computed (R/project/comparison_methods.R),
 ## then the seconds it took and the machine
 bayes_factor_row <- function(design, method, predictors_a, predictors_b, outcome, name) {
   started <- Sys.time()

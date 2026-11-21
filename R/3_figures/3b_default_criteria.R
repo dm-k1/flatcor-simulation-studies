@@ -3,8 +3,8 @@
 ##    Rscript R/3_figures/3b_default_criteria.R
 ## =====================================================================
 library(ggplot2)
-source("R/shared/figures.R") # read_results(), figure_folder
-source("R/shared/comparison_methods.R") # contenders, method_scales(): names and colours
+source("R/engine/figures.R") # read_results(), figure_folder
+source("R/project/comparison_methods.R") # contenders, method_scales(): names and colours
 
 results <- read_results("3b")
 medians <- results$tables$growing_medians

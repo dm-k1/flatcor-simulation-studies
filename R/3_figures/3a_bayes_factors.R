@@ -4,7 +4,7 @@
 ##  What the figure shows and why: docs/validation_tests.md, study 3a.
 ## =====================================================================
 library(ggplot2)
-source("R/shared/figures.R") # read_results(), figure_folder
+source("R/engine/figures.R") # read_results(), figure_folder
 
 results <- read_results("3a")
 bins <- results$tables$calibration_bins

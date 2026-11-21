@@ -135,7 +135,7 @@ sample_setting_1a <- function(setting, predictors, model) {
   )
 }
 
-## Layer 1 (R/shared/per_dataset.R): every prior draw of every quantity, one
+## Layer 1 (R/engine/per_dataset.R): every prior draw of every quantity, one
 ## row per draw
 draws_table_1a <- function(samples) {
   bind_rows(lapply(samples, function(sampled) {

@@ -3,7 +3,7 @@
 ##    Rscript R/3_figures/2a_posterior.R
 ## =====================================================================
 library(ggplot2)
-source("R/shared/figures.R") # read_per_dataset_file(), figure_folder
+source("R/engine/figures.R") # read_per_dataset_file(), figure_folder
 
 stats <- read_per_dataset_file("2a_sbc_fits") # one row per variable of each SBC fit
 

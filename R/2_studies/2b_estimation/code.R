@@ -135,7 +135,7 @@ estimates_2b <- function(cell, replication) {
 ## One batch of datasets of one cell. `model`: flatcor's Stan model, compiled
 ## before, so that parallel workers find it instead of compiling it at once.
 estimates_batch_2b <- function(cell, replications, model) {
-  compile_flatcor_models() # once per worker, one worker at a time (R/shared/pipeline.R)
+  compile_flatcor_models() # once per worker, one worker at a time (R/project/flatcor.R)
   bind_rows(lapply(replications, function(r) estimates_2b(cell, r)))
 }
 
@@ -194,7 +194,7 @@ prediction_2b <- function(estimates) {
 }
 
 ## One table: every estimate against its reference, with its Δ, target
-## Monte Carlo SE and whether it is reached (R/shared/rounds.R)
+## Monte Carlo SE and whether it is reached (R/engine/rounds.R)
 results_table_2b <- function(bias_and_coverage, prediction) {
   bias <- transmute(
     bias_and_coverage, k, n, rho, others, cell, method,

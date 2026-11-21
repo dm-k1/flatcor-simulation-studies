@@ -1,6 +1,6 @@
 ## =====================================================================
 ##  The queue: every expensive piece of work, each cell's rounds on its own
-##  (run_all.R runs it; the rule itself is in R/shared/rounds.R)
+##  (run_all.R runs it; the rule itself is in R/engine/rounds.R)
 ##
 ##  Every cell goes through its own rounds. (A "cell" here is what a
 ##  quantity is computed over: one cell of the design, or the cells of a
@@ -8,11 +8,12 @@
 ##  the last of them is back, the cell is judged on its own results, and if
 ##  a quantity is short of its target, its next batch goes into the queue
 ##  at once. No cell waits for another, so the workers stay busy until the
-##  last cell is done. The pieces that run once (1a, 2a, 3b.1 and 3b.2) go
-##  into the queue first, so they run alongside, not after.
+##  last cell is done. The parts that run once go into the queue first, so
+##  they run alongside, not after. Which parts there are, each study declares
+##  in its design.R (R/engine/parts.R).
 ##
 ##  The results are the same as with rounds over all cells at once: a
-##  dataset's numbers come from its name (R/shared/random_streams.R), and a
+##  dataset's numbers come from its name (R/engine/random_streams.R), and a
 ##  cell's verdict only from its own results, so when a cell is judged
 ##  changes nothing.
 ##
@@ -21,7 +22,7 @@
 ##  would cost; the researcher decides (raise the budget and start again,
 ##  or report the cell as short). docs/validation_tests.md, "How many datasets".
 ##
-##  Each finished piece is saved in the store (R/shared/rounds.R,
+##  Each finished piece is saved in the store (R/engine/rounds.R,
 ##  run_piece()), so a run that stops continues where it was, and the
 ##  pipeline reads the pieces afterwards instead of computing them again.
 ## =====================================================================
@@ -30,14 +31,14 @@
 ## ---- Running pieces ---------------------------------------------------------------
 
 ## What a queue worker does with a piece: it loads the validation's code the
-## first time (R/shared/workers.R, code_files()) and then runs the piece
-## (run_piece(), R/shared/rounds.R). `task`: list(design, piece, store, files).
+## first time (R/engine/workers.R, code_files()) and then runs the piece
+## (run_piece(), R/engine/rounds.R). `task`: list(design, piece, store, files).
 run_task <- function(task) {
   if (!exists("run_piece", envir = globalenv())) {
     for (file in task$files) sys.source(file, envir = globalenv())
   }
   if (!exists("queue_model", envir = globalenv())) {
-    assign("queue_model", flatcor_stan_model(), envir = globalenv())
+    assign("queue_model", piece_model(), envir = globalenv())
   }
   run_piece(task$design, task$piece, task$store, get("queue_model", envir = globalenv()))
 }
@@ -87,7 +88,7 @@ start_queue <- function(workers) {
         command = run_task(task),
         data = list(task = task),
         globals = list(run_task = run_task),
-        packages = c("flatcor", "dplyr"),
+        packages = step_packages,
         name = name
       )
     },
@@ -122,7 +123,7 @@ start_queue <- function(workers) {
 cells_of <- function(plan, by) split(seq_len(nrow(plan)), do.call(paste, plan[by]))
 
 ## A table as the per-dataset file gives it back (write_per_dataset(), then
-## read_per_dataset(), R/shared/per_dataset.R): a cell is judged on exactly
+## read_per_dataset(), R/engine/per_dataset.R): a cell is judged on exactly
 ## the numbers its study's results are computed from. Text columns stay text:
 ## read alone, a cell's column of only "true" would come back as TRUE, where
 ## the study's whole file, with other values in it, keeps it as text (and a
@@ -140,7 +141,7 @@ as_read_back <- function(table) {
 }
 
 ## The plan after judging one cell of a design: the cell's rows get the
-## datasets it is estimated to lack (next_plan(), R/shared/rounds.R), or
+## datasets it is estimated to lack (next_plan(), R/engine/rounds.R), or
 ## stay as they are when it has reached its targets. The cell is judged on
 ## its own results only: the tables of its study (design$table) computed
 ## from its own finished pieces.
@@ -163,9 +164,9 @@ judge_cell <- function(design, plan, rows, store, one_batch) {
 ## pipeline
 piece_row <- function(pieces, i) vctrs::vec_slice(pieces, i)
 
-## Runs the pieces of `once` (run_all.R's run_once: per part, its pieces,
-## each run once), and every cell of `designs` (run_all.R's in_rounds) to
-## its targets or to the budget. `workers`: as in start_queue().
+## Runs the pieces of `once` (per part that runs once, its pieces), and
+## every cell of `designs` (the parts that run in rounds, R/engine/parts.R,
+## each with its `name`) to its targets or to the budget. `workers`: as in start_queue().
 ## `spent_elsewhere`: core hours the pipeline's own steps have cost so far
 ## (a run that continues). `one_extension`: at most one extra batch per cell
 ## (the smoke test, which tests the step, not the numbers).
@@ -191,12 +192,12 @@ run_rounds <- function(designs, once, store, budget_core_hours, workers, spent_e
   run$extended <- character(0)
   run$short <- list()      # per cell its next batch did not fit: what it would cost
 
-  # core hours: every piece runs Stan's 4 chains, so 4 cores
-  spent <- function() spent_elsewhere + sum(unlist(run$seconds)) * 4 / 3600
+  # core hours: every piece keeps cores_per_piece cores busy (R/project/settings.R)
+  spent <- function() spent_elsewhere + sum(unlist(run$seconds)) * cores_per_piece / 3600
   out_cost <- function() sum(unlist(run$out))
   per_dataset <- function(name) {
     if (length(run$seconds[[name]]) == 0) return(0)
-    mean(run$seconds[[name]]) * 4 / 3600 / designs[[name]]$batch_size
+    mean(run$seconds[[name]]) * cores_per_piece / 3600 / designs[[name]]$batch_size
   }
   # the pieces of a table not run yet
   not_run <- function(name, pieces) {

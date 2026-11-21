@@ -3,8 +3,8 @@
 ##    Rscript R/3_figures/1a_prior_sampling.R
 ## =====================================================================
 library(ggplot2)
-source("R/shared/figures.R") # read_results(), figure_folder
-source("R/shared/comparison_methods.R") # contenders, method_scales(): names and colours
+source("R/engine/figures.R") # read_results(), figure_folder
+source("R/project/comparison_methods.R") # contenders, method_scales(): names and colours
 
 results <- read_results("1a")
 quantiles <- as.data.frame(results$tables$quantiles)

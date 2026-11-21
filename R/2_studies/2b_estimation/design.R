@@ -40,9 +40,31 @@ deltas_2b <- c(
 )
 ## The first round: computed for coverage, .95 x .05 / .01^2 = 475. Bias and
 ## prediction are measured: a cell gets more datasets in later rounds until
-## they reach their targets too (R/shared/rounds.R).
+## they reach their targets too (R/engine/rounds.R).
 first_round_2b <- datasets(475, in_smoke = 10)
 
 
 ## ---- Bookkeeping (no effect on the results) ------------------------------------
 batch_size_2b <- if (smoke) 5 else 25   # datasets per piece of work, saved as it finishes
+
+
+## ---- How it runs (R/engine/parts.R) ------------------------------------------
+## In rounds, per cell: a piece is a batch of datasets, each fitted by every
+## method; a cell is judged on its bias, coverage and prediction error
+declared_parts[["2b"]] <- part_in_rounds(
+  study = "2b", cells = cells_2b, by = c("k", "n", "rho", "others"),
+  first_round = first_round_2b, batch_size = batch_size_2b,
+  work = function(piece, model) {
+    estimates_batch_2b(piece[names(cells_2b)], replications_of(piece), model)
+  },
+  table = function(rows) {
+    list(results_table_2b(bias_and_coverage_2b(rows), prediction_2b(rows)))
+  }
+)
+
+## For the check at the end of a run (R/engine/check_results.R)
+declared_blanks[[length(declared_blanks) + 1]] <- list(
+  study = "2b", table = "per_dataset", columns = "divergent",
+  when = function(t) t$method %in% c("OLS", "JZS default", "Zellner-Siow"),
+  reason = "these methods do not use Stan, so have no divergences to count"
+)

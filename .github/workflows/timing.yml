@@ -1,6 +1,6 @@
 # Estimates how long the full validation takes, before renting anything for it.
 #
-# Every study runs in timing mode (R/shared/pipeline.R) inside the published
+# Every study runs in timing mode (R/engine/pipeline.R) inside the published
 # image: the full design and full-length chains, on two fractions of its
 # datasets, each on its own runner (4 cores). R/timing/estimate_run_time.R then
 # fits the fixed part and the part per dataset and reads off the full run; the

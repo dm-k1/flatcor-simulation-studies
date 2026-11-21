@@ -83,7 +83,7 @@ models_as_formulas <- function(predictors_a, predictors_b, outcome) {
 
 ## The log BF of model A (columns predictors_a) against model B
 ## (predictors_b), for one method, with everything computed on the way, as
-## one row (a tibble) for the per-dataset files (R/shared/per_dataset.R):
+## one row (a tibble) for the per-dataset files (R/engine/per_dataset.R):
 ##   id, seed        the name the Stan fits and bridge sampling are seeded
 ##                   from, and the seed (model B's is seed + 1)
 ##   log_bf, error   the log BF and its approximate Monte Carlo SE
@@ -111,7 +111,7 @@ log_bayes_factor_between <- function(method, predictors_a, predictors_b, outcome
 
   # the three priors: flatcor
   if (method %in% names(contenders)) {
-    compile_flatcor_models() # once per worker, one worker at a time (R/shared/pipeline.R)
+    compile_flatcor_models() # once per worker, one worker at a time (R/project/flatcor.R)
     models <- models_as_formulas(predictors_a, predictors_b, outcome)
     result <- suppressWarnings(flatcor::bayes_factor_models(
       models$formula_a,

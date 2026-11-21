@@ -38,17 +38,17 @@ if (dry_run) Sys.setenv(VALIDATION_SMOKE = "1")
 
 ## Every worker's environment (the cache folder, a copy of the TBB library,
 ## one BLAS thread), set before any worker starts, so they inherit it, and
-## the validation's code, in order (R/shared/workers.R)
-source(file.path("R", "shared", "workers.R"))
+## the validation's code, in order (R/engine/workers.R)
+source(file.path("R", "engine", "workers.R"))
 tar_source(code_files())
 
-## A worker per 4 cores (worker_count(), R/shared/workers.R). The dry run
+## A worker per 4 cores (worker_count(), R/engine/workers.R). The dry run
 ## samples nothing, so it runs every step in this one process: starting
 ## workers would take longer than the steps.
 tar_option_set(
   packages = c("flatcor", "dplyr"),
   # targets seeds R before each step from the step's name and this seed;
-  # every draw that matters has its own seed (R/shared/random_streams.R),
+  # every draw that matters has its own seed (R/engine/random_streams.R),
   # but whatever is left follows the same root seed
   seed = root_seed,
   controller = if (dry_run) NULL else crew_controller_local(
@@ -63,22 +63,17 @@ tar_option_set(
 ## ---- The steps ------------------------------------------------------------------------
 
 list(
+  ## The model every piece of work gets (piece_model(), R/project/settings.R):
   ## flatcor's Stan model, compiled once before the studies that sample it
-  tar_target(stan_model, flatcor_stan_model()),
+  tar_target(model, piece_model()),
 
 
   ## ---- 1a. Does the software draw the prior it claims? ----
-  tar_target(design_1a, settings_1a),
+  # the draws of each setting: the part 1a declares (its design.R;
+  # once_steps(), R/engine/steps.R)
+  once_steps("samples_1a", "1a", iteration = "list"),
   tar_target(predictors_1a, data_prior_only_designs()),
-  tar_target(
-    samples_1a,
-    # a setting's draws: the ones run_all.R's queue saved, or computed here
-    # (piece_rows(), R/shared/rounds.R)
-    piece_rows("1a", design_1a, stan_model),
-    pattern = map(design_1a),
-    iteration = "list"
-  ),
-  # layer 1: the draws, the recipe's draws, each setting's run (R/shared/per_dataset.R)
+  # layer 1: the draws, the recipe's draws, each setting's run (R/engine/per_dataset.R)
   tar_target(
     per_dataset_draws_1a,
     write_per_dataset(draws_table_1a(samples_1a), "1a_prior_draws", gzip = TRUE),
@@ -107,19 +102,10 @@ list(
 
 
   ## ---- 1b. Is the Bayes factor invariant to units and coding? ----
-  # the plan and its pieces, as in 2b (R/shared/rounds.R)
-  tar_target(
-    plan_1b,
-    read_plan("1b", targets::tar_path_store(), priors_1b, first_round_1b),
-    cue = tar_cue(mode = "always")
-  ),
-  tar_target(pieces_1b, pieces_of_plan(plan_1b, batch_size_1b)),
-  tar_target(
-    log_bfs_1b,
-    piece_rows("1b", pieces_1b),
-    pattern = map(pieces_1b)
-  ),
-  # layer 1: every log Bayes factor's row (R/shared/per_dataset.R)
+  # the log Bayes factors, in rounds: the part 1b declares (its design.R;
+  # round_steps(), R/engine/steps.R)
+  round_steps("log_bfs_1b", "1b"),
+  # layer 1: every log Bayes factor's row (R/engine/per_dataset.R)
   tar_target(
     per_dataset_1b,
     write_per_dataset(log_bfs_1b, "1b_log_bayes_factors"),
@@ -132,20 +118,9 @@ list(
 
 
   ## ---- 2a. Is the posterior computed correctly? ----
-  tar_target(design_2a, settings_2a),
-  tar_target(
-    batches_2a,
-    split_into_batches(fits_2a, batch_size_2a),
-    iteration = "list"
-  ),
-  tar_target(
-    sbc_2a,
-    # a batch's fits: the queue's, or computed here (piece_rows())
-    piece_rows("2a", cbind(design_2a, from = min(batches_2a), to = max(batches_2a)), stan_model),
-    pattern = cross(design_2a, batches_2a),
-    iteration = "list"
-  ),
-  # layer 1: every fit's rows (R/shared/per_dataset.R)
+  # the SBC fits, a batch of a setting per piece: the part 2a declares
+  once_steps("sbc_2a", "2a", iteration = "list"),
+  # layer 1: every fit's rows (R/engine/per_dataset.R)
   tar_target(
     per_dataset_fits_2a,
     write_per_dataset(bind_rows(lapply(sbc_2a, `[[`, "stats")), "2a_sbc_fits"),
@@ -166,42 +141,19 @@ list(
 
 
   ## ---- 2b. How close are the estimates to a known truth? ----
-  # the plan: per cell, the datasets of the rounds so far (R/shared/rounds.R);
-  # read every time, but what follows reruns only if it changed
-  tar_target(
-    plan_2b,
-    read_plan("2b", targets::tar_path_store(), cells_2b, first_round_2b),
-    cue = tar_cue(mode = "always")
-  ),
-  # one piece of work per cell and batch; a new round only adds pieces. Each
-  # piece's rows: the ones run_all.R's queue saved, or computed here
-  # (piece_rows(), R/shared/rounds.R)
-  tar_target(pieces_2b, pieces_of_plan(plan_2b, batch_size_2b)),
-  tar_target(
-    fits_2b,
-    piece_rows("2b", pieces_2b, stan_model),
-    pattern = map(pieces_2b)
-  ),
-  # layer 1: every fit's row (R/shared/per_dataset.R)
+  # the fits, in rounds: the part 2b declares (its design.R; round_steps(),
+  # R/engine/steps.R: the plan, its pieces and their rows)
+  round_steps("fits_2b", "2b"),
+  # layer 1: every fit's row (R/engine/per_dataset.R)
   tar_target(per_dataset_2b, write_per_dataset(fits_2b, "2b_fits"), format = "file"),
   tar_target(results_2b, save_results_2b(read_per_dataset(per_dataset_2b)), format = "file"),
 
 
   ## ---- 3a. Are the Bayes factors right? ----
 
-  # part A, calibration: its plan and pieces, as in 2b (R/shared/rounds.R)
-  tar_target(
-    plan_3a,
-    read_plan("3a", targets::tar_path_store(), cells_3a, first_round_3a),
-    cue = tar_cue(mode = "always")
-  ),
-  tar_target(pieces_3a, pieces_of_plan(plan_3a, batch_size_3a)),
-  tar_target(
-    calibration_runs_3a,
-    piece_rows("3a", pieces_3a),
-    pattern = map(pieces_3a)
-  ),
-  # layer 1: every dataset's row (R/shared/per_dataset.R)
+  # part A, calibration, in rounds: the part "3a" its design.R declares
+  round_steps("calibration_runs_3a", "3a"),
+  # layer 1: every dataset's row (R/engine/per_dataset.R)
   tar_target(
     per_dataset_calibration_3a,
     write_per_dataset(calibration_runs_3a, "3a_calibration"),
@@ -213,19 +165,9 @@ list(
   tar_target(bins_table_3a, calibration_bins_3a(calibration_rows_3a)),
   tar_target(line_table_3a, calibration_line_3a(calibration_rows_3a)),
 
-  # part B, bridge sampling's error: each dataset run repeat_runs_3a times;
-  # its own plan and pieces
-  tar_target(
-    plan_repeats_3a,
-    read_plan("3a-repeats", targets::tar_path_store(), cells_3a, first_round_repeats_3a),
-    cue = tar_cue(mode = "always")
-  ),
-  tar_target(pieces_repeats_3a, pieces_of_plan(plan_repeats_3a, batch_size_repeats_3a)),
-  tar_target(
-    repeated_3a,
-    piece_rows("3a-repeats", pieces_repeats_3a),
-    pattern = map(pieces_repeats_3a)
-  ),
+  # part B, bridge sampling's error: each dataset run repeat_runs_3a times,
+  # in rounds of its own: the part "3a-repeats"
+  round_steps("repeated_3a", "3a-repeats"),
   tar_target(
     per_dataset_repeats_3a,
     write_per_dataset(repeated_3a, "3a_repeated_runs"),
@@ -251,44 +193,16 @@ list(
 
   ## ---- 3b. Do the Bayes factors meet the default-prior criteria? ----
 
-  # 3b.1, 3b.2: one dataset per row
-  tar_target(design_formula_3b, formula_checks_3b),
-  tar_target(
-    formula_3b,
-    piece_rows("3b-formula", design_formula_3b),
-    pattern = map(design_formula_3b)
-  ),
-
-  # 3b.3-3b.6: the rates; their plan and pieces, as in 2b (R/shared/rounds.R)
-  tar_target(
-    plan_rates_3b,
-    read_plan("3b-rates", targets::tar_path_store(), rate_cells_3b, first_round_rates_3b),
-    cue = tar_cue(mode = "always")
-  ),
-  tar_target(pieces_rates_3b, pieces_of_plan(plan_rates_3b, batch_size_3b)),
-  tar_target(
-    rates_3b,
-    piece_rows("3b-rates", pieces_rates_3b),
-    pattern = map(pieces_rates_3b)
-  ),
-
-  # 3b.8, 3b.9: k growing with n; their own plan and pieces
-  tar_target(
-    plan_growing_3b,
-    read_plan("3b-growing", targets::tar_path_store(), growing_cells_3b, first_round_growing_3b),
-    cue = tar_cue(mode = "always")
-  ),
-  tar_target(pieces_growing_3b, pieces_of_plan(plan_growing_3b, batch_size_3b)),
-  tar_target(
-    growing_3b,
-    piece_rows("3b-growing", pieces_growing_3b),
-    pattern = map(pieces_growing_3b)
-  ),
+  # 3b.1, 3b.2: one dataset per piece, run once; 3b.3-3b.6, the rates, and
+  # 3b.8, 3b.9, k growing with n, in rounds: the parts 3b's design.R declares
+  once_steps("formula_3b", "3b-formula"),
+  round_steps("rates_3b", "3b-rates"),
+  round_steps("growing_3b", "3b-growing"),
 
   # 3b.7: the prior's draws with the sample and the population covariance
   tar_target(draws_intrinsic_3b, intrinsic_draws_of_3b()),
 
-  # layer 1: every Bayes factor's row and the draws (R/shared/per_dataset.R)
+  # layer 1: every Bayes factor's row and the draws (R/engine/per_dataset.R)
   tar_target(per_dataset_formula_3b, write_per_dataset(formula_3b, "3b_formula"), format = "file"),
   tar_target(per_dataset_rates_3b, write_per_dataset(rates_3b, "3b_rates"), format = "file"),
   tar_target(

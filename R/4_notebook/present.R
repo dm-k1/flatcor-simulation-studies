@@ -36,7 +36,7 @@ study_questions <- c(
 )
 
 ## Where the results are: the tracked folder, or cache/ for the smoke test
-## (the same rule as R/shared/results.R)
+## (the same rule as R/engine/results.R)
 results_folder_of <- function(smoke) if (smoke) file.path("cache", "smoke_results") else "results"
 
 ## ---- Reading ------------------------------------------------------------------------

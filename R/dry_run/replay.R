@@ -18,9 +18,10 @@
 ##  This file changes no study's code. It is sourced after the studies'
 ##  files, and only in a recording run or the dry run (_targets.R, run_all.R);
 ##  a normal run never sees it. It replaces a few functions by versions that
-##  record or replay the original: the seams, listed in replayed_functions.
+##  record or replay the original: the seams, which the project lists in
+##  R/project/seams.R (replayed_functions).
 ##  Every expensive call in the studies' code must be inside one of them
-##  (the static check enforces it: R/shared/static_check.R).
+##  (the static check enforces it: R/engine/static_check.R).
 ##
 ##  What the dry run tests: everything around the seams. What it does not:
 ##  the code inside them (Stan, bridge sampling, sample_setting_1a()'s
@@ -38,20 +39,8 @@ dry <- identical(Sys.getenv("VALIDATION_DRY"), "1")
 recording <- identical(Sys.getenv("VALIDATION_RECORD"), "1")
 recordings_folder <- file.path("cache", "dry_recordings")
 
-## The seams: the functions this file replaces. fit_regression is flatcor's,
-## called by the studies without flatcor::, so a function of that name here
-## comes first.
-replayed_functions <- c(
-  "log_bayes_factor_between", # comparison_methods.R: flatcor's Bayes factors (1b, 3a, 3b)
-  "fit_regression",           # flatcor's fit (2b)
-  "sample_setting_1a",        # 1a: the prior draws of one setting
-  "sbc_batch_2a"              # 2a: the SBC fits of one batch
-)
-
-## Skipped in the dry run, which samples nothing: compiling flatcor's models
-## (R/shared/pipeline.R). The static check fails when one of these no longer
-## exists, so a rename never silently brings compiling back into the dry run.
-skipped_in_dry_run <- c("compile_flatcor_models", "flatcor_stan_model")
+## The seams, the functions the dry run replaces or skips, are the
+## project's: R/project/seams.R, sourced at the end of this file.
 
 
 ## ---- Record or replay one call --------------------------------------------------------
@@ -129,69 +118,8 @@ replace_function <- function(name, make) {
   assign(name, replacement, envir = overlay_env)
 }
 
-## flatcor's Bayes factor between two models (the three priors; the
-## references are cheap and run as they are)
-replace_function("log_bayes_factor_between", function(original) {
-  function(method, predictors_a, predictors_b, outcome, name) {
-    if (!(method %in% names(contenders))) {
-      return(original(method, predictors_a, predictors_b, outcome, name))
-    }
-    replayable(
-      "bayes_factor",
-      shape = list(
-        prior = contenders[[method]], k_a = ncol(predictors_a), k_b = ncol(predictors_b)
-      ),
-      inputs = list(method, predictors_a, predictors_b, outcome, name, bayes_factor_draws),
-      original(method, predictors_a, predictors_b, outcome, name)
-    )
-  }
-})
-
-## 1a: the prior draws of one setting (`model` is not part of the inputs:
-## in the dry run there is none)
-replace_function("sample_setting_1a", function(original) {
-  function(setting, predictors, model) {
-    replayable(
-      "sample_setting_1a",
-      shape = list(prior = setting$prior, design = setting$design),
-      inputs = list(setting, predictors, start_draws_1a),
-      original(setting, predictors, model)
-    )
-  }
-})
-
-## 2a: the SBC fits of one batch
-replace_function("sbc_batch_2a", function(original) {
-  function(setting, replications, model) {
-    replayable(
-      "sbc_batch_2a",
-      shape = list(prior = setting$prior, k = setting$k, fits = length(replications)),
-      inputs = list(setting, replications, iterations_2a),
-      original(setting, replications, model)
-    )
-  }
-})
-
-## flatcor's fit (2b). What is kept of the fit: everything but the CmdStan
-## fit object itself (its draws, divergences, sampler per chain, seconds,
-## seed).
-if (exists("estimates_2b", envir = overlay_env, inherits = FALSE)) {
-  fit_regression <- function(formula, data, prior, ..., seed) {
-    replayable(
-      "fit_regression",
-      shape = list(prior = prior, k = length(all.vars(formula)) - 1),
-      inputs = list(deparse(formula), data, prior, list(...), seed),
-      {
-        fit <- flatcor::fit_regression(formula, data, prior = prior, ..., seed = seed)
-        fit[c("draws", "divergent", "sampler", "seconds", "seed")]
-      }
-    )
-  }
-  attr(fit_regression, "replayed") <- TRUE
-}
-
 ## The dry run's results files go to cache/dry_results/, never over the smoke
-## test's, and are marked as dry. Done here, not in R/shared/results.R, so a
+## test's, and are marked as dry. Done here, not in R/engine/results.R, so a
 ## normal run sees save_study_results_file() unchanged and a finished store's
 ## results steps stay valid: the original writes the file in a scratch
 ## folder, and it is moved from there.
@@ -227,12 +155,11 @@ if (dry) {
   })
 }
 
-## The dry run samples nothing, so compiles no model
+## The project's seams (R/project/seams.R): the expensive calls, replaced
+## by versions that record or replay them, and what the dry run skips
+sys.source(file.path("R", "project", "seams.R"), envir = overlay_env)
 if (dry) {
-  replace_function("compile_flatcor_models", function(original) {
-    function() invisible(TRUE)
-  })
-  replace_function("flatcor_stan_model", function(original) {
-    function() "dry run: no model"
-  })
+  for (name in names(skipped_in_dry_run)) {
+    replace_function(name, function(original) skipped_in_dry_run[[name]])
+  }
 }

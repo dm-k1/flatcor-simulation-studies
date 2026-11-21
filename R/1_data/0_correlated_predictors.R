@@ -1,7 +1,7 @@
 ## =====================================================================
 ##  The predictors of every data set (docs/validation_tests.md, "The data
 ##  sets"). Each data file draws them inside its own random stream
-##  (R/shared/random_streams.R).
+##  (R/engine/random_streams.R).
 ## =====================================================================
 
 

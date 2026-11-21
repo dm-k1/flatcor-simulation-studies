@@ -4,7 +4,7 @@
 ##    VALIDATION_TIMING=0.04 Rscript R/timing/time_study.R 3a
 ##
 ##  runs the study's steps of the pipeline (_targets.R: the targets ending in
-##  _3a) in timing mode (R/shared/pipeline.R): the full design, but 4% of the
+##  _3a) in timing mode (R/engine/pipeline.R): the full design, but 4% of the
 ##  datasets (at least 2), in its own store under cache/timing/, so it never
 ##  mixes with a real run. It writes cache/timing/time_3a_at_0.04.rds with the
 ##  elapsed time and the cores. R/timing/estimate_run_time.R scales these up to

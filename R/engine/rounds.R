@@ -10,7 +10,7 @@
 ##  is run again. The plan, how many datasets each cell has so far, is a
 ##  small file in the targets store, so a fresh start deletes it with the
 ##  store. Each cell goes through its rounds on its own, without waiting for
-##  the others: run_all.R's queue (R/shared/queue.R) runs the pieces of work
+##  the others: run_all.R's queue (R/engine/queue.R) runs the pieces of work
 ##  and judges a cell as soon as its own batch is done. The pipeline reads
 ##  the plan and the finished pieces.
 ## =====================================================================
@@ -117,35 +117,21 @@ next_plan <- function(plan, table, by, batch_size, one_batch = FALSE) {
 
 ## ---- The pieces ------------------------------------------------------------------------
 
-## The work of one piece: its rows. run_all.R's queue and the pipeline's
-## steps (_targets.R) both call this, so a piece is the same work wherever
-## it runs. Besides the studies that run in rounds, it does the pieces that
-## run once: a setting of 1a, a batch of fits of a setting of 2a, a dataset
-## of 3b.1 and 3b.2. Every draw that matters has a seed of its own already
-## (R/shared/random_streams.R), but flatcor seeds bridge sampling with
-## set.seed(), which draws with whichever generator R has set. So a piece
-## starts as targets starts a step: seeded, with R's default generator.
-## `model`: flatcor's Stan model (2b).
-piece_work <- function(design, piece, model = NULL) {
-  replications <- if (!is.null(piece$from)) piece$from:piece$to
+## The work of one piece: its rows, from the work function its part
+## declares (R/engine/parts.R). run_all.R's queue and the pipeline's steps
+## (R/engine/steps.R) both call this, so a piece is the same work wherever it
+## runs. Every draw that matters has a seed of its own already
+## (R/engine/random_streams.R), but a package may seed its own draws with
+## set.seed() (flatcor does, for bridge sampling), which draws with whichever
+## generator R has set. So a piece starts as targets starts a step: seeded,
+## with R's default generator. `model`: what piece_model() gives
+## (R/project/settings.R).
+piece_work <- function(part, piece, model = NULL) {
   set.seed(
-    seed_of("piece", design, piece_id(piece)),
+    seed_of("piece", part, piece_id(piece)),
     kind = "default", normal.kind = "default", sample.kind = "default"
   )
-  switch(design,
-    "1b" = invariance_batch_1b(piece["prior"], replications),
-    "2b" = estimates_batch_2b(piece[names(cells_2b)], replications, model),
-    "3a" = calibration_batch_3a(piece[names(cells_3a)], replications),
-    "3a-repeats" = repeats_3a(piece[names(cells_3a)], replications, repeat_runs_3a),
-    "3b-rates" = batch_3b(piece[names(rate_cells_3b)], replications, rate_bayes_factor_3b),
-    "3b-growing" = batch_3b(
-      piece[names(growing_cells_3b)], replications, growing_bayes_factor_3b
-    ),
-    "1a" = sample_setting_1a(piece, data_prior_only_designs()[[piece$design]], model),
-    "2a" = sbc_batch_2a(piece[names(settings_2a)], replications, model),
-    "3b-formula" = formula_check_3b(piece),
-    stop("No pieces of ", design)
-  )
+  declared_parts[[part]]$work(piece, model)
 }
 
 ## A piece's name: a hash of its cell's values and its replications (types
@@ -154,18 +140,18 @@ piece_id <- function(piece) digest::digest(as.list(piece))
 
 ## Where the queue saves a finished piece: in the store, so a fresh start
 ## deletes it with the store
-piece_file <- function(design, piece, store) {
-  file.path(store, "pieces", design, paste0(piece_id(piece), ".rds"))
+piece_file <- function(part, piece, store) {
+  file.path(store, "pieces", part, paste0(piece_id(piece), ".rds"))
 }
 
-## The queue's run of one piece (R/shared/queue.R): its rows and seconds,
+## The queue's run of one piece (R/engine/queue.R): its rows and seconds,
 ## saved under another name and then renamed, so a worker that stops halfway
 ## leaves no broken piece. Returns the seconds.
-run_piece <- function(design, piece, store, model = NULL) {
+run_piece <- function(part, piece, store, model = NULL) {
   started <- Sys.time()
-  rows <- piece_work(design, piece, model)
+  rows <- piece_work(part, piece, model)
   seconds <- as.numeric(difftime(Sys.time(), started, units = "secs"))
-  file <- piece_file(design, piece, store)
+  file <- piece_file(part, piece, store)
   dir.create(dirname(file), recursive = TRUE, showWarnings = FALSE)
   partial <- tempfile(tmpdir = dirname(file), fileext = ".partial")
   saveRDS(list(rows = rows, seconds = seconds), partial)
@@ -174,15 +160,15 @@ run_piece <- function(design, piece, store, model = NULL) {
 }
 
 ## A finished piece (list(rows, seconds)), or NULL if the queue has not run it
-read_piece <- function(design, piece, store) {
-  file <- piece_file(design, piece, store)
+read_piece <- function(part, piece, store) {
+  file <- piece_file(part, piece, store)
   if (file.exists(file)) readRDS(file) else NULL
 }
 
 ## A piece's rows in the pipeline's step: the queue's, read back, or, if the
 ## queue has not run it (a plain tar_make(), a timing run), computed here
-piece_rows <- function(design, piece, model = NULL) {
-  finished <- read_piece(design, piece, targets::tar_path_store())
+piece_rows <- function(part, piece, model = NULL) {
+  finished <- read_piece(part, piece, targets::tar_path_store())
   if (!is.null(finished)) return(finished$rows)
-  piece_work(design, piece, model)
+  piece_work(part, piece, model)
 }

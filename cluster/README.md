@@ -78,7 +78,7 @@ one job on one node, resubmitted until the pipeline is done. (Several nodes
 would need crew's cluster controllers instead; not set up.)
 
 The workers stay busy until the end. Every expensive piece of work goes
-through a queue ([`R/shared/queue.R`](../R/shared/queue.R)):
+through a queue ([`R/engine/queue.R`](../R/engine/queue.R)):
 each cell is judged as soon as its own batch is done and, if it needs more
 datasets, its next batch joins the queue at once, without waiting for the
 other cells. A batch that would take the run past its budget is not
@@ -127,7 +127,7 @@ sbatch run_validation.sbatch
 
 - **Cores.** The pipeline uses the job's allocation (`--cpus-per-task`), not
   all cores of the node (`parallelly::availableCores()`, in
-  `worker_count()` in `R/shared/workers.R`),
+  `worker_count()` in `R/engine/workers.R`),
   and starts (cores - 1) / 4 workers, rounded down: one core is for the
   pipeline itself. So ask for 4 × workers + 1: 33 cores give 8 workers,
   where 32 would give 7 and leave 3 idle.

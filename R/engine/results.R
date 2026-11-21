@@ -29,16 +29,26 @@ save_study_results_file <- function(study, tables) {
     "git", c("rev-parse", "--short", "HEAD"),
     stdout = TRUE, stderr = FALSE
   ))
-  setup <- list(
-    finished = format(Sys.time(), "%Y-%m-%d %H:%M %Z"),
-    commit = if (length(commit) == 1) commit else NA_character_,
-    R = R.version.string,
-    flatcor = as.character(utils::packageVersion("flatcor")),
-    flatcor_commit = utils::packageDescription("flatcor")$RemoteSha,
-    CmdStan = or_missing(as.character(cmdstanr::cmdstan_version())),
-    machine = paste(Sys.info()[["sysname"]], Sys.info()[["machine"]]),
-    root_seed = root_seed, # every random number follows from it (R/shared/random_streams.R)
-    smoke = smoke
+  # the package under test, in fields named after it (flatcor, flatcor_commit),
+  # and what else the project records (project_setup(), R/project/settings.R)
+  tested <- list(
+    as.character(utils::packageVersion(tested_package)),
+    utils::packageDescription(tested_package)$RemoteSha
+  )
+  names(tested) <- c(tested_package, paste0(tested_package, "_commit"))
+  setup <- c(
+    list(
+      finished = format(Sys.time(), "%Y-%m-%d %H:%M %Z"),
+      commit = if (length(commit) == 1) commit else NA_character_,
+      R = R.version.string
+    ),
+    tested,
+    project_setup(),
+    list(
+      machine = paste(Sys.info()[["sysname"]], Sys.info()[["machine"]]),
+      root_seed = root_seed, # every random number follows from it (R/engine/random_streams.R)
+      smoke = smoke
+    )
   )
 
   saveRDS(list(study = study, tables = tables, setup = setup), file)

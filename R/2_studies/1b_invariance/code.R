@@ -27,7 +27,7 @@ recoded_1b <- function(data) {
 ## ---- The log Bayes factors of one dataset -----------------------------------------
 
 ## For one prior and one dataset: the five log Bayes factors, one row each
-## with everything computed (R/shared/comparison_methods.R): the whole model
+## with everything computed (R/project/comparison_methods.R): the whole model
 ## against the intercept-only model on the original, rescaled and recoded
 ## data, and x1 (with it against without it) on the original and rescaled
 ## data. The changes are computed from these rows (changes_of_1b()).

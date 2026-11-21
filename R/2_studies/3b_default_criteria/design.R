@@ -48,9 +48,9 @@ if (smoke) {
 ## Δ is 10% of each row's expected rate (1/2, q/2 or a); the alternative's
 ## (3b.6, a direction, whose size is not known in advance) is 10% of its
 ## slope, at least .05 per log n (10% of the smallest rate, 1/2): the
-## relative rule, direction_delta() in R/shared/rounds.R. The
+## relative rule, direction_delta() in R/engine/rounds.R. The
 ## first round is the Chow-Robbins rule's; later rounds add datasets to every
-## n of a slope until it reaches its target (R/shared/rounds.R).
+## n of a slope until it reaches its target (R/engine/rounds.R).
 relative_delta_3b  <- 0.1
 direction_delta_3b <- 0.05
 first_round_rates_3b <- datasets(50, in_smoke = 2)   # per cell
@@ -85,3 +85,39 @@ bootstrap_replicates_3b <- if (smoke) 100 else 1000   # for the MCSE of medians 
 
 ## ---- Bookkeeping (no effect on the results) ------------------------------------
 batch_size_3b <- if (smoke) 2 else 10   # datasets per piece of work, saved as it finishes
+
+
+## ---- How it runs (R/engine/parts.R) ------------------------------------------
+## 3b.1 and 3b.2 run once, a dataset per piece; their errors are judged with
+## bridge sampling's error as 3a part B measures it, so that part runs with
+## 3b. The rates and growing k run in rounds, per slope (its cells over n).
+declared_parts[["3b-formula"]] <- part_once(
+  study = "3b",
+  pieces = formula_checks_3b,
+  work = function(piece, model) formula_check_3b(piece),
+  needs = "3a-repeats"
+)
+declared_parts[["3b-rates"]] <- part_in_rounds(
+  study = "3b", cells = rate_cells_3b, by = c("item", "setting", "q", "prior"),
+  first_round = first_round_rates_3b, batch_size = batch_size_3b,
+  work = function(piece, model) {
+    batch_3b(piece[names(rate_cells_3b)], replications_of(piece), rate_bayes_factor_3b)
+  },
+  # a slope is either a rate (3b.3-3b.5) or the alternative's (3b.6)
+  table = function(rows) {
+    if (all(rows$setting == "alternative")) list(alternative_slopes_3b(rows))
+    else list(rate_slopes_3b(rows))
+  }
+)
+declared_parts[["3b-growing"]] <- part_in_rounds(
+  study = "3b", cells = growing_cells_3b, by = c("truth", "growth", "method"),
+  first_round = first_round_growing_3b, batch_size = batch_size_3b,
+  work = function(piece, model) {
+    batch_3b(piece[names(growing_cells_3b)], replications_of(piece), growing_bayes_factor_3b)
+  },
+  table = function(rows) list(growing_slopes_3b(rows))
+)
+
+## For the check at the end of a run (R/engine/check_results.R): the smoke
+## test's corner of the design leaves the alternative setting out
+declared_empty_in_smoke[["3b"]] <- c("alternative", "alternative_slopes")

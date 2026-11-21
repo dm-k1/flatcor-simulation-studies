@@ -23,7 +23,7 @@ if (dry) Sys.setenv(VALIDATION_SMOKE = "1")
 smoke <- identical(Sys.getenv("VALIDATION_SMOKE"), "1")
 requested <- commandArgs(trailingOnly = TRUE)
 
-## the same folders as run_all.R and R/shared/figures.R
+## the same folders as run_all.R and R/engine/figures.R
 results_root <- if (dry) {
   file.path("cache", "dry_results")
 } else if (smoke) {

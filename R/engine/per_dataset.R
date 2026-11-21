@@ -13,7 +13,7 @@
 ##  the figures and the notebook read both.
 ##
 ##  A row's `id` is the name its random numbers come from (seed = a hash of
-##  it, R/shared/random_streams.R): the dataset can be made again from it.
+##  it, R/engine/random_streams.R): the dataset can be made again from it.
 ## =====================================================================
 
 ## The folder of the per-dataset files

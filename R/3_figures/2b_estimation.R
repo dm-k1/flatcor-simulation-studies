@@ -3,8 +3,8 @@
 ##    Rscript R/3_figures/2b_estimation.R
 ## =====================================================================
 library(ggplot2)
-source("R/shared/figures.R") # read_results(), figure_folder
-source("R/shared/comparison_methods.R") # method_scales(): the colours of the methods
+source("R/engine/figures.R") # read_results(), figure_folder
+source("R/project/comparison_methods.R") # method_scales(): the colours of the methods
 
 results <- read_results("2b")
 table <- results$tables$estimates

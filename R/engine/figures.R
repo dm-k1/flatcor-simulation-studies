@@ -22,7 +22,7 @@ read_results <- function(study) {
 }
 
 ## A per-dataset file of a study (results/per_dataset/study_<file>.csv or
-## .csv.gz, R/shared/per_dataset.R)
+## .csv.gz, R/engine/per_dataset.R)
 read_per_dataset_file <- function(file) {
   path <- list.files(
     file.path(results_root, "per_dataset"),
