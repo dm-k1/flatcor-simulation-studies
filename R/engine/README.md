@@ -27,11 +27,17 @@ this folder and the three root scripts (`_targets.R`, `run_all.R`,
    rule: is the cell done, or how many more datasets does it need? If more,
    the next batch goes out at once, without waiting for other cells or
    studies.
-4. When every cell is done, the pipeline (`pipeline/`, targets) makes each
+4. After every finished batch, the scheduler estimates what is left: every
+   dataset asked for and not yet done, times what a dataset of its part has
+   cost so far. If what has been spent plus that estimate is more than the
+   budget, the run stops: nothing new starts, and finished batches are
+   kept. You then raise the budget or change a target, and start again; the
+   run continues where it was.
+5. When every cell is done, the pipeline (`pipeline/`, targets) makes each
    study's results from the saved batches. It writes the results files
    (`report/results_files.R`) and the per-dataset files
    (`report/per_dataset_files.R`).
-5. `tests/check_results.R` checks those files.
+6. `tests/check_results.R` checks those files.
 
 A dataset's random numbers come from its name (`seeds.R`). A cell is judged
 only on its own results. So a study gives the same numbers whether it runs
@@ -57,7 +63,7 @@ alone or with any other studies, on any number of workers.
 | `report/figure_files.R` | What a figure script needs; drawing all figures |
 | `report/notebook_tables.R` | The notebook's tables and figures |
 | `tests/` | The four tests (`tests/README.md`) |
-| `run_time/` | Before a run: time a study on a share of its datasets, and scale that up to the full run |
+| `run_time/` | Before a run: time a study on a share of its datasets (`time_study.R`), and scale that up to the full run (`estimate_run_time.R`). During a run: the time left, per part, per study and in all (`remaining_time.R`) |
 
 ## What the project provides
 

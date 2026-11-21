@@ -75,6 +75,10 @@ batch_work <- function(part, batch, model = NULL) {
   declared_parts[[part]]$work(batch, model)
 }
 
+## The datasets in a batch (1 for a batch of a part that runs once without
+## replications, such as one setting's draws)
+datasets_in <- function(batch) if (is.null(batch$to)) 1 else batch$to - batch$from + 1
+
 ## A batch's name: a hash of its cell's values and its replications (types
 ## included: 2 is not 2L, as in the plan)
 batch_id <- function(batch) digest::digest(as.list(batch))
@@ -85,9 +89,9 @@ batch_file <- function(part, batch, store) {
   file.path(store, "batches", part, paste0(batch_id(batch), ".rds"))
 }
 
-## The scheduler's run of one batch: its rows and seconds, saved under
-## another name and then renamed, so a worker that stops halfway leaves no
-## broken batch. Returns the seconds.
+## The scheduler's run of one batch: its rows, seconds and datasets, saved
+## under another name and then renamed, so a worker that stops halfway
+## leaves no broken batch. Returns the seconds.
 run_batch <- function(part, batch, store, model = NULL) {
   started <- Sys.time()
   rows <- batch_work(part, batch, model)
@@ -95,12 +99,12 @@ run_batch <- function(part, batch, store, model = NULL) {
   file <- batch_file(part, batch, store)
   dir.create(dirname(file), recursive = TRUE, showWarnings = FALSE)
   partial <- tempfile(tmpdir = dirname(file), fileext = ".partial")
-  saveRDS(list(rows = rows, seconds = seconds), partial)
+  saveRDS(list(rows = rows, seconds = seconds, datasets = datasets_in(batch)), partial)
   file.rename(partial, file)
   seconds
 }
 
-## A finished batch (list(rows, seconds)), or NULL if it has not run
+## A finished batch (list(rows, seconds, datasets)), or NULL if it has not run
 read_batch <- function(part, batch, store) {
   file <- batch_file(part, batch, store)
   if (file.exists(file)) readRDS(file) else NULL

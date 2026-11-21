@@ -118,7 +118,15 @@ VALIDATION_SMOKE=1 Rscript make_figures.R   # and its figures
 Rscript run_all.R                           # the studies
 Rscript make_figures.R                      # then the figures, from the results files
 VALIDATION_FRESH=1 Rscript run_all.R        # the studies, from scratch
+Rscript R/engine/run_time/remaining_time.R  # during a run, beside it: the time left
 ```
+
+A run has a budget of 2,500 core hours (`VALIDATION_BUDGET_CORE_HOURS`).
+It estimates as it goes what is left: every dataset asked for and not yet
+done, times what a dataset of its part has cost so far. When what it has
+spent plus that estimate is more than the budget, it stops and reports what
+is left per part; raise the budget or change a target, and start again: it
+continues where it was.
 
 `run_all.R` only simulates, so a cloud machine spends its time on the
 studies alone; `make_figures.R` draws the figures from the results files

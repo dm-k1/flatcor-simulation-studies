@@ -81,7 +81,10 @@ The workers stay busy until the end. Every batch goes through the
 scheduler ([`R/engine/workers/scheduler.R`](../R/engine/workers/scheduler.R)):
 each cell is judged as soon as its own batch is done and, if it needs more
 datasets, its next batch goes out at once, without waiting for the other
-cells. A batch that would take the run past its budget is not started. The
+cells. When what the run has spent plus what it still expects to cost is
+more than its budget, it stops and reports what is left (the run-time
+estimate below; `Rscript R/engine/run_time/remaining_time.R` shows the same
+from outside, at any moment). The
 parts that run once (1a, 2a, 3b.1 and 3b.2) go out first and run
 alongside. Then the pipeline runs once, in minutes: every study's results,
 from the finished batches.

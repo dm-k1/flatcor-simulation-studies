@@ -82,9 +82,9 @@ full_run <- function(requested = character(0)) {
   run_once <- lapply(Filter(function(part) !is.null(part$batches), parts), `[[`, "batches")
 
   ## The budget: raising it is a decision written in the log:
-  ## VALIDATION_BUDGET_CORE_HOURS=3000
+  ## VALIDATION_BUDGET_CORE_HOURS=3000. The run stops when what it has
+  ## spent plus what it still expects to cost is more (R/engine/workers/scheduler.R).
   budget_core_hours <- as.numeric(Sys.getenv("VALIDATION_BUDGET_CORE_HOURS", "2500"))
-  message("Budget: ", budget_core_hours, " core hours")
 
   ## the core hours the pipeline's own steps have cost so far (a run that
   ## continues): every step's seconds, times the cores a batch keeps busy
@@ -94,13 +94,23 @@ full_run <- function(requested = character(0)) {
     sum(steps$seconds[steps$type %in% c("stem", "branch")], na.rm = TRUE) * cores_per_batch / 3600
   }
 
-  run_rounds(
+  all_done <- run_parts(
     until_target, run_once, store, budget_core_hours,
     # the dry run samples nothing: every batch in this process
     workers = if (dry) 0 else worker_count(),
     spent_elsewhere = pipeline_core_hours(),
     one_extension = smoke
   )
+  if (!all_done) {
+    stop(
+      "Stopped: what the run still expects to cost does not fit the budget. Every finished ",
+      "batch is saved. To go on, raise the budget (VALIDATION_BUDGET_CORE_HOURS) or change a ",
+      "target (R/project/engine_settings/stopping_rule.R, or a study's deltas), and start ",
+      "again: the run continues where it was. The study results are made only when every ",
+      "cell is done.",
+      call. = FALSE
+    )
+  }
 
   ## ---- 5. The pipeline: every study's results -----------------------------------------
   ## The batches the scheduler ran are read from the store (batch_rows(),

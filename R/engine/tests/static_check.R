@@ -158,7 +158,7 @@ file_calls <- c(
 )
 allowed_file_use <- c(
   "save_study_results_file", "read_plan", "write_plan",
-  "run_batch", "read_batch", "run_rounds", "as_read_back", "code_files", "full_run",
+  "run_batch", "read_batch", "run_parts", "as_read_back", "code_files", "full_run",
   "check_results_file", "check_results", "write_per_dataset", "read_per_dataset",
   project_file_functions # the project's own (R/project/engine_settings/settings.R)
 )
