@@ -18,16 +18,16 @@
 # R version as recorded in renv.lock
 FROM rocker/r-ver:4.6.1
 
-# System libraries that the R packages compile against (graphics, fonts,
-# networking; GMP and MPFR for Rmpfr; libnode for V8; ZeroMQ for pbdZMQ;
-# the list follows remotes::system_requirements() for the packages in
-# renv.lock) and git (each results file records the commit)
+# System libraries that the R packages compile against (networking; ICU for
+# stringi; libuv for fs; GMP and MPFR for Rmpfr; libxml2 for igraph; the list
+# follows the SystemRequirements of the packages in renv.lock) and git (each
+# results file records the commit). The image only runs the simulations:
+# nothing for figures or a notebook (graphics, fonts, V8, ZeroMQ), which live
+# in another repository (a separate private repository).
 RUN apt-get update && apt-get install -y --no-install-recommends \
       git curl make cmake g++ \
       libcurl4-openssl-dev libssl-dev libxml2-dev libicu-dev libuv1-dev \
-      libfontconfig1-dev libfreetype6-dev libharfbuzz-dev libfribidi-dev \
-      libpng-dev libjpeg-dev libtiff5-dev libx11-dev \
-      libgmp-dev libmpfr-dev libnode-dev libzmq3-dev \
+      libgmp-dev libmpfr-dev \
     && rm -rf /var/lib/apt/lists/*
 
 # R packages at the versions in renv.lock, into the image's site library
