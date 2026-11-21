@@ -44,3 +44,11 @@ beyond_reference <- function(rows, by = "quantity") {
 
   do.call(rbind, per_group)
 }
+
+## The Monte Carlo SE of an estimated proportion. It uses the Agresti-Coull
+## adjusted proportion (x + 2) / (n + 4), so a share of 0 or 1 does not get
+## an SE of zero.
+mcse_of_proportion <- function(p, n_sim) {
+  adjusted <- (p * n_sim + 2) / (n_sim + 4)
+  sqrt(adjusted * (1 - adjusted) / (n_sim + 4))
+}

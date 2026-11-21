@@ -35,8 +35,8 @@
 ##  shape it stops and says what to do.
 ## =====================================================================
 
-dry <- identical(Sys.getenv("VALIDATION_DRY"), "1")
-recording <- identical(Sys.getenv("VALIDATION_RECORD"), "1")
+## Whether this is the dry run or a recording: `dry`, `recording`
+## (R/engine/run_mode.R)
 recordings_folder <- file.path("cache", "dry_recordings")
 
 ## The seams, the functions the dry run replaces or skips, are the

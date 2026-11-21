@@ -6,6 +6,13 @@
 ##  seams (the static check enforces it: R/engine/tests/static_check.R).
 ## =====================================================================
 
+## The expensive calls: every call of one of these must be inside a seam
+## (the static check, R/engine/tests/static_check.R, rule a)
+expensive_calls <- c(
+  "bayes_factor_models", "fit_regression", "compute_SBC", "bridge_sampler",
+  "cmdstan_model", "sample" # sample: model$sample(), a CmdStan fit
+)
+
 ## The seams. fit_regression is flatcor's, called by the studies without
 ## flatcor::, so a function of that name here comes first.
 replayed_functions <- c(
@@ -16,8 +23,8 @@ replayed_functions <- c(
 )
 
 ## Skipped in the dry run, which samples nothing: compiling flatcor's
-## models, with what each gives instead (R/project/tested_package/flatcor_models.R). The static
-## check fails when one of these no longer exists, so a rename never
+## models, with what each gives instead (R/project/tested_package/flatcor_models.R).
+## The static check fails when one of these no longer exists, so a rename never
 ## silently brings compiling back into the dry run.
 skipped_in_dry_run <- list(
   compile_flatcor_models = function() invisible(TRUE),

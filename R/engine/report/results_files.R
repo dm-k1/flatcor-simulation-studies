@@ -8,16 +8,7 @@
 
 ## Writes the file and returns its path (a targets "file" target)
 save_study_results_file <- function(study, tables) {
-  smoke <- identical(Sys.getenv("VALIDATION_SMOKE"), "1")
-  timing <- !is.na(suppressWarnings(as.numeric(Sys.getenv("VALIDATION_TIMING", NA))))
-  root <- if (smoke) {
-    file.path("cache", "smoke_results")
-  } else if (timing) {
-    file.path("cache", "timing", "results")
-  } else {
-    "results"
-  }
-  folder <- file.path(root, "studies")
+  folder <- file.path(results_root, "studies")
   dir.create(folder, recursive = TRUE, showWarnings = FALSE)
   file <- file.path(folder, sprintf("study_%s.rds", study))
 

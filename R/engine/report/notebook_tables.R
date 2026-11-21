@@ -11,6 +11,13 @@
 ## =====================================================================
 library(gt)
 
+## The project's settings (the package under test), how it names things,
+## and what single studies add for the notebook (their present.R)
+source(file.path("R", "project", "engine_settings", "settings.R"))
+source(file.path("R", "engine", "run_mode.R"))
+source(file.path("R", "project", "shared_by_studies", "display_labels.R"))
+for (file in Sys.glob(file.path("R", "studies", "*", "present.R"))) source(file)
+
 ## Jupyter may start R in an ASCII locale; the results contain names such as
 ## García-Donato, so use UTF-8 here and in the figure scripts started from here
 if (!isTRUE(l10n_info()$`UTF-8`)) {
@@ -19,25 +26,10 @@ if (!isTRUE(l10n_info()$`UTF-8`)) {
   }
 }
 
-## The six studies, one per cell of the table in docs/working/REDESIGN.md:
-## heading (1 prior sampling, 2 posterior estimation, 3 Bayes factors) and row
-## (a: computed correctly, b: behaves like a default)
-study_files <- c(
-  "1a" = "1a_prior_sampling", "1b" = "1b_invariance", "2a" = "2a_posterior",
-  "2b" = "2b_estimation", "3a" = "3a_bayes_factors", "3b" = "3b_default_criteria"
-)
-study_questions <- c(
-  "1a" = "Does the software draw the prior it claims?",
-  "1b" = "Is the Bayes factor invariant to the units and coding of the predictors?",
-  "2a" = "Is the posterior computed correctly (simulation-based calibration)?",
-  "2b" = "How close are the posterior estimates to a known truth?",
-  "3a" = "Are the Bayes factors right (calibration; bridge sampling's error)?",
-  "3b" = "Do the Bayes factors meet the default-prior criteria?"
-)
 
 ## Where the results are: the tracked folder, or cache/ for the smoke test
-## (the same rule as R/engine/report/results_files.R)
-results_folder_of <- function(smoke) if (smoke) file.path("cache", "smoke_results") else "results"
+## (R/engine/run_mode.R)
+results_folder_of <- function(smoke) results_root_of(dry = FALSE, smoke = smoke)
 
 ## ---- Reading ------------------------------------------------------------------------
 read_study <- function(study, smoke = FALSE) {
@@ -47,20 +39,23 @@ read_study <- function(study, smoke = FALSE) {
 
 ## One row per study: its question and the run it comes from
 overview_of <- function(studies, smoke = FALSE) {
-  do.call(rbind, lapply(studies, function(study) {
+  overview <- do.call(rbind, lapply(studies, function(study) {
     result <- read_study(study, smoke)
     if (is.null(result)) {
       return(data.frame(
         study = study, question = study_questions[[study]], finished = "not run",
-        commit = "", flatcor = "", machine = ""
+        commit = "", version = "", machine = ""
       ))
     }
     data.frame(
       study = study, question = study_questions[[study]],
       finished = result$setup$finished, commit = result$setup$commit,
-      flatcor = result$setup$flatcor, machine = result$setup$machine %||% ""
+      version = result$setup[[tested_package]], machine = result$setup$machine %||% ""
     )
   }))
+  # the version of the package under test, in a column named after it
+  names(overview)[names(overview) == "version"] <- tested_package
+  overview
 }
 
 ## ---- Showing ------------------------------------------------------------------------
@@ -74,21 +69,6 @@ display_gt <- function(table) {
   invisible(table)
 }
 
-## Names in the data as they are written in the text
-prior_labels <- c(
-  flat_partial_r = "flat partial r",
-  flat_r = "flat R",
-  flat_r_squared = "flat R-squared"
-)
-column_labels <- c(
-  k = "*k*", n = "*n*", q = "*q*", p_value = "*p*", mcse = "MCSE",
-  n_sim = "*n*<sub>sim</sub>", chi_square = "*χ*²", z = "*z*",
-  largest_abs_z = "Largest |*z*|", est = "Estimate"
-)
-abbreviations <- c(
-  se = "SE", mcse = "MCSE", sd = "SD", mc = "MC", ks = "KS", ess = "ESS",
-  bf = "BF", jzs = "JZS"
-)
 label_of <- function(name) {
   if (name %in% names(column_labels)) {
     return(column_labels[[name]])
@@ -194,11 +174,10 @@ show_text <- function(text) {
 ## (results downloaded from a run, say), make_figures.R draws them first.
 show_figures <- function(result) {
   smoke <- isTRUE(result$setup$smoke)
-  folder <- if (smoke) file.path("cache", "smoke_figures") else file.path("results", "figures")
+  folder <- figure_folder_of(dry = FALSE, smoke = smoke)
   pattern <- paste0("^", result$study, "_.*[.]png$")
-  has_script <- any(file.exists(file.path(
-    list.dirs(file.path("R", "studies"), recursive = FALSE), "figures.R"
-  )[startsWith(list.files(file.path("R", "studies")), paste0(result$study, "_"))]))
+  script <- Sys.glob(file.path("R", "studies", paste0(result$study, "_*"), "figures.R"))
+  has_script <- length(script) > 0
   if (has_script && length(list.files(folder, pattern = pattern)) == 0) {
     status <- system2(file.path(R.home("bin"), "Rscript"), c("make_figures.R", result$study),
       env = c(
@@ -230,16 +209,6 @@ divergence_sentence <- function(table, total, with, what = "fits") {
   )
 }
 
-## 2b in short: per method and quantity, the mean and the range of the
-## estimates over the cells (the full table is under Details)
-summary_2b <- function(tables) {
-  as.data.frame(tables$estimates) |>
-    dplyr::summarise(
-      cells = dplyr::n(), mean = mean(estimate), lowest = min(estimate), highest = max(estimate),
-      .by = c(quantity, method)
-    ) |>
-    dplyr::arrange(quantity, method)
-}
 
 ## Everything of one study: the run it comes from, the chosen tables, a
 ## sentence or two and its figures. `tables` maps a title to the name of a
@@ -259,8 +228,9 @@ show_study <- function(study, tables = list(), notes = list(), smoke = FALSE) {
     return(invisible(NULL))
   }
   show_text(sprintf(
-    "Run of %s, commit %s, flatcor %s, %s%s. Each estimate is shown against what is expected, %s",
-    result$setup$finished, result$setup$commit, result$setup$flatcor, result$setup$machine,
+    "Run of %s, commit %s, %s %s, %s%s. Each estimate is shown against what is expected, %s",
+    result$setup$finished, result$setup$commit, tested_package, result$setup[[tested_package]],
+    result$setup$machine,
     if (isTRUE(result$setup$smoke)) ", **smoke test: its numbers mean nothing**" else "",
     "with its Monte Carlo SE (no pass/fail)."
   ))

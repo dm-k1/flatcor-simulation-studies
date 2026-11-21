@@ -17,26 +17,12 @@
 ## =====================================================================
 
 ## The folder of the per-dataset files
-per_dataset_folder <- function() {
-  if (identical(Sys.getenv("VALIDATION_DRY"), "1")) {
-    return(file.path("cache", "dry_results", "per_dataset"))
-  }
-  smoke <- identical(Sys.getenv("VALIDATION_SMOKE"), "1")
-  timing <- !is.na(suppressWarnings(as.numeric(Sys.getenv("VALIDATION_TIMING", NA))))
-  root <- if (smoke) {
-    file.path("cache", "smoke_results")
-  } else if (timing) {
-    file.path("cache", "timing", "results")
-  } else {
-    "results"
-  }
-  file.path(root, "per_dataset")
-}
+per_dataset_folder <- function() file.path(results_root, "per_dataset")
 
 ## The name a seed comes from (seed_of() hashes the same parts)
 name_of <- function(...) paste(...)
 
-## The machine a piece of work ran on, for its rows
+## The machine a batch ran on, for its rows
 machine_of <- function() paste(Sys.info()[["nodename"]], Sys.info()[["machine"]])
 
 ## Writes one study's table: its plain columns to study_<file>.csv (.csv.gz
@@ -97,9 +83,9 @@ read_per_dataset <- function(paths, part = "") {
   as.data.frame(data.table::rbindlist(tables, fill = TRUE))
 }
 
-## The pieces of a study as one table (targets' branches, as a list or
+## The batches of a study as one table (targets' branches, as a list or
 ## already bound), keeping the list columns
-bind_pieces <- function(pieces) {
-  if (is.data.frame(pieces)) return(pieces)
-  dplyr::bind_rows(pieces)
+bind_batches <- function(batches) {
+  if (is.data.frame(batches)) return(batches)
+  dplyr::bind_rows(batches)
 }

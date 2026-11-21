@@ -54,7 +54,7 @@ if (smoke) {
 ## n of a slope until it reaches its target (R/engine/workers/batches.R).
 relative_delta_3b  <- 0.1
 direction_delta_3b <- 0.05
-first_round_rates_3b <- datasets(50, in_smoke = 2)   # per cell
+first_datasets_rates_3b <- datasets(50, in_smoke = 2)   # per cell
 
 
 ## ---- 3b.7 intrinsic consistency (the prior as a recipe; no Bayes factors) --------
@@ -77,7 +77,7 @@ if (smoke) {
 
 ## How many: the slopes' Δ is 10% of the slope, at least .05 per log n (a
 ## direction, as 3b.6); first round and later rounds as for the rates
-first_round_growing_3b <- datasets(50, in_smoke = 2)   # per cell
+first_datasets_growing_3b <- datasets(50, in_smoke = 2)   # per cell
 
 
 ## ---- For every part ----------------------------------------------------------------
@@ -85,24 +85,24 @@ bootstrap_replicates_3b <- if (smoke) 100 else 1000   # for the MCSE of medians 
 
 
 ## ---- Bookkeeping (no effect on the results) ------------------------------------
-batch_size_3b <- if (smoke) 2 else 10   # datasets per piece of work, saved as it finishes
+batch_size_3b <- if (smoke) 2 else 10   # datasets per batch, saved as it finishes
 
 
 ## ---- How it runs (R/engine/study_form.R) ------------------------------------------
-## 3b.1 and 3b.2 run once, a dataset per piece; their errors are judged with
+## 3b.1 and 3b.2 run once, a dataset per batch; their errors are judged with
 ## bridge sampling's error as 3a part B measures it, so that part runs with
 ## 3b. The rates and growing k run in rounds, per slope (its cells over n).
 declared_parts[["3b-formula"]] <- part_once(
   study = "3b",
-  pieces = formula_checks_3b,
-  work = function(piece, model) formula_check_3b(piece),
+  batches = formula_checks_3b,
+  work = function(batch, model) formula_check_3b(batch),
   needs = "3a-repeats"
 )
-declared_parts[["3b-rates"]] <- part_in_rounds(
+declared_parts[["3b-rates"]] <- part_until_target(
   study = "3b", cells = rate_cells_3b, by = c("item", "setting", "q", "prior"),
-  first_round = first_round_rates_3b, batch_size = batch_size_3b,
-  work = function(piece, model) {
-    batch_3b(piece[names(rate_cells_3b)], replications_of(piece), rate_bayes_factor_3b)
+  first_datasets = first_datasets_rates_3b, batch_size = batch_size_3b,
+  work = function(batch, model) {
+    batch_3b(batch[names(rate_cells_3b)], replications_of(batch), rate_bayes_factor_3b)
   },
   # a slope is either a rate (3b.3-3b.5) or the alternative's (3b.6)
   table = function(rows) {
@@ -110,11 +110,11 @@ declared_parts[["3b-rates"]] <- part_in_rounds(
     else list(rate_slopes_3b(rows))
   }
 )
-declared_parts[["3b-growing"]] <- part_in_rounds(
+declared_parts[["3b-growing"]] <- part_until_target(
   study = "3b", cells = growing_cells_3b, by = c("truth", "growth", "method"),
-  first_round = first_round_growing_3b, batch_size = batch_size_3b,
-  work = function(piece, model) {
-    batch_3b(piece[names(growing_cells_3b)], replications_of(piece), growing_bayes_factor_3b)
+  first_datasets = first_datasets_growing_3b, batch_size = batch_size_3b,
+  work = function(batch, model) {
+    batch_3b(batch[names(growing_cells_3b)], replications_of(batch), growing_bayes_factor_3b)
   },
   table = function(rows) list(growing_slopes_3b(rows))
 )

@@ -10,7 +10,7 @@
 ##  figures are made from those files afterwards by the scripts in
 ##  R/3_figures/ (Rscript run_all.R runs the studies' rounds through a queue,
 ##  cell by cell, then this pipeline once; then
-##  Rscript make_figures.R the figures). Every finished piece is saved in _targets/
+##  Rscript make_figures.R the figures). Every finished batch is saved in _targets/
 ##  as soon as it is done, so a run that stops (a laptop closed, Colab or a
 ##  cloud machine shutting down) continues where it was.
 ##
@@ -27,51 +27,30 @@
 ##  steps). What each tests, expects and why: docs/validation_tests.md.
 ## =====================================================================
 library(targets)
-library(crew)
 
 
 ## ---- Setup ------------------------------------------------------------------------
 
-## The dry run uses the smoke test's design (R/engine/tests/dry_run.R)
-dry_run <- identical(Sys.getenv("VALIDATION_DRY"), "1")
-if (dry_run) Sys.setenv(VALIDATION_SMOKE = "1")
-
-## Every worker's environment (the cache folder, a copy of the TBB library,
-## one BLAS thread), set before any worker starts, so they inherit it, and
-## the validation's code, in order (R/engine/workers/worker_setup.R)
-source(file.path("R", "engine", "workers", "worker_setup.R"))
-tar_source(code_files())
-
-## A worker per 4 cores (worker_count(), R/engine/workers/worker_setup.R). The dry run
-## samples nothing, so it runs every step in this one process: starting
-## workers would take longer than the steps.
-tar_option_set(
-  packages = c("flatcor", "dplyr"),
-  # targets seeds R before each step from the step's name and this seed;
-  # every draw that matters has its own seed (R/engine/seeds.R),
-  # but whatever is left follows the same root seed
-  seed = root_seed,
-  controller = if (dry_run) NULL else crew_controller_local(
-    workers = worker_count(),
-    # a log per worker (its R output, including Stan's own messages), for
-    # finding out why a piece of work failed
-    options_local = crew_options_local(log_directory = file.path("cache", "logs", "workers"))
-  )
-)
+## Which kind of run, the project's settings, every worker's environment
+## (R/engine/load_code.R), then the code, in order, and the pipeline's
+## settings (R/engine/pipeline/pipeline_setup.R)
+source(file.path("R", "engine", "load_code.R"))
+tar_source(c(code_files(), file.path("R", "engine", "pipeline", "pipeline_setup.R")))
+pipeline_setup()
 
 
 ## ---- The steps ------------------------------------------------------------------------
 
 list(
-  ## The model every piece of work gets (piece_model(), R/project/engine_settings/settings.R):
+  ## The model every batch gets (batch_model(), R/project/engine_settings/settings.R):
   ## flatcor's Stan model, compiled once before the studies that sample it
-  tar_target(model, piece_model()),
+  tar_target(model, batch_model()),
 
 
   ## ---- 1a. Does the software draw the prior it claims? ----
   # the draws of each setting: the part 1a declares (its design.R;
-  # once_steps(), R/engine/pipeline/pipeline_steps.R)
-  once_steps("samples_1a", "1a", iteration = "list"),
+  # steps_once(), R/engine/pipeline/pipeline_steps.R)
+  steps_once("samples_1a", "1a", iteration = "list"),
   tar_target(predictors_1a, data_prior_only_designs()),
   # layer 1: the draws, the recipe's draws, each setting's run (R/engine/report/per_dataset_files.R)
   tar_target(
@@ -103,8 +82,8 @@ list(
 
   ## ---- 1b. Is the Bayes factor invariant to units and coding? ----
   # the log Bayes factors, in rounds: the part 1b declares (its design.R;
-  # round_steps(), R/engine/pipeline/pipeline_steps.R)
-  round_steps("log_bfs_1b", "1b"),
+  # steps_until_target(), R/engine/pipeline/pipeline_steps.R)
+  steps_until_target("log_bfs_1b", "1b"),
   # layer 1: every log Bayes factor's row (R/engine/report/per_dataset_files.R)
   tar_target(
     per_dataset_1b,
@@ -118,8 +97,8 @@ list(
 
 
   ## ---- 2a. Is the posterior computed correctly? ----
-  # the SBC fits, a batch of a setting per piece: the part 2a declares
-  once_steps("sbc_2a", "2a", iteration = "list"),
+  # the SBC fits, a batch of a setting per batch: the part 2a declares
+  steps_once("sbc_2a", "2a", iteration = "list"),
   # layer 1: every fit's rows (R/engine/report/per_dataset_files.R)
   tar_target(
     per_dataset_fits_2a,
@@ -141,9 +120,9 @@ list(
 
 
   ## ---- 2b. How close are the estimates to a known truth? ----
-  # the fits, in rounds: the part 2b declares (its design.R; round_steps(),
-  # R/engine/pipeline/pipeline_steps.R: the plan, its pieces and their rows)
-  round_steps("fits_2b", "2b"),
+  # the fits, in rounds: the part 2b declares (its design.R; steps_until_target(),
+  # R/engine/pipeline/pipeline_steps.R: the plan, its batches and their rows)
+  steps_until_target("fits_2b", "2b"),
   # layer 1: every fit's row (R/engine/report/per_dataset_files.R)
   tar_target(per_dataset_2b, write_per_dataset(fits_2b, "2b_fits"), format = "file"),
   tar_target(results_2b, save_results_2b(read_per_dataset(per_dataset_2b)), format = "file"),
@@ -152,7 +131,7 @@ list(
   ## ---- 3a. Are the Bayes factors right? ----
 
   # part A, calibration, in rounds: the part "3a" its design.R declares
-  round_steps("calibration_runs_3a", "3a"),
+  steps_until_target("calibration_runs_3a", "3a"),
   # layer 1: every dataset's row (R/engine/report/per_dataset_files.R)
   tar_target(
     per_dataset_calibration_3a,
@@ -167,7 +146,7 @@ list(
 
   # part B, bridge sampling's error: each dataset run repeat_runs_3a times,
   # in rounds of its own: the part "3a-repeats"
-  round_steps("repeated_3a", "3a-repeats"),
+  steps_until_target("repeated_3a", "3a-repeats"),
   tar_target(
     per_dataset_repeats_3a,
     write_per_dataset(repeated_3a, "3a_repeated_runs"),
@@ -193,11 +172,11 @@ list(
 
   ## ---- 3b. Do the Bayes factors meet the default-prior criteria? ----
 
-  # 3b.1, 3b.2: one dataset per piece, run once; 3b.3-3b.6, the rates, and
+  # 3b.1, 3b.2: one dataset per batch, run once; 3b.3-3b.6, the rates, and
   # 3b.8, 3b.9, k growing with n, in rounds: the parts 3b's design.R declares
-  once_steps("formula_3b", "3b-formula"),
-  round_steps("rates_3b", "3b-rates"),
-  round_steps("growing_3b", "3b-growing"),
+  steps_once("formula_3b", "3b-formula"),
+  steps_until_target("rates_3b", "3b-rates"),
+  steps_until_target("growing_3b", "3b-growing"),
 
   # 3b.7: the prior's draws with the sample and the population covariance
   tar_target(draws_intrinsic_3b, intrinsic_draws_of_3b()),

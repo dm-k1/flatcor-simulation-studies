@@ -1,22 +1,17 @@
 ## =====================================================================
-##  Shared by the figure scripts in R/3_figures/: where a study's results file
-##  and per-dataset files are, and where its figures go (cache/ for the smoke
-##  test and the dry run)
+##  Figure files: what each study's figures.R needs (where its results file
+##  and per-dataset files are, where its figures go), and drawing them all
+##  (make_figures.R calls draw_figures())
+##
+##  A figure script reads one study's results file, computes nothing, and
+##  writes its figures to results/figures/ (cache/ for the smoke test and
+##  the dry run, R/engine/run_mode.R).
 ## =====================================================================
 
-smoke <- identical(Sys.getenv("VALIDATION_SMOKE"), "1")
-dry <- identical(Sys.getenv("VALIDATION_DRY"), "1")
+source(file.path("R", "engine", "run_mode.R"))
+dir.create(figure_folder, recursive = TRUE, showWarnings = FALSE)
 
-## The folder of the results: results/ (cache/ for the smoke test and the dry run)
-results_root <- if (dry) {
-  file.path("cache", "dry_results")
-} else if (smoke) {
-  file.path("cache", "smoke_results")
-} else {
-  "results"
-}
-
-## The results file of a study (results/studies/study_<cell>.rds)
+## The results file of a study (results/studies/study_<study>.rds)
 read_results <- function(study) {
   readRDS(file.path(results_root, "studies", sprintf("study_%s.rds", study)))
 }
@@ -32,12 +27,37 @@ read_per_dataset_file <- function(file) {
   as.data.frame(data.table::fread(path, na.strings = c("", "NA")))
 }
 
-## Where the figures go
-figure_folder <- if (dry) {
-  file.path("cache", "dry_figures")
-} else if (smoke) {
-  file.path("cache", "smoke_figures")
-} else {
-  file.path("results", "figures")
+## The figure script of every study in R/studies/ that has one, by study
+## code (the folder's first two characters)
+figure_scripts <- function() {
+  scripts <- list.files(
+    file.path("R", "studies"), pattern = "^figures[.]R$", recursive = TRUE, full.names = TRUE
+  )
+  names(scripts) <- substr(basename(dirname(scripts)), 1, 2)
+  scripts
 }
-dir.create(figure_folder, recursive = TRUE, showWarnings = FALSE)
+
+## Runs the figure script of every study in `requested` (all if none) that
+## has a results file, each in its own R process. A script that stops is
+## an error here, after the others have run.
+draw_figures <- function(requested = character(0)) {
+  results_folder <- file.path(results_root, "studies")
+  scripts <- figure_scripts()
+  if (length(requested) > 0) scripts <- scripts[names(scripts) %in% requested]
+  failed <- character(0)
+  drawn <- 0
+  for (study in names(scripts)) {
+    script <- scripts[[study]]
+    if (!file.exists(file.path(results_folder, sprintf("study_%s.rds", study)))) {
+      message(sprintf("%s: no results file for %s in %s, skipped", script, study, results_folder))
+      next
+    }
+    status <- system2(file.path(R.home("bin"), "Rscript"), script)
+    message(sprintf("%s: %s", script, if (status == 0) "done" else "stopped (see above)"))
+    if (status == 0) drawn <- drawn + 1 else failed <- c(failed, script)
+  }
+  if (length(failed) > 0) {
+    stop("Figure script(s) stopped: ", paste(failed, collapse = ", "), call. = FALSE)
+  }
+  message(sprintf("Figures: %d script(s) done.", drawn))
+}

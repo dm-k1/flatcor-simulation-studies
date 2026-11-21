@@ -9,21 +9,21 @@
 ## commit of it than the run started with (run_all.R).
 tested_package <- "flatcor"
 
-## The packages every step and every piece of work loads
+## The packages every step and every batch loads
 step_packages <- c("flatcor", "dplyr")
 
-## The cores one piece of work keeps busy: Stan runs its 4 chains in
+## The cores one batch keeps busy: Stan runs its 4 chains in
 ## parallel. A worker per that many cores (worker_count(),
-## R/engine/workers/worker_setup.R); a piece's core hours are its hours times this.
-cores_per_piece <- 4
+## R/engine/workers/worker_setup.R); a batch's core hours are its hours times this.
+cores_per_batch <- 4
 
 ## Before any worker starts, once: build what the workers share, flatcor's
 ## models (R/project/tested_package/flatcor_models.R). The dry run skips it.
 prepare_models <- function() compile_flatcor_models()
 
-## What a piece of work gets as `model` (piece_work(), R/engine/workers/batches.R):
+## What a batch gets as `model` (batch_work(), R/engine/workers/batches.R):
 ## flatcor's Stan model. The dry run gives a stand-in.
-piece_model <- function() flatcor_stan_model()
+batch_model <- function() flatcor_stan_model()
 
 ## What a results file records about the run besides the engine's own
 ## fields (R/engine/report/results_files.R)

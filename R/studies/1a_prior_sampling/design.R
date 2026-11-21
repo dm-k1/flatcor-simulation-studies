@@ -27,12 +27,12 @@ reference_size_1a <- if (smoke) 20000 else 200000   # draws of the prior as a re
 
 
 ## ---- How it runs (R/engine/study_form.R) ------------------------------------------
-## One piece of work per setting, run once: its prior draws, the chains
+## One batch per setting, run once: its prior draws, the chains
 ## lengthened until every percentile reaches its target
 declared_parts[["1a"]] <- part_once(
   study = "1a",
-  pieces = settings_1a,
-  work = function(piece, model) {
-    sample_setting_1a(piece, data_prior_only_designs()[[piece$design]], model)
+  batches = settings_1a,
+  work = function(batch, model) {
+    sample_setting_1a(batch, data_prior_only_designs()[[batch$design]], model)
   }
 )

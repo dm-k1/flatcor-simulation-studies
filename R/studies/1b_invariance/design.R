@@ -19,22 +19,22 @@ deltas_1b <- c(
 )
 ## The first round (the Chow-Robbins rule's, per prior); later rounds add
 ## datasets until both changes reach their targets (R/engine/workers/batches.R)
-first_round_1b <- datasets(50, in_smoke = 2)
+first_datasets_1b <- datasets(50, in_smoke = 2)
 
 
 ## ---- Bookkeeping (no effect on the results) ------------------------------------
-batch_size_1b <- if (smoke) 2 else 5   # datasets per piece of work, saved as it finishes
+batch_size_1b <- if (smoke) 2 else 5   # datasets per batch, saved as it finishes
 
 
 ## ---- How it runs (R/engine/study_form.R) ------------------------------------------
-## In rounds, per prior: a piece is a batch of datasets, each with its five
+## In rounds, per prior: a batch is a batch of datasets, each with its five
 ## log Bayes factors; a prior is judged on its pooled changes. A change of
 ## one dataset is judged against bridge sampling's error as 3a part B
 ## measures it, so that part runs with 1b.
-declared_parts[["1b"]] <- part_in_rounds(
+declared_parts[["1b"]] <- part_until_target(
   study = "1b", cells = priors_1b, by = "prior",
-  first_round = first_round_1b, batch_size = batch_size_1b,
-  work = function(piece, model) invariance_batch_1b(piece["prior"], replications_of(piece)),
+  first_datasets = first_datasets_1b, batch_size = batch_size_1b,
+  work = function(batch, model) invariance_batch_1b(batch["prior"], replications_of(batch)),
   table = function(rows) list(pooled_1b(changes_of_1b(rows))),
   needs = "3a-repeats"
 )

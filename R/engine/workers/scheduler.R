@@ -1,10 +1,10 @@
 ## =====================================================================
-##  The queue: every expensive piece of work, each cell's rounds on its own
+##  The queue: every expensive batch of work, each cell's rounds on its own
 ##  (run_all.R runs it; the rule itself is in R/engine/workers/batches.R)
 ##
 ##  Every cell goes through its own rounds. (A "cell" here is what a
 ##  quantity is computed over: one cell of the design, or the cells of a
-##  slope over n together.) Its pieces of work go into the queue; as soon as
+##  slope over n together.) Its batches of work go into the queue; as soon as
 ##  the last of them is back, the cell is judged on its own results, and if
 ##  a quantity is short of its target, its next batch goes into the queue
 ##  at once. No cell waits for another, so the workers stay busy until the
@@ -22,36 +22,36 @@
 ##  would cost; the researcher decides (raise the budget and start again,
 ##  or report the cell as short). docs/validation_tests.md, "How many datasets".
 ##
-##  Each finished piece is saved in the store (R/engine/workers/batches.R,
-##  run_piece()), so a run that stops continues where it was, and the
-##  pipeline reads the pieces afterwards instead of computing them again.
+##  Each finished batch is saved in the store (R/engine/workers/batches.R,
+##  run_batch()), so a run that stops continues where it was, and the
+##  pipeline reads the batches afterwards instead of computing them again.
 ## =====================================================================
 
 
-## ---- Running pieces ---------------------------------------------------------------
+## ---- Running batches ---------------------------------------------------------------
 
-## What a queue worker does with a piece: it loads the validation's code the
-## first time (R/engine/workers/worker_setup.R, code_files()) and then runs the piece
-## (run_piece(), R/engine/workers/batches.R). `task`: list(design, piece, store, files).
+## What a queue worker does with a batch: it loads the validation's code the
+## first time (R/engine/workers/worker_setup.R, code_files()) and then runs the batch
+## (run_batch(), R/engine/workers/batches.R). `task`: list(design, batch, store, files).
 run_task <- function(task) {
-  if (!exists("run_piece", envir = globalenv())) {
+  if (!exists("run_batch", envir = globalenv())) {
     for (file in task$files) sys.source(file, envir = globalenv())
   }
-  if (!exists("queue_model", envir = globalenv())) {
-    assign("queue_model", piece_model(), envir = globalenv())
+  if (!exists("worker_model", envir = globalenv())) {
+    assign("worker_model", batch_model(), envir = globalenv())
   }
-  run_piece(task$design, task$piece, task$store, get("queue_model", envir = globalenv()))
+  run_batch(task$design, task$batch, task$store, get("worker_model", envir = globalenv()))
 }
 
-## The queue: `workers` R processes (crew), each running one piece at a time;
-## or, with workers = 0 (the dry run), every piece in this process, at once.
-##   push(task)   adds a piece
-##   busy()       whether pieces are still out
-##   next_done()  waits for a piece to finish and returns its task with
-##                its seconds; stops the run if the piece failed
+## The queue: `workers` R processes (crew), each running one batch at a time;
+## or, with workers = 0 (the dry run), every batch in this process, at once.
+##   push(task)   adds a batch
+##   busy()       whether batches are still out
+##   next_done()  waits for a batch to finish and returns its task with
+##                its seconds; stops the run if the batch failed
 ##   stop()       ends the workers
 start_queue <- function(workers) {
-  # the pieces pushed and not yet handed back
+  # the batches pushed and not yet handed back
   out <- new.env()
   out$tasks <- list()
 
@@ -73,16 +73,16 @@ start_queue <- function(workers) {
 
   controller <- crew::crew_controller_local(
     workers = workers,
-    # keep each worker's loaded code from one piece to the next
+    # keep each worker's loaded code from one batch to the next
     reset_globals = FALSE,
     # a log per worker (its R output, including Stan's own messages), for
-    # finding out why a piece of work failed
+    # finding out why a batch of work failed
     options_local = crew::crew_options_local(log_directory = file.path("cache", "logs", "workers"))
   )
   controller$start()
   list(
     push = function(task) {
-      name <- paste(task$design, piece_id(task$piece))
+      name <- paste(task$design, batch_id(task$batch))
       out$tasks[[name]] <- task
       controller$push(
         command = run_task(task),
@@ -101,7 +101,7 @@ start_queue <- function(workers) {
       }
       if (!identical(finished$status, "success")) {
         stop(
-          "A piece of work failed (", finished$name, "): ", finished$error,
+          "A batch of work failed (", finished$name, "): ", finished$error,
           "\nThe workers' logs are in cache/logs/workers/.",
           call. = FALSE
         )
@@ -144,11 +144,11 @@ as_read_back <- function(table) {
 ## datasets it is estimated to lack (next_plan(), R/engine/workers/batches.R), or
 ## stay as they are when it has reached its targets. The cell is judged on
 ## its own results only: the tables of its study (design$table) computed
-## from its own finished pieces.
+## from its own finished batches.
 judge_cell <- function(design, plan, rows, store, one_batch) {
-  pieces <- pieces_of_plan(plan[rows, , drop = FALSE], design$batch_size)
-  results <- bind_pieces(lapply(seq_len(nrow(pieces)), function(i) {
-    read_piece(design$name, pieces[i, ], store)$rows
+  batches <- batches_of_plan(plan[rows, , drop = FALSE], design$batch_size)
+  results <- bind_batches(lapply(seq_len(nrow(batches)), function(i) {
+    read_batch(design$name, batches[i, ], store)$rows
   }))
   columns <- c(design$by, "mcse", "target_mcse", "reached")
   tables <- design$table(as_read_back(results))
@@ -159,12 +159,7 @@ judge_cell <- function(design, plan, rows, store, one_batch) {
 
 ## ---- The queue's run ----------------------------------------------------------------
 
-## Row i of a table of pieces, as targets hands a step one row of it (the
-## same row names), so a piece is the same object in the queue and in the
-## pipeline
-piece_row <- function(pieces, i) vctrs::vec_slice(pieces, i)
-
-## Runs the pieces of `once` (per part that runs once, its pieces), and
+## Runs the batches of `once` (per part that runs once, its batches), and
 ## every cell of `designs` (the parts that run in rounds, R/engine/study_form.R,
 ## each with its `name`) to its targets or to the budget. `workers`: as in start_queue().
 ## `spent_elsewhere`: core hours the pipeline's own steps have cost so far
@@ -179,57 +174,57 @@ run_rounds <- function(designs, once, store, budget_core_hours, workers, spent_e
   # what changes while the queue runs, in one place
   run <- new.env()
   run$plans <- lapply(designs, function(design) {
-    read_plan(design$name, store, design$cells, design$first_round)
+    read_plan(design$name, store, design$cells, design$first_datasets)
   })
-  # every piece's seconds, per design or part: those saved before (a run
+  # every batch's seconds, per design or part: those saved before (a run
   # that continues) and those that come back
   run$seconds <- lapply(c(names(designs), names(once)), function(name) {
-    saved <- list.files(file.path(store, "pieces", name), "[.]rds$", full.names = TRUE)
+    saved <- list.files(file.path(store, "batches", name), "[.]rds$", full.names = TRUE)
     vapply(saved, function(file) readRDS(file)$seconds, numeric(1), USE.NAMES = FALSE)
   })
   names(run$seconds) <- c(names(designs), names(once))
-  run$out <- list()        # per cell: the expected core hours of each piece out
+  run$out <- list()        # per cell: the expected core hours of each batch out
   run$extended <- character(0)
   run$short <- list()      # per cell its next batch did not fit: what it would cost
 
-  # core hours: every piece keeps cores_per_piece cores busy (R/project/engine_settings/settings.R)
-  spent <- function() spent_elsewhere + sum(unlist(run$seconds)) * cores_per_piece / 3600
+  # core hours: every batch keeps cores_per_batch cores busy (R/project/engine_settings/settings.R)
+  spent <- function() spent_elsewhere + sum(unlist(run$seconds)) * cores_per_batch / 3600
   out_cost <- function() sum(unlist(run$out))
   per_dataset <- function(name) {
     if (length(run$seconds[[name]]) == 0) return(0)
-    mean(run$seconds[[name]]) * cores_per_piece / 3600 / designs[[name]]$batch_size
+    mean(run$seconds[[name]]) * cores_per_batch / 3600 / designs[[name]]$batch_size
   }
-  # the pieces of a table not run yet
-  not_run <- function(name, pieces) {
-    missing <- vapply(seq_len(nrow(pieces)), function(i) {
-      is.null(read_piece(name, piece_row(pieces, i), store))
+  # the batches of a table not run yet
+  not_run <- function(name, batches) {
+    missing <- vapply(seq_len(nrow(batches)), function(i) {
+      is.null(read_batch(name, batch_row(batches, i), store))
     }, logical(1))
-    vctrs::vec_slice(pieces, missing)
+    vctrs::vec_slice(batches, missing)
   }
-  # the pieces of a cell's plan not run yet
+  # the batches of a cell's plan not run yet
   cell_not_run <- function(name, rows) {
     plan <- run$plans[[name]][rows, , drop = FALSE]
-    not_run(name, pieces_of_plan(plan, designs[[name]]$batch_size))
+    not_run(name, batches_of_plan(plan, designs[[name]]$batch_size))
   }
-  # `key`: the cell; NA for a piece that runs once
-  push_pieces <- function(name, key, pieces) {
+  # `key`: the cell; NA for a batch that runs once
+  push_batches <- function(name, key, batches) {
     cell <- paste(name, key)
-    for (i in seq_len(nrow(pieces))) {
-      cost <- if (is.na(key)) 0 else (pieces$to[i] - pieces$from[i] + 1) * per_dataset(name)
+    for (i in seq_len(nrow(batches))) {
+      cost <- if (is.na(key)) 0 else (batches$to[i] - batches$from[i] + 1) * per_dataset(name)
       run$out[[cell]] <- c(run$out[[cell]], cost)
-      piece <- piece_row(pieces, i)
-      queue$push(list(design = name, key = key, piece = piece, store = store, files = files))
+      batch <- batch_row(batches, i)
+      queue$push(list(design = name, key = key, batch = batch, store = store, files = files))
     }
   }
 
-  # a cell with no pieces out: run what its plan still lacks (a run that
+  # a cell with no batches out: run what its plan still lacks (a run that
   # continues), or judge it and start its next batch
   next_step <- function(name, key) {
     design <- designs[[name]]
     cell <- paste(name, key)
     rows <- cells_of(run$plans[[name]], design$by)[[key]]
     missing <- cell_not_run(name, rows)
-    if (nrow(missing) > 0) return(push_pieces(name, key, missing))
+    if (nrow(missing) > 0) return(push_batches(name, key, missing))
 
     plan_next <- judge_cell(design, run$plans[[name]], rows, store, one_batch = one_extension)
     added <- sum(plan_next$datasets[rows] - run$plans[[name]]$datasets[rows])
@@ -246,12 +241,12 @@ run_rounds <- function(designs, once, store, budget_core_hours, workers, spent_e
     run$extended <- c(run$extended, cell)
     run$plans[[name]]$datasets[rows] <- plan_next$datasets[rows]
     write_plan(run$plans[[name]], name, store)
-    push_pieces(name, key, cell_not_run(name, rows))
+    push_batches(name, key, cell_not_run(name, rows))
   }
 
-  # the pieces that run once first, then every cell; each finished piece
+  # the batches that run once first, then every cell; each finished batch
   # may complete its cell's batch
-  for (name in names(once)) push_pieces(name, NA, not_run(name, once[[name]]))
+  for (name in names(once)) push_batches(name, NA, not_run(name, once[[name]]))
   for (name in names(designs)) {
     for (key in names(cells_of(run$plans[[name]], designs[[name]]$by))) next_step(name, key)
   }

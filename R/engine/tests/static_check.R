@@ -48,18 +48,20 @@ if (!is.null(manifest)) cat(sprintf("2. the pipeline is valid: %d steps\n", nrow
 
 ## ---- 3. Every function called exists ------------------------------------------------
 ## The pipeline's code as the workers have it: the files _targets.R sources
-## (code_files(), R/engine/workers/worker_setup.R, which also reads the project's
-## settings), the engine's files only run_all.R uses, and the packages
+## (code_files(), R/engine/load_code.R, which also reads the project's
+## settings), the engine's files only a full run uses, and the packages
 ## every step loads
-source(file.path("R", "engine", "workers", "worker_setup.R"))
+source(file.path("R", "engine", "load_code.R"))
 pipeline_files <- c(
   code_files(),
   file.path("R", "engine", c(
-    "tests/check_results.R", "workers/worker_setup.R", "workers/scheduler.R"
+    "load_code.R", "full_run.R", "pipeline/pipeline_setup.R", "tests/check_results.R",
+    "workers/worker_setup.R",
+    "workers/scheduler.R"
   ))
 )
-# packages the pipeline loads (step_packages, R/project/engine_settings/settings.R), and those
-# only the figures load, whose helpers live in the project's shared code
+# packages the pipeline loads (step_packages, R/project/engine_settings/settings.R), and
+# those only the figures load, whose helpers live in the project's shared code
 for (package in c("targets", step_packages, "ggplot2", "grid")) {
   suppressPackageStartupMessages(library(package, character.only = TRUE))
 }
@@ -137,22 +139,18 @@ cat(sprintf("3. calls checked in %d functions and the pipeline's steps\n", lengt
 ## The pipeline's code keeps to three rules, so that targets knows what every
 ## step needs and makes, and the dry run can stand in for every expensive
 ## call:
-##   a. every expensive call (Stan, bridge sampling, SBC) is inside one of
-##      the seams the dry run replays (replayed_functions in
-##      R/project/engine_settings/dry_run_seams.R), and every seam listed there exists
+##   a. every expensive call (expensive_calls) is inside one of the seams
+##      the dry run replays (replayed_functions), and every seam listed
+##      exists; both lists are the project's (R/project/engine_settings/dry_run_seams.R)
 ##   b. files are read and written only where it is declared: a study's results
-##      file (save_study_results_file(), a "file" step), the plans of the
-##      rounds and the pieces the queue runs (both in the store), the
+##      file (save_study_results_file(), a "file" step), the plans and the
+##      batches the scheduler runs (both in the store), the
 ##      recordings, the compile lock and the final check. Any other file a
 ##      step needs or makes is a step of its own (tar_target(..., format = "file"))
-##   c. every results file a figure script or run_all.R reads is made by a
+##   c. every results file a figure script or a full run reads is made by a
 ##      step: results_<study>, format = "file"; the figure scripts read them
 ##      only through read_results()
 
-expensive_calls <- c(
-  "bayes_factor_models", "fit_regression", "compute_SBC", "bridge_sampler",
-  "cmdstan_model", "sample" # sample: model$sample(), a CmdStan fit
-)
 file_calls <- c(
   "readRDS", "saveRDS", "load", "save", "read.csv", "write.csv", "readLines", "writeLines",
   "read_csv", "write_csv", "fread", "fwrite", "file.exists", "file.rename", "file.copy",
@@ -160,7 +158,7 @@ file_calls <- c(
 )
 allowed_file_use <- c(
   "save_study_results_file", "read_plan", "write_plan",
-  "run_piece", "read_piece", "run_rounds", "as_read_back", "code_files",
+  "run_batch", "read_batch", "run_rounds", "as_read_back", "code_files", "full_run",
   "check_results_file", "check_results", "write_per_dataset", "read_per_dataset",
   project_file_functions # the project's own (R/project/engine_settings/settings.R)
 )
@@ -170,6 +168,7 @@ allowed_file_use <- c(
 overlay <- new.env()
 sys.source(file.path("R", "engine", "tests", "dry_run.R"), envir = overlay)
 seams <- overlay$replayed_functions
+expensive_calls <- overlay$expensive_calls
 for (skipped in names(overlay$skipped_in_dry_run)) {
   if (!exists(skipped, envir = code, mode = "function")) {
     note(
@@ -269,13 +268,12 @@ if (!is.null(manifest)) {
       }
     }
   }
-  # run_all.R reads, at the end, the results file of every study that runs in rounds
-  run_all_lines <- grep("study = \"[0-9][a-z]\"", readLines("run_all.R"), value = TRUE)
-  run_all_studies <- unique(sub(".*study = \"([0-9][a-z])\".*", "\\1", run_all_lines))
-  for (study in run_all_studies) {
+  # a full run reads, at the end, the results file of every study that declares parts
+  declared_studies <- unique(vapply(code$declared_parts, `[[`, "", "study"))
+  for (study in declared_studies) {
     if (!is_results_file_step(study)) {
       note(
-        "run_all.R reads study %s, but no step results_%s (format = \"file\") makes it",
+        "study %s declares parts, but no step results_%s (format = \"file\") makes its results",
         study, study
       )
     }

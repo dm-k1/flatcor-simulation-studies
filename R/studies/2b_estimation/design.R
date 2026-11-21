@@ -41,21 +41,21 @@ deltas_2b <- c(
 ## The first round: computed for coverage, .95 x .05 / .01^2 = 475. Bias and
 ## prediction are measured: a cell gets more datasets in later rounds until
 ## they reach their targets too (R/engine/workers/batches.R).
-first_round_2b <- datasets(475, in_smoke = 10)
+first_datasets_2b <- datasets(475, in_smoke = 10)
 
 
 ## ---- Bookkeeping (no effect on the results) ------------------------------------
-batch_size_2b <- if (smoke) 5 else 25   # datasets per piece of work, saved as it finishes
+batch_size_2b <- if (smoke) 5 else 25   # datasets per batch, saved as it finishes
 
 
 ## ---- How it runs (R/engine/study_form.R) ------------------------------------------
-## In rounds, per cell: a piece is a batch of datasets, each fitted by every
+## In rounds, per cell: a batch is a batch of datasets, each fitted by every
 ## method; a cell is judged on its bias, coverage and prediction error
-declared_parts[["2b"]] <- part_in_rounds(
+declared_parts[["2b"]] <- part_until_target(
   study = "2b", cells = cells_2b, by = c("k", "n", "rho", "others"),
-  first_round = first_round_2b, batch_size = batch_size_2b,
-  work = function(piece, model) {
-    estimates_batch_2b(piece[names(cells_2b)], replications_of(piece), model)
+  first_datasets = first_datasets_2b, batch_size = batch_size_2b,
+  work = function(batch, model) {
+    estimates_batch_2b(batch[names(cells_2b)], replications_of(batch), model)
   },
   table = function(rows) {
     list(results_table_2b(bias_and_coverage_2b(rows), prediction_2b(rows)))

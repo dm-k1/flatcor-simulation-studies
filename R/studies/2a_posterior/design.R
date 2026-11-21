@@ -35,24 +35,24 @@ fits_2a <- datasets(131, in_smoke = 10)
 
 
 ## ---- Bookkeeping (no effect on the results) ------------------------------------
-batch_size_2a <- if (smoke) 10 else 50   # fits per piece of work, saved as it finishes
+batch_size_2a <- if (smoke) 10 else 50   # fits per batch, saved as it finishes
 
 
 ## ---- How it runs (R/engine/study_form.R) ------------------------------------------
-## Run once: a piece is one batch of fits of one setting (every setting with
+## Run once: a batch is one batch of fits of one setting (every setting with
 ## every batch, the batches in order within a setting)
-pieces_2a <- do.call(rbind, lapply(seq_len(nrow(settings_2a)), function(i) {
+batches_2a <- do.call(rbind, lapply(seq_len(nrow(settings_2a)), function(i) {
   batches <- split_into_batches(fits_2a, batch_size_2a)
   do.call(rbind, lapply(batches, function(batch) {
     cbind(settings_2a[i, , drop = FALSE], from = min(batch), to = max(batch))
   }))
 }))
-rownames(pieces_2a) <- NULL
+rownames(batches_2a) <- NULL
 declared_parts[["2a"]] <- part_once(
   study = "2a",
-  pieces = pieces_2a,
-  work = function(piece, model) {
-    sbc_batch_2a(piece[names(settings_2a)], replications_of(piece), model)
+  batches = batches_2a,
+  work = function(batch, model) {
+    sbc_batch_2a(batch[names(settings_2a)], replications_of(batch), model)
   }
 )
 
