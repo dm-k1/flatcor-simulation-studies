@@ -6,25 +6,21 @@
 ##    targets::tar_outdated()                      what tar_make() would (re)run
 ##    targets::tar_visnetwork()                    the steps and what depends on what
 ##
-##  Each study writes its tables to results/studies/study_<cell>.rds; the
-##  figures are made from those files afterwards by the scripts in
-##  R/3_figures/ (Rscript run_all.R runs the studies' rounds through a queue,
-##  cell by cell, then this pipeline once; then
-##  Rscript make_figures.R the figures). Every finished batch is saved in _targets/
-##  as soon as it is done, so a run that stops (a laptop closed, Colab or a
-##  cloud machine shutting down) continues where it was.
+##  Rscript run_all.R runs the studies' batches through the scheduler first,
+##  then this pipeline once, which makes every study's results from the
+##  saved batches (R/engine/full_run.R). Each study writes its tables to
+##  results/studies/study_<study>.rds; Rscript make_figures.R draws the
+##  figures from those files afterwards. Every finished step is saved in
+##  _targets/, so a run that stops continues where it was.
 ##
-##  Smoke test (a corner of each design, to test the code; its own store and
-##  results folder, so it never mixes with a real run):
+##  Smoke test and dry run, with their own store and results (R/engine/run_mode.R):
 ##    Sys.setenv(VALIDATION_SMOKE = "1"); targets::tar_make(store = "cache/targets_smoke")
-##
-##  Dry run (the smoke test's design with Stan and bridge sampling replayed
-##  from a recorded smoke test, in one R process: tests the plumbing in a
-##  minute or two; R/engine/tests/dry_run.R):
 ##    Sys.setenv(VALIDATION_DRY = "1"); targets::tar_make(store = "cache/targets_dry")
 ##
-##  Each study is a folder in R/studies/: design.R (the design) and code.R (the
-##  steps). What each tests, expects and why: docs/validation_tests.md.
+##  This file only collects: every study is a folder in R/studies/ with its
+##  design (design.R), its code (code.R), its steps here (steps.R) and its
+##  figures (figures.R). What each tests, expects and why:
+##  docs/validation_tests.md.
 ## =====================================================================
 library(targets)
 
@@ -42,169 +38,10 @@ pipeline_setup()
 ## ---- The steps ------------------------------------------------------------------------
 
 list(
-  ## The model every batch gets (batch_model(), R/project/engine_settings/settings.R):
-  ## flatcor's Stan model, compiled once before the studies that sample it
+  ## The model every batch gets (batch_model(), R/project/engine_settings/settings.R),
+  ## made once before the studies that use it
   tar_target(model, batch_model()),
 
-
-  ## ---- 1a. Does the software draw the prior it claims? ----
-  # the draws of each setting: the part 1a declares (its design.R;
-  # steps_once(), R/engine/pipeline/pipeline_steps.R)
-  steps_once("samples_1a", "1a", iteration = "list"),
-  tar_target(predictors_1a, data_prior_only_designs()),
-  # layer 1: the draws, the recipe's draws, each setting's run (R/engine/report/per_dataset_files.R)
-  tar_target(
-    per_dataset_draws_1a,
-    write_per_dataset(draws_table_1a(samples_1a), "1a_prior_draws", gzip = TRUE),
-    format = "file"
-  ),
-  tar_target(
-    per_dataset_recipe_1a,
-    write_per_dataset(
-      recipe_table_1a(predictors_1a[["three_correlated"]]), "1a_recipe_draws", gzip = TRUE
-    ),
-    format = "file"
-  ),
-  tar_target(
-    per_dataset_settings_1a,
-    write_per_dataset(settings_table_1a(samples_1a), "1a_settings"),
-    format = "file"
-  ),
-  tar_target(
-    comparisons_1a,
-    compare_1a(
-      read_per_dataset(per_dataset_draws_1a), read_per_dataset(per_dataset_recipe_1a),
-      read_per_dataset(per_dataset_settings_1a), predictors_1a
-    )
-  ),
-  tar_target(results_1a, save_results_1a(comparisons_1a), format = "file"),
-
-
-  ## ---- 1b. Is the Bayes factor invariant to units and coding? ----
-  # the log Bayes factors, in rounds: the part 1b declares (its design.R;
-  # steps_until_target(), R/engine/pipeline/pipeline_steps.R)
-  steps_until_target("log_bfs_1b", "1b"),
-  # layer 1: every log Bayes factor's row (R/engine/report/per_dataset_files.R)
-  tar_target(
-    per_dataset_1b,
-    write_per_dataset(log_bfs_1b, "1b_log_bayes_factors"),
-    format = "file"
-  ),
-  tar_target(changes_1b, changes_of_1b(read_per_dataset(per_dataset_1b))),
-  # a change of one dataset is judged against bridge sampling's error as
-  # measured in 3a, part B (shortfall_3a, below)
-  tar_target(results_1b, save_results_1b(changes_1b, shortfall_3a), format = "file"),
-
-
-  ## ---- 2a. Is the posterior computed correctly? ----
-  # the SBC fits, a batch of a setting per batch: the part 2a declares
-  steps_once("sbc_2a", "2a", iteration = "list"),
-  # layer 1: every fit's rows (R/engine/report/per_dataset_files.R)
-  tar_target(
-    per_dataset_fits_2a,
-    write_per_dataset(bind_rows(lapply(sbc_2a, `[[`, "stats")), "2a_sbc_fits"),
-    format = "file"
-  ),
-  tar_target(
-    per_dataset_diagnostics_2a,
-    write_per_dataset(bind_rows(lapply(sbc_2a, `[[`, "diagnostics")), "2a_sbc_diagnostics"),
-    format = "file"
-  ),
-  tar_target(
-    results_2a,
-    save_results_2a(
-      read_per_dataset(per_dataset_fits_2a), read_per_dataset(per_dataset_diagnostics_2a)
-    ),
-    format = "file"
-  ),
-
-
-  ## ---- 2b. How close are the estimates to a known truth? ----
-  # the fits, in rounds: the part 2b declares (its design.R; steps_until_target(),
-  # R/engine/pipeline/pipeline_steps.R: the plan, its batches and their rows)
-  steps_until_target("fits_2b", "2b"),
-  # layer 1: every fit's row (R/engine/report/per_dataset_files.R)
-  tar_target(per_dataset_2b, write_per_dataset(fits_2b, "2b_fits"), format = "file"),
-  tar_target(results_2b, save_results_2b(read_per_dataset(per_dataset_2b)), format = "file"),
-
-
-  ## ---- 3a. Are the Bayes factors right? ----
-
-  # part A, calibration, in rounds: the part "3a" its design.R declares
-  steps_until_target("calibration_runs_3a", "3a"),
-  # layer 1: every dataset's row (R/engine/report/per_dataset_files.R)
-  tar_target(
-    per_dataset_calibration_3a,
-    write_per_dataset(calibration_runs_3a, "3a_calibration"),
-    format = "file"
-  ),
-  tar_target(calibration_rows_3a, read_per_dataset(per_dataset_calibration_3a)),
-  # the data-averaged posterior decides; the bins and the line describe
-  tar_target(averaged_table_3a, data_averaged_posterior_3a(calibration_rows_3a)),
-  tar_target(bins_table_3a, calibration_bins_3a(calibration_rows_3a)),
-  tar_target(line_table_3a, calibration_line_3a(calibration_rows_3a)),
-
-  # part B, bridge sampling's error: each dataset run repeat_runs_3a times,
-  # in rounds of its own: the part "3a-repeats"
-  steps_until_target("repeated_3a", "3a-repeats"),
-  tar_target(
-    per_dataset_repeats_3a,
-    write_per_dataset(repeated_3a, "3a_repeated_runs"),
-    format = "file"
-  ),
-  tar_target(repeated_rows_3a, read_per_dataset(per_dataset_repeats_3a)),
-  tar_target(spread_table_3a, repeat_spread_3a(repeated_rows_3a, repeat_runs_3a)),
-  # the factor by which the reported error falls short, over every cell:
-  # used by 1b and 3b for quantities about one given dataset
-  tar_target(shortfall_3a, bridge_shortfall_3a(repeated_rows_3a)),
-
-  # also reported, and the results file
-  tar_target(diagnostics_table_3a, diagnostics_3a(calibration_rows_3a)),
-  tar_target(
-    results_3a,
-    save_results_3a(
-      averaged_table_3a, bins_table_3a, line_table_3a, spread_table_3a, shortfall_3a,
-      diagnostics_table_3a
-    ),
-    format = "file"
-  ),
-
-
-  ## ---- 3b. Do the Bayes factors meet the default-prior criteria? ----
-
-  # 3b.1, 3b.2: one dataset per batch, run once; 3b.3-3b.6, the rates, and
-  # 3b.8, 3b.9, k growing with n, in rounds: the parts 3b's design.R declares
-  steps_once("formula_3b", "3b-formula"),
-  steps_until_target("rates_3b", "3b-rates"),
-  steps_until_target("growing_3b", "3b-growing"),
-
-  # 3b.7: the prior's draws with the sample and the population covariance
-  tar_target(draws_intrinsic_3b, intrinsic_draws_of_3b()),
-
-  # layer 1: every Bayes factor's row and the draws (R/engine/report/per_dataset_files.R)
-  tar_target(per_dataset_formula_3b, write_per_dataset(formula_3b, "3b_formula"), format = "file"),
-  tar_target(per_dataset_rates_3b, write_per_dataset(rates_3b, "3b_rates"), format = "file"),
-  tar_target(
-    per_dataset_growing_3b,
-    write_per_dataset(growing_3b, "3b_growing_k", split_by = "growth"),
-    format = "file"
-  ),
-  tar_target(
-    per_dataset_intrinsic_3b,
-    write_per_dataset(draws_intrinsic_3b, "3b_intrinsic_draws", gzip = TRUE),
-    format = "file"
-  ),
-
-  # the results file, from the per-dataset files
-  tar_target(
-    results_3b,
-    save_results_3b(
-      read_per_dataset(per_dataset_formula_3b),
-      read_per_dataset(per_dataset_rates_3b),
-      read_per_dataset(per_dataset_growing_3b),
-      read_per_dataset(per_dataset_intrinsic_3b),
-      shortfall_3a
-    ),
-    format = "file"
-  )
+  ## Every study's steps (its steps.R; study_steps(), R/engine/pipeline/pipeline_steps.R)
+  study_steps()
 )

@@ -52,3 +52,11 @@ steps_once <- function(rows, part, iteration = "vector") {
     )
   )
 }
+
+## Every study's steps: each study's steps.R (R/studies/<study>/steps.R)
+## ends in a list of its steps; this collects them. A new study adds its
+## folder and nothing here or in _targets.R.
+study_steps <- function() {
+  files <- sort(Sys.glob(file.path("R", "studies", "*", "steps.R")))
+  lapply(files, function(file) source(file, local = new.env(parent = globalenv()))$value)
+}
