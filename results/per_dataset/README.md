@@ -1,30 +1,48 @@
-# Per-dataset results of the final validation
+# Per-dataset results (layer 1)
 
-One row per dataset (and prior or method) of every study: the numbers the
-summaries in `../studies/` were made from. Exported once on 20 Nov 2026 by
-`export_v1.R` from the two final targets stores, without running any step
-and without computing any number. The checks at the end of that script
-confirm that the stored rows are the ones the results files summarise
-(2b and 3a row for row; the medians of 3b's growing k equal the reported
-ones). Which commit and flatcor made each study: `../RUNS.md`.
+One row per dataset (and prior or method) of every study, with everything
+the run computed: the numbers the metrics in `../studies/` are made from,
+and what else came out on the way. Written by the pipeline, one step per
+file (`R/shared/per_dataset.R`); the metrics are then computed from these
+files as they are written here, so they can be redone from them.
 
-The design columns name a dataset: with the replication they are its name,
-from which its data and seeds follow (`docs/validation_tests.md`,
-"Randomness"). `divergent` is the number of divergent transitions;
-`error` is bridge sampling's error of the log Bayes factor.
+The validation's metrics (layer 2) are exactly those of
+`docs/validation_tests.md`. Anything else (comparisons between priors,
+other summaries) is a secondary analysis of these files, outside the
+validation.
 
-| File | Rows | One row is | Columns beyond the design |
-|---|---|---|---|
-| `study_1a_prior_draws.csv.gz` | 180,000 | one draw of the prior: `prior`, `design`, `quantity`, `chain`, `iteration` | `value` |
-| `study_1b_changes.csv` | 450 | one dataset's change in a log Bayes factor when the data are rescaled or recoded | `expected`, `estimate`, `mcse`, `distance_in_mcse`, `bridge_error` |
-| `study_2a_sbc_fits.csv` | 2,358 | one parameter of one simulation-based calibration fit (`sim_id`) | `simulated_value`, `rank`, posterior summaries, `rhat`, `ess_bulk`, `ess_tail` |
-| `study_2b_fits.csv` | 82,200 | one method's fit of one dataset | `estimate`, `lower`, `upper` (interval), `prediction_error`, `divergent` |
-| `study_3a_calibration.csv` | 1,275 | one dataset's log Bayes factor, data from either model (`from_model_without_x1`) | `log_BF10`, `error`, `divergent` |
-| `study_3a_repeated_runs.csv` | 2,800 | one of several runs on the same dataset (`run`) | `log_BF10`, `error`, `divergent` |
-| `study_3b_formula.csv` | 21 | one prior at one small *n* (items 3b.1, 3b.2) | `log_bf`, `error`, `divergent` |
-| `study_3b_rates.csv` | 5,170 | one dataset's log Bayes factor (items 3b.3–3b.6) | `log_bf`, `error`, `divergent` |
-| `study_3b_growing_k.csv` | 11,100 | one method on one dataset as *k* grows with *n* (items 3b.8, 3b.9) | `log_bf`, `error`, `divergent` |
+**Columns every Bayes factor row has** (1b, 3a, 3b; `R/shared/comparison_methods.R`):
+`id` (the name its seed comes from: the dataset can be made again from it),
+`seed` (model B's is `seed + 1`), `n`, `k_a`, `k_b`, `r_squared_a`,
+`r_squared_b` (the data's sample R² under each model), `log_bf`, `error`
+(bridge sampling's approximate SE of the log BF), `divergent`; per model
+(`_a`, `_b`): `log_ml`, `error`, `divergent`, `bridge_iterations`,
+`seconds_sampling`, `seconds_bridge`; then `seconds` (the whole row) and
+`machine`. JZS and Zellner–Siow rows have BayesFactor's Bayes factor of each
+model against the intercept-only model instead (`log_bf_intercept_a`, ...).
 
-Not here, as the runs did not keep them: the draws behind 3b.7 (intrinsic
-consistency; only its test is in `../studies/study_3b.rds`), and the two log
-Bayes factors per dataset behind 1b's changes (only the changes).
+**Files `_variables.csv.gz` and `_chains.csv.gz`** (not in git: 197 MB;
+attached to the release of tag
+[`v2-results`](https://github.com/dm-k1/flatcor-validation/releases/tag/v2-results),
+with their SHA-256 sums; a run writes them here) hold, joined by `id` and `model` (`a`, `b`): the summary of every Stan
+variable (mean, median, sd, mad, quantiles, rhat, ess_bulk, ess_tail) and
+the sampler per chain (divergences, treedepth hits, E-BFMI, step size,
+leapfrog steps, warmup and sampling seconds), as flatcor returns them.
+
+| File | One row is |
+|---|---|
+| `study_1a_prior_draws.csv.gz` | one prior draw of a quantity: `prior`, `design`, `quantity`, `chain`, `iteration`, `value` |
+| `study_1a_recipe_draws.csv.gz` | one draw of the prior as a recipe (partial correlations, three-predictor design) |
+| `study_1a_settings.csv` (+ `_chains`) | one setting's run: seed, iterations per chain, attempts, smallest ESS, seconds |
+| `study_1b_log_bayes_factors.csv` (+ both) | one of a dataset's five log BFs: `bayes_factor` (whole model / x1), `version` (original, rescaled, recoded) |
+| `study_2a_sbc_fits.csv` | one variable of one SBC fit: true value, rank, posterior summary, rhat, ESS (the SBC package) |
+| `study_2a_sbc_diagnostics.csv` | one SBC fit's sampler diagnostics (the SBC package) |
+| `study_2b_fits.csv` (+ both) | one method's fit of one dataset: x1's estimate and interval, prediction error; `_variables` has every parameter (OLS: its coefficient table with t and p) |
+| `study_3a_calibration.csv` (+ both) | one dataset's log BF10, with the true values it was drawn with |
+| `study_3a_repeated_runs.csv` (+ both) | one of several runs on the same dataset (`run`) |
+| `study_3b_formula.csv` (+ both) | one prior at one small *n* (3b.1, 3b.2) |
+| `study_3b_rates.csv` (+ both) | one dataset's log BF (3b.3–3b.6): `log_bf` for the truth, `log_bf_smaller` of the smaller model against the larger |
+| `study_3b_growing_k.csv` (+ both, one per growth rule: `_k_n_4`, `_k_sqrt_n`) | one method on one dataset as *k* grows with *n* (3b.8, 3b.9); its `_variables` and `_chains` are split by `growth` |
+| `study_3b_intrinsic_draws.csv.gz` | one prior draw of x1's coefficient with the sample or the population covariance (3b.7) |
+
+Numbers are written with 15 significant digits (`data.table::fwrite`).

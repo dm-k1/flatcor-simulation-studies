@@ -3915,14 +3915,14 @@
     },
     "flatcor": {
       "Package": "flatcor",
-      "Version": "2.0.0.9000",
+      "Version": "2.2.0.9000",
       "Source": "GitHub",
       "RemoteType": "github",
       "RemoteHost": "api.github.com",
       "RemoteUsername": "dm-k1",
       "RemoteRepo": "flatcor",
-      "RemoteRef": "main",
-      "RemoteSha": "86b66b3344f31ec86b5eec3b6483c6d3a51dd56c",
+      "RemoteRef": "v2",
+      "RemoteSha": "a0d2ac916971b7e102b7fc6bb0892edac7cffa65",
       "Requirements": [
         "MASS",
         "R",
@@ -4954,6 +4954,20 @@
       "Author": "Martin Maechler [aut, cre] (ORCID: <https://orcid.org/0000-0002-8685-9910>), Richard M. Heiberger [ctb] (formatHex(), *Bin, *Dec), John C. Nash [ctb] (hjkMpfr(), origin of unirootR()), Hans W. Borchers [ctb] (optimizeR(*, \"GoldenRatio\"); origin of hjkMpfr()), Mikael Jagan [ctb] (safer convert.c; configure.ac etc, ORCID: <https://orcid.org/0000-0002-3542-2938>)",
       "Maintainer": "Martin Maechler <maechler@stat.math.ethz.ch>",
       "Repository": "CRAN"
+    },
+    "bridgestan": {
+      "Package": "bridgestan",
+      "Version": "2.9.0",
+      "Source": "Repository",
+      "Title": "BridgeStan, Accessing Stan Model Functions in R",
+      "License": "BSD_3_clause + file LICENSE",
+      "Imports": [
+        "R6 (>= 2.4.0)"
+      ],
+      "Repository": "RMultiverse",
+      "RemoteUrl": "https://github.com/roualdes/bridgestan",
+      "RemoteSha": "49e248f351d4dac18d7fd154dbc3a0ab39c5de10",
+      "NeedsCompilation": "no"
     },
     "bridgesampling": {
       "Package": "bridgesampling",

@@ -1,7 +1,8 @@
 # Running the validation elsewhere, and how long it takes
 
 The validation is one pipeline ([`_targets.R`](../_targets.R)); `Rscript
-run_all.R` runs it and then the figures. It saves every finished piece as it
+run_all.R` runs it (only the simulation: the figures come after, from the
+results files, with `Rscript make_figures.R`, on any machine). It saves every finished piece as it
 goes, so it can run anywhere a run may stop (a laptop, Colab, a cloud
 machine) and continue where it was, as long as the project folder (with its
 `_targets/` store) survives and flatcor stays the same: `run_all.R` refuses
@@ -16,11 +17,14 @@ the run-time estimate, and how to run it on a cluster.
 2.40.0. GitHub Actions ([`.github/workflows/image.yml`](../.github/workflows/image.yml))
 builds it whenever the environment changes, runs the whole pipeline in smoke
 mode inside it, and only then publishes it as
-`ghcr.io/dm-k1/flatcor-validation:<branch>` (`latest` on `main`). To run the
-validation in it, from the project folder:
+`ghcr.io/dm-k1/flatcor-validation:env-<fingerprint>`. The fingerprint is a
+hash of the three files the image is built from (the Dockerfile, its ignore
+file and `renv.lock`); [`image_tag.sh`](image_tag.sh) prints it for the
+checkout you are in, so every commit finds the image of its own environment,
+whatever the branch. To run the validation in it, from the project folder:
 
 ```bash
-docker run --rm -v "$PWD":/project ghcr.io/dm-k1/flatcor-validation:latest
+docker run --rm -v "$PWD":/project "ghcr.io/dm-k1/flatcor-validation:$(cluster/image_tag.sh)"
 ```
 
 Without the image, `renv::restore()` installs the same packages; CmdStan comes
@@ -82,7 +86,7 @@ Apptainer (formerly Singularity) runs the same image. Pull it once; the
 `.sif` file is then fixed for the whole run:
 
 ```bash
-apptainer pull flatcor-validation.sif docker://ghcr.io/dm-k1/flatcor-validation:main
+apptainer pull flatcor-validation.sif "docker://ghcr.io/dm-k1/flatcor-validation:$(cluster/image_tag.sh)"
 ```
 
 **3. A job script**, here for SLURM (`run_validation.sbatch`, next to the
@@ -124,9 +128,9 @@ sbatch run_validation.sbatch
   the run started with (the image fixes flatcor, so this only happens with a
   new `.sif`), and `VALIDATION_FRESH=1` (as `apptainer exec --env
   VALIDATION_FRESH=1 ...`) starts from scratch.
-- **Afterwards.** The results are in `results/` (one file per study, and the
-  figures). Copy them back and commit them; the notebook and the docs read
-  them from there.
+- **Afterwards.** The results are in `results/studies/` (one file per
+  study). Copy them back, draw the figures with `Rscript make_figures.R`,
+  and commit both; the notebook and the docs read them from there.
 
 A SLURM array script was here until 17 November 2026 (in the git history);
 one job on one node replaces it.
@@ -137,8 +141,9 @@ one job on one node replaces it.
 instance (Amazon Linux 2023), given to it as user data with five values
 filled in: the S3 bucket, a name for the run, smoke test or not, the studies,
 and a safety cutoff in hours. It installs Docker, clones this repository,
-runs `run_all.R` in the published image, copies the results and logs to
-`s3://<bucket>/<run name>/`, and shuts down. Launched with shutdown behaviour
+runs `run_all.R` in the published image (only the simulation), copies the
+results and logs to `s3://<bucket>/<run name>/`, and shuts down. The figures
+are drawn afterwards from the downloaded results: `Rscript make_figures.R`. Launched with shutdown behaviour
 "terminate", the instance then deletes itself.
 
 AWS can take a spot instance back at any moment, its disk included. A real
@@ -146,6 +151,14 @@ run therefore copies the pipeline's store to `s3://<bucket>/<run name>/store`
 every 15 minutes, and a new instance launched with the same run name first
 copies it back and continues from there. An interruption costs at most 15
 minutes of work.
+
+[`aws/keep_running.sh`](aws/keep_running.sh), run in the background on your
+own computer, launches that new instance: every 2 minutes it checks the
+run's instance, and when it is gone and the run's log in S3 does not say
+the run finished, it launches the fleet again (at most 12 times). When the
+log says `run_all.R` stopped on an error in the code (status 1, "Execution
+halted"), it stops instead and shows the end of the log, since a new
+instance would stop on the same error.
 
 The instance needs a role that may read and write the bucket. With 32 cores
 the pipeline runs 7 workers.

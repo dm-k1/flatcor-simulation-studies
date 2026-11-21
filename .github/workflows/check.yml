@@ -1,20 +1,23 @@
-# Checks the validation on every push to main: five independent jobs that
+# Checks the validation on every push to main or v2: five independent jobs that
 # start at the same time, written from the quickest to the slowest.
 #
 #   lint        lintr, in the style of .lintr (seconds)
 #   static      the static check (R/shared/static_check.R): the pipeline is
 #               valid, every function called exists, and the code keeps to
 #               the declared way (expensive calls replayable, files declared
-#               as steps); inside the published image, for its packages
+#               as steps); inside the published image, for its packages,
+#               after waiting for an image build still running (as smoke does)
 #   links       every link in the README, the docs and the notebook (seconds)
 #   workflows   actionlint on these workflow files (seconds)
-#   smoke       the smoke test (VALIDATION_SMOKE=1 Rscript run_all.R: a corner
-#               of every study, from scratch, and every figure) inside the
+#   smoke       the smoke test (VALIDATION_SMOKE=1: Rscript run_all.R, a corner
+#               of every study from scratch, then Rscript make_figures.R, every
+#               figure) inside the
 #               published image, so with exactly the packages and CmdStan of
 #               the real run (about 40 minutes); skipped when this commit's
 #               own image build already ran it before publishing. It fails
 #               when the outputs check (R/shared/check_results.R) finds a
-#               missing file or figure, an empty table, or NA/NaN/Inf. It runs
+#               missing file, an empty table, or NA/NaN/Inf, or when a figure
+#               script stops (make_figures.R). It runs
 #               with 3 workers (16 cores pretended: (16 - 1) %/% 4), as a
 #               real run has several: clashes between workers only show then
 #
@@ -24,7 +27,7 @@ name: Check
 
 on:
   push:
-    branches: [main]
+    branches: [main, v2]
   workflow_dispatch:
 
 permissions:
@@ -54,12 +57,34 @@ jobs:
 
   static:
     runs-on: ubuntu-latest
+    timeout-minutes: 150
     steps:
+      # the static check reads the packages in the image (flatcor's functions,
+      # for one): when renv.lock or the Dockerfile changed in this push, check
+      # against the new image, not the one before it
+      - name: Wait for the branch's latest image build, if it is still running
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          sleep 60
+          while true; do
+            build=$(gh run list -R "$GITHUB_REPOSITORY" --workflow image.yml \
+              --branch "$GITHUB_REF_NAME" --limit 1 --json status,conclusion \
+              -q '.[0] // empty | "\(.status) \(.conclusion)"')
+            read -r status conclusion <<< "$build"
+            case "$status $conclusion" in
+              " ") echo "No image build for this branch"; break ;;
+              "completed success") echo "Image built"; break ;;
+              completed*) echo "Image build ended: $status $conclusion"; exit 1 ;;
+            esac
+            sleep 60
+          done
+
       - uses: actions/checkout@v4
       - name: Static check
         run: |
           docker run --rm -v "$PWD":/project \
-            ghcr.io/${{ github.repository_owner }}/flatcor-validation:${{ github.ref_name }} \
+            "ghcr.io/${{ github.repository_owner }}/flatcor-validation:$(cluster/image_tag.sh)" \
             Rscript R/shared/static_check.R
 
   links:
@@ -127,5 +152,5 @@ jobs:
         run: |
           docker run --rm -v "$PWD":/project \
             -e VALIDATION_SMOKE=1 -e R_PARALLELLY_AVAILABLECORES_SYSTEM=16 \
-            ghcr.io/${{ github.repository_owner }}/flatcor-validation:${{ github.ref_name }} \
-            Rscript run_all.R
+            "ghcr.io/${{ github.repository_owner }}/flatcor-validation:$(cluster/image_tag.sh)" \
+            sh -c "Rscript run_all.R && Rscript make_figures.R"
