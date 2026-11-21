@@ -19,6 +19,9 @@
 ##                                          image for the commit's renv.lock
 ##                                          and Dockerfile (cluster/image_tag.sh):
 ##                                          stop, as for an error
+##    "User data not filled in", "No such
+##    commit", "No project folder"          the user data is wrong: stop, as
+##                                          for an error
 ##    anything else, or no status           AWS took the machine back (or it
 ##                                          stopped another way): launch a
 ##                                          new one from <fleet file> (an EC2
@@ -67,6 +70,11 @@ while true; do
         echo "$(date +%H:%M) $run finished"
         run_log | tail -20
         exit 0
+      fi
+      if run_log | grep -q "User data not filled in\|No such commit or branch\|No project folder"; then
+        echo "$(date +%H:%M) $run: the user data is wrong; not launching again"
+        run_log | tail -20
+        exit 1
       fi
       if run_log | grep -q "No image for this environment"; then
         echo "$(date +%H:%M) $run: no image for this commit's environment; not launching again"

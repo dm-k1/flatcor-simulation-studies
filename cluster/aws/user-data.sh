@@ -1,8 +1,8 @@
 #!/bin/bash
 ## =====================================================================
-##  The validation on one AWS EC2 instance (Amazon Linux 2023), as user data
+##  A project's run on one AWS EC2 instance (Amazon Linux 2023), as user data
 ##
-##  Runs the validation in the published image, copies the log and the
+##  Runs the project in the published image, copies the log and the
 ##  results to S3, and shuts the instance down; launched with shutdown
 ##  behaviour "terminate", it then deletes itself. A safety cutoff shuts
 ##  it down after MAX_HOURS whatever happens. cluster/README.md, "On AWS".
@@ -14,10 +14,13 @@
 ##  after an interruption, it continues where that one was, losing at most
 ##  15 minutes of work. (The smoke test always starts from scratch.)
 ##
-##  Set per run (the launch command fills them in):
+##  Set per run (the launch command fills them in; a value left as
+##  __NAME__ stops the run before anything else, saying which):
 ##    BUCKET      the S3 bucket for the log and the results
 ##    RUN_NAME    a folder in the bucket for this run
 ##    SMOKE       1 for the smoke test, 0 for a real run
+##    CHECKOUT    the commit to run (or a branch, as v2): every machine of
+##                a run should run the same commit, so pin one
 ##    PROJECT     the project folder to run, as project_1_validation
 ##    STUDIES     the studies to run ("" for all), as for run_all.R
 ##    MAX_HOURS   the safety cutoff
@@ -25,6 +28,7 @@
 BUCKET="__BUCKET__"
 RUN_NAME="__RUN_NAME__"
 SMOKE="__SMOKE__"
+CHECKOUT="__CHECKOUT__"
 PROJECT="__PROJECT__"
 STUDIES="__STUDIES__"
 MAX_HOURS="__MAX_HOURS__"
@@ -32,6 +36,19 @@ MAX_HOURS="__MAX_HOURS__"
 LOG=/var/log/flatcor-run.log
 exec > "$LOG" 2>&1
 set -x
+
+## every value filled in, or stop here (cluster/aws/keep_running.sh then
+## stops too, instead of launching new machines that would stop the same way)
+unfilled=""
+for name in BUCKET RUN_NAME SMOKE CHECKOUT PROJECT STUDIES MAX_HOURS; do
+  case "${!name}" in __*__) unfilled="$unfilled $name" ;; esac
+done
+if [ -n "$unfilled" ]; then
+  echo "User data not filled in:$unfilled"
+  case "$BUCKET" in __*__) ;; *) aws s3 cp "$LOG" "s3://$BUCKET/$RUN_NAME/run.log" --only-show-errors ;; esac
+  shutdown -h now
+  exit 1
+fi
 
 ## the safety cutoff, first of all
 shutdown -h "+$((MAX_HOURS * 60))"
@@ -61,7 +78,9 @@ dnf install -y docker git
 systemctl start docker
 git clone https://github.com/dm-k1/flatcor-validation.git /opt/flatcor-validation
 cd /opt/flatcor-validation || exit 1
+git checkout --quiet "$CHECKOUT" || { echo "No such commit or branch: $CHECKOUT"; exit 1; }
 git log --oneline -1
+[ -d "$PROJECT" ] || { echo "No project folder $PROJECT at $CHECKOUT"; exit 1; }
 
 ## the image built for this checkout's environment (cluster/image_tag.sh); a
 ## commit whose environment has no published image stops here
