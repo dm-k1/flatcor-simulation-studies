@@ -10,7 +10,7 @@
 ##  chain (file _chains), seeds, names and seconds. Layer 2: the metrics of
 ##  docs/validation_tests.md are computed from those files, read back here,
 ##  so the published files are exactly what the results come from. Layer 3:
-##  the figures and the notebook read both.
+##  whatever shows the results reads both.
 ##
 ##  A row's `id` is the name its random numbers come from (seed = a hash of
 ##  it, R/engine/seeds.R): the dataset can be made again from it.

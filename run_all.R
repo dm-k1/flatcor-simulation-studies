@@ -19,12 +19,9 @@
 ##  then the pipeline (_targets.R) makes every study's results from those
 ##  batches, and the results are checked. A run that stopped continues where
 ##  it was. A study run alone gives the same results as in a full run.
-##  Each study writes results/studies/study_<study>.rds.
-##
-##  Only the simulation runs here, so a cloud machine does nothing else. The
-##  figures come after, from those files: Rscript R/project/report/make_figures.R (with the
-##  same VALIDATION_SMOKE or VALIDATION_DRY), on any machine, also after
-##  downloading the results.
+##  A run ends at the results files: each study's results
+##  (results/studies/study_<study>.rds, layer 2) and every dataset's rows
+##  (results/per_dataset/, layer 1).
 ## =====================================================================
 source(file.path("R", "engine", "load_code.R"))
 load_code()

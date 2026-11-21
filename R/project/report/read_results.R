@@ -4,11 +4,22 @@
 ##  figures go), and drawing them all (make_figures.R calls draw_figures())
 ##
 ##  A figure script reads one study's results file, computes nothing, and
-##  writes its figures to results/figures/ (cache/ for the smoke test and
-##  the dry run, R/engine/run_mode.R).
+##  writes its figures to results/figures/ (cache/ for the results of the
+##  smoke test and the dry run). Drawing figures is a step of its own, after
+##  a run: the run itself, its tests and CI know nothing of it.
 ## =====================================================================
 
+## Which results to read: those of a full run, the smoke test or the dry run
+## (R/engine/run_mode.R: dry, smoke, results_root)
 source(file.path("R", "engine", "run_mode.R"))
+
+## Where the figures go, next to the results they show
+figure_folder_of <- function(dry, smoke) {
+  if (dry) return(file.path("cache", "dry_figures"))
+  if (smoke) return(file.path("cache", "smoke_figures"))
+  file.path("results", "figures")
+}
+figure_folder <- figure_folder_of(dry, smoke)
 dir.create(figure_folder, recursive = TRUE, showWarnings = FALSE)
 
 ## The results file of a study (results/studies/study_<study>.rds)

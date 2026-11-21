@@ -10,8 +10,7 @@
 ##
 ##  The smoke test (and so every push to main or v2, check.yml, and every image build)
 ##  stops with an error when something is wrong; a real run reports it in
-##  its log, as its results are written and should not be lost. The figures
-##  are checked by make_figures.R, which draws them.
+##  its log, as its results are written and should not be lost.
 ## =====================================================================
 
 ## Blanks by design (a column NA on purpose) and tables empty in the smoke

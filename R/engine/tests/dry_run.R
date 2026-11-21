@@ -3,8 +3,8 @@
 ##
 ##  The dry run (VALIDATION_DRY=1 Rscript run_all.R) tests the plumbing of
 ##  the whole validation in a minute or two: every step, every hand-over of
-##  a table from one step to the next, the rounds, every results file, every
-##  figure and the check at the end. It runs the smoke test's design, in one
+##  a table from one step to the next, the scheduler, every results file and
+##  the check at the end. It runs the smoke test's design, in one
 ##  R process, with the calls to Stan and bridge sampling replaced by what
 ##  those same calls returned in a real smoke test.
 ##

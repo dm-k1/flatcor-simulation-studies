@@ -34,10 +34,7 @@ full_run <- function(requested = character(0)) {
       "Recordings for the dry run come from a smoke test: VALIDATION_SMOKE=1 VALIDATION_RECORD=1"
     )
   }
-  # the figures of an earlier run go with its results (make_figures.R draws new ones)
-  if (smoke || fresh) {
-    unlink(c(store, file.path(results_root, "studies"), figure_folder), recursive = TRUE)
-  }
+  if (smoke || fresh) unlink(c(store, file.path(results_root, "studies")), recursive = TRUE)
   # a recording run replaces every recording, so none is left from an older
   # design or package (R/engine/tests/dry_run.R)
   if (recording) unlink(file.path("cache", "dry_recordings"), recursive = TRUE)

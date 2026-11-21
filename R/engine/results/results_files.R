@@ -2,8 +2,8 @@
 ##  The results file of a study: results/studies/study_<cell>.rds
 ##  (cache/smoke_results/studies/ for the smoke test, cache/timing/results/
 ##  for a timing run, so neither mixes with real results), with the study's
-##  tables and the setup of the run. The notebook and the figure scripts
-##  read only these files.
+##  tables and the setup of the run. Whatever shows the results reads only
+##  these files.
 ## =====================================================================
 
 ## Writes the file and returns its path (a targets "file" target)

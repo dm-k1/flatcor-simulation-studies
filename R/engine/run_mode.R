@@ -12,8 +12,7 @@
 ##                      fraction of the datasets (R/engine/run_time/)
 ##
 ##  Every process sources this file (R/engine/load_code.R), so each kind of
-##  run keeps its own store, results and figures and never mixes with a
-##  real run.
+##  run keeps its own store and results and never mixes with a real run.
 ## =====================================================================
 
 dry <- identical(Sys.getenv("VALIDATION_DRY"), "1")
@@ -35,13 +34,6 @@ results_root_of <- function(dry, smoke, timing = FALSE) {
   "results"
 }
 
-## The folder of the figures
-figure_folder_of <- function(dry, smoke) {
-  if (dry) return(file.path("cache", "dry_figures"))
-  if (smoke) return(file.path("cache", "smoke_figures"))
-  file.path("results", "figures")
-}
-
 ## The targets store (a timing run gives its own, R/engine/run_time/time_study.R)
 store <- if (dry) {
   file.path("cache", "targets_dry")
@@ -51,7 +43,6 @@ store <- if (dry) {
   "_targets"
 }
 results_root <- results_root_of(dry, smoke, timing = !is.na(timing_fraction))
-figure_folder <- figure_folder_of(dry, smoke)
 
 
 ## ---- How much to run ---------------------------------------------------------------

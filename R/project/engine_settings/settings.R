@@ -1,7 +1,7 @@
 ## =====================================================================
 ##  The project's settings: everything the engine (R/engine/) needs to know
 ##  about this project. A new project writes its own version of this file
-##  (and its studies, data and figures) and leaves the engine as it is.
+##  (and its studies and data) and leaves the engine as it is.
 ## =====================================================================
 
 ## The package under test. Every results file records its version and

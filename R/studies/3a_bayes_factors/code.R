@@ -234,8 +234,7 @@ diagnostics_3a <- function(results) {
 
 ## ---- The results file ---------------------------------------------------------
 
-## Every table of the study in results/studies/study_3a.rds
-## (R/studies/3a_bayes_factors/figures.R makes the figures from it); the
+## Every table of the study in results/studies/study_3a.rds; the
 ## per-dataset rows are in results/per_dataset/ (study_3a_calibration,
 ## study_3a_repeated_runs)
 save_results_3a <- function(averaged, bins, line, spread, shortfall, diagnostics) {

@@ -114,9 +114,7 @@ container image of `cluster/Dockerfile`, published by GitHub Actions as
 
 ```bash
 VALIDATION_SMOKE=1 Rscript run_all.R        # first: a corner of every study, about 10 minutes
-VALIDATION_SMOKE=1 Rscript R/project/report/make_figures.R   # and its figures
 Rscript run_all.R                           # the studies
-Rscript R/project/report/make_figures.R                      # then the figures, from the results files
 VALIDATION_FRESH=1 Rscript run_all.R        # the studies, from scratch
 Rscript R/engine/run_time/remaining_time.R  # during a run, beside it: the time left
 ```
@@ -128,27 +126,40 @@ spent plus that estimate is more than the budget, it stops and reports what
 is left per part; raise the budget or change a target, and start again: it
 continues where it was.
 
-`run_all.R` only simulates, so a cloud machine spends its time on the
-studies alone; `R/project/report/make_figures.R` draws the figures from the results files
-afterwards, on any machine (also after downloading the results). The
-notebook ([`validation.ipynb`](validation.ipynb)) runs nothing: it presents
-the results, each study's deciding tables, figures and result in a line, the
-rest under Details, and draws figures that are missing. The smoke test runs
-every step and every figure on a small part of each design, from scratch,
+A run ends at the results files: each study's results
+(`results/studies/`) and every dataset's rows (`results/per_dataset/`). The
+smoke test runs every step on a small part of each design, from scratch,
 with its results in `cache/` (never mixed with real ones).
+
+### Figures and the notebook: a step of their own
+
+Showing the results is apart from the run: [`R/project/report/`](R/project/report/)
+only reads the results files, on any machine, also after downloading them.
+The run, its tests and CI know nothing of it.
+
+```bash
+Rscript R/project/report/make_figures.R                     # every study's figures (results/figures/)
+Rscript R/project/report/make_figures.R 3a                  # one study's
+VALIDATION_SMOKE=1 Rscript R/project/report/make_figures.R  # from the smoke test's results (cache/)
+```
+
+The notebook ([`validation.ipynb`](validation.ipynb)) runs nothing: it
+presents the results, each study's deciding tables, figures and result in a
+line, the rest under Details, and draws figures that are missing (after a
+new run, draw them again with `make_figures.R`). `make_figures.R` stops with an error when a figure
+script stops (after running the others).
 
 ### Faster checks while working on the code
 
 Two cheaper checks come before the smoke test, for the mistakes that do
 not need Stan to show up: a renamed function, a column a later step
-expects but an earlier one no longer writes, a results file or figure that
-is not made.
+expects but an earlier one no longer writes, a results file that is not
+made.
 
 ```bash
 Rscript R/engine/tests/static_check.R                   # seconds: parses, the pipeline is valid, every function called exists, the rules below
 VALIDATION_SMOKE=1 VALIDATION_RECORD=1 Rscript run_all.R # once: the smoke test, recording what Stan and bridge sampling returned
 VALIDATION_DRY=1 Rscript run_all.R                      # then, after every change: the dry run
-VALIDATION_DRY=1 Rscript R/project/report/make_figures.R                 # and its figures
 ```
 
 The dry run ([`R/engine/tests/dry_run.R`](R/engine/tests/dry_run.R)) is the smoke
@@ -160,8 +171,8 @@ functions (the seams: flatcor's Bayes factors and fit, 1a's prior draws of a
 setting, 2a's SBC fits of a batch) by versions that record or replay the
 original. Everything else runs for real: the data, every step, the
 hand-overs between them, the scheduler with two batches for each cell, the
-results files, the check at the end and, with `R/project/report/make_figures.R`, the figures. Its results go to `cache/dry_results/` and
-`cache/dry_figures/`. It does not test the code inside the seams or whether
+results files and the check at the end. Its results go to
+`cache/dry_results/`. It does not test the code inside the seams or whether
 the numbers are right: run the smoke test for that, and record again when
 flatcor changes. When the design or a data step has changed since the
 recording, the dry run replays recordings of the same shape (prior, numbers
@@ -180,9 +191,8 @@ enforces (it fails, saying which rule and where):
    the store), the recordings. Any other file a
    step needs or makes is a step of its own (`tar_target(..., format =
    "file")`), so targets knows it is there before a step needs it.
-3. Every results file a figure script or a full run reads is made by a step
-   `results_<study>` (`format = "file"`), and the figure scripts read them
-   only through `read_results()`.
+3. Every study that declares parts has a step that makes its results file,
+   `results_<study>` (`format = "file"`).
 
 Every run ends with a check of its outputs
 ([`R/engine/tests/check_results.R`](R/engine/tests/check_results.R)): a results file
@@ -190,8 +200,7 @@ for every study run, all with the run's flatcor; no empty table, no NaN,
 Inf or NA in any table, except blanks that are there by design (each study
 declares its own, with its reason, in its `design.R`). The smoke test, and so every push to
 `main` or `v2`, fails when the check finds a problem; a real run reports it
-in its log. `R/project/report/make_figures.R` stops with an error when a figure script stops
-(after running the others).
+in its log.
 
 A stopped run continues where it was. It refuses to
 continue with another flatcor than the one it started with (each results

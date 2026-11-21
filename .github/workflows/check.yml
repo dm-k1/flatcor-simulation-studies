@@ -11,14 +11,11 @@
 #   links       every link in the README, the docs and the notebook (seconds)
 #   workflows   actionlint on these workflow files (seconds)
 #   smoke       the smoke test (VALIDATION_SMOKE=1: Rscript run_all.R, a corner
-#               of every study from scratch, then Rscript R/project/report/make_figures.R, every
-#               figure) inside the
-#               published image, so with exactly the packages and CmdStan of
+#               of every study from scratch) inside the published image, so with exactly the packages and CmdStan of
 #               the real run (about 40 minutes); skipped when an image build
 #               runs it, or ran it on the same code (see the smoke job). It fails
 #               when the outputs check (R/engine/tests/check_results.R) finds a
-#               missing file, an empty table, or NA/NaN/Inf, or when a figure
-#               script stops (make_figures.R). It runs
+#               missing file, an empty table, or NA/NaN/Inf. It runs
 #               with 3 workers (16 cores pretended: (16 - 1) %/% 4), as a
 #               real run has several: clashes between workers only show then
 #
@@ -161,4 +158,4 @@ jobs:
           docker run --rm -v "$PWD":/project \
             -e VALIDATION_SMOKE=1 -e R_PARALLELLY_AVAILABLECORES_SYSTEM=16 \
             "$IMAGE:$(cluster/image_tag.sh)" \
-            sh -c "Rscript run_all.R && Rscript R/project/report/make_figures.R"
+            Rscript run_all.R

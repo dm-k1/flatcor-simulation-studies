@@ -13,7 +13,7 @@ library(gt)
 
 ## The project's settings (the package under test) and how it names things
 source(file.path("R", "project", "engine_settings", "settings.R"))
-source(file.path("R", "engine", "run_mode.R"))
+source(file.path("R", "project", "report", "read_results.R"))
 source(file.path("R", "project", "report", "display_labels.R"))
 
 ## Jupyter may start R in an ASCII locale; the results contain names such as
@@ -169,7 +169,8 @@ show_text <- function(text) {
 
 ## The figures of a study: the PNGs its script in R/project/report/figures/ wrote (named
 ## after the study, as results/figures/3a_*.png). When there are none yet
-## (results downloaded from a run, say), make_figures.R draws them first.
+## (results downloaded from a run, say), make_figures.R draws them first;
+## after a new run, draw them again with make_figures.R.
 show_figures <- function(result) {
   smoke <- isTRUE(result$setup$smoke)
   folder <- figure_folder_of(dry = FALSE, smoke = smoke)

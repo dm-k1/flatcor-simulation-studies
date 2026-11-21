@@ -146,9 +146,8 @@ cat(sprintf("3. calls checked in %d functions and the pipeline's steps\n", lengt
 ##      batches the scheduler runs (both in the store), the
 ##      recordings, the compile lock and the final check. Any other file a
 ##      step needs or makes is a step of its own (tar_target(..., format = "file"))
-##   c. every results file a figure script or a full run reads is made by a
-##      step: results_<study>, format = "file"; the figure scripts read them
-##      only through read_results()
+##   c. every study that declares parts has a step that makes its results
+##      file: results_<study>, format = "file"
 
 file_calls <- c(
   "readRDS", "saveRDS", "load", "save", "read.csv", "write.csv", "readLines", "writeLines",
@@ -244,28 +243,6 @@ if (!is.null(manifest)) {
   is_results_file_step <- function(study) {
     step <- formats[formats$name == paste0("results_", study), ]
     nrow(step) == 1 && identical(step$format[[1]], "file")
-  }
-  figure_scripts <- list.files(
-    file.path("R", "project", "report", "figures"), pattern = "[.]R$", full.names = TRUE
-  )
-  for (script in figure_scripts) {
-    for (call in calls_with_context(as.call(c(as.name("{"), as.list(parse(script)))))) {
-      if (call[["name"]] %in% c("readRDS", "load", "read.csv", "fread")) {
-        note("%s reads a file with %s(): read results with read_results()", script, call[["name"]])
-      }
-    }
-    studies_read <- regmatches(
-      readLines(script),
-      regexpr("read_results[(]\"[^\"]+\"[)]", readLines(script))
-    )
-    for (study in sub("read_results[(]\"([^\"]+)\"[)]", "\\1", studies_read)) {
-      if (!is_results_file_step(study)) {
-        note(
-          "%s reads study %s, but no step results_%s (format = \"file\") makes it",
-          script, study, study
-        )
-      }
-    }
   }
   # a full run reads, at the end, the results file of every study that declares parts
   declared_studies <- unique(vapply(code$declared_parts, `[[`, "", "study"))

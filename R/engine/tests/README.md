@@ -7,12 +7,12 @@ validation itself reports.
 | Test | How to start it | Time | What it catches |
 |---|---|---|---|
 | Static check | `Rscript R/engine/tests/static_check.R` | seconds | A file that doesn't parse, an invalid pipeline, a function called that doesn't exist, and code that breaks the three rules below |
-| Dry run | `VALIDATION_DRY=1 Rscript run_all.R` | a minute or two | Everything around the expensive calls: every step, every hand-over of a table between steps, the scheduler, every results file, the check at the end; with `VALIDATION_DRY=1 Rscript R/project/report/make_figures.R`, every figure |
+| Dry run | `VALIDATION_DRY=1 Rscript run_all.R` | a minute or two | Everything around the expensive calls: every step, every hand-over of a table between steps, the scheduler, every results file, the check at the end |
 | Smoke test | `VALIDATION_SMOKE=1 Rscript run_all.R` | about 10 minutes | The whole run for real, on a corner of each design, with several workers and the real expensive calls |
 | Check of the results | runs at the end of every run | seconds | A missing results file, an empty table, a NaN, Inf or NA that isn't a declared blank, a results file made with another commit of the package under test |
 
 The smoke test and the dry run are kinds of run (`R/engine/run_mode.R`):
-each has its own store, results and figures in `cache/`, so neither mixes
+each has its own store and results in `cache/`, so neither mixes
 with a real run. Both always start from scratch.
 
 ## The dry run
@@ -36,6 +36,5 @@ run replays, and what it skips are the project's choice:
 2. A step reads and writes files only where that's declared: a study's
    results file, the plans and batches in the store, the recordings. Any
    other file a step needs or makes is a step of its own (`format = "file"`).
-3. Every results file a figure script or a full run reads is made by a step
-   `results_<study>`, and figure scripts read results only through
-   `read_results()`.
+3. Every study that declares parts has a step that makes its results file,
+   `results_<study>` (`format = "file"`).
