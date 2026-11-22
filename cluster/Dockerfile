@@ -19,7 +19,9 @@
 FROM rocker/r-ver:4.6.1
 
 # System libraries that the R packages compile against (networking; ICU for
-# stringi; libuv for fs; GMP and MPFR for Rmpfr; libxml2 for igraph; the list
+# stringi; libuv for fs; GMP and MPFR for Rmpfr; libxml2 for igraph; zlib for
+# data.table, whose fwrite writes the .csv.gz files: without its headers
+# data.table compiles without compression and the run stops; the list
 # follows the SystemRequirements of the packages in renv.lock) and git (each
 # results file records the commit). The image only runs the simulations:
 # nothing for figures or a notebook (graphics, fonts, V8, ZeroMQ), which live
@@ -27,7 +29,7 @@ FROM rocker/r-ver:4.6.1
 RUN apt-get update && apt-get install -y --no-install-recommends \
       git curl make cmake g++ \
       libcurl4-openssl-dev libssl-dev libxml2-dev libicu-dev libuv1-dev \
-      libgmp-dev libmpfr-dev \
+      libgmp-dev libmpfr-dev zlib1g-dev \
     && rm -rf /var/lib/apt/lists/*
 
 # R packages at the versions in renv.lock, into the image's site library
