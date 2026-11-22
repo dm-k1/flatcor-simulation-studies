@@ -5,7 +5,7 @@
 ##  When a push changes the environment (cluster/Dockerfile, its ignore
 ##  file, renv.lock), .github/workflows/image.yml builds the image for it,
 ##  and that takes a while. Everything that runs inside the image (the
-##  static check, the smoke test, the BridgeStan check, the run-time
+##  static check, the smoke test, the run-time
 ##  estimate) first calls this script, so it uses the new image, not the
 ##  one before it or none at all. It waits while the branch's latest image
 ##  build is queued or running; it fails if that build failed.
