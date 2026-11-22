@@ -18,6 +18,7 @@ folder of its own:
 | Project | What it asks |
 |---|---|
 | [`project_1_validation/`](project_1_validation/) | Do flatcor's three default priors work within the Bayesian framework? |
+| [`project_2_prior_comparison/`](project_2_prior_comparison/) | How do the priors' Bayes factors differ in the decisions they lead to? (stage 1 built, not run) |
 
 The engine ([`engine/`](engine/), its README) names no study and no
 package; a project tells it everything it needs (`<project>/settings/`).
