@@ -54,7 +54,6 @@ if (smoke) {
 ## n of a slope until it reaches its target (engine/workers/batches.R).
 relative_delta_3b  <- 0.1
 direction_delta_3b <- 0.05
-first_datasets_rates_3b <- datasets(50, in_smoke = 2)   # per cell
 
 
 ## ---- 3b.7 intrinsic consistency (the prior as a recipe; no Bayes factors) --------
@@ -77,7 +76,6 @@ if (smoke) {
 
 ## How many: the slopes' Δ is 10% of the slope, at least .05 per log n (a
 ## direction, as 3b.6); first round and later rounds as for the rates
-first_datasets_growing_3b <- datasets(50, in_smoke = 2)   # per cell
 
 
 ## ---- For every part ----------------------------------------------------------------
@@ -85,7 +83,9 @@ bootstrap_replicates_3b <- if (smoke) 100 else 1000   # for the MCSE of medians 
 
 
 ## ---- Bookkeeping (no effect on the results) ------------------------------------
-batch_size_3b <- if (smoke) 2 else 10   # datasets per batch, saved as it finishes
+## 10 per batch, not the project's 25, for the rates and growing k: kept so
+## that the v2 run's batches keep their names
+batch_size_3b <- 10
 
 
 ## ---- How it runs (engine/study_form.R) ------------------------------------------
@@ -100,7 +100,7 @@ declared_parts[["3b-formula"]] <- part_once(
 )
 declared_parts[["3b-rates"]] <- part_until_target(
   study = "3b", cells = rate_cells_3b, by = c("item", "setting", "q", "prior"),
-  first_datasets = first_datasets_rates_3b, batch_size = batch_size_3b,
+  batch_size = batch_size_3b,
   work = function(batch, model) {
     batch_3b(batch[names(rate_cells_3b)], replications_of(batch), rate_bayes_factor_3b)
   },
@@ -112,7 +112,7 @@ declared_parts[["3b-rates"]] <- part_until_target(
 )
 declared_parts[["3b-growing"]] <- part_until_target(
   study = "3b", cells = growing_cells_3b, by = c("truth", "growth", "method"),
-  first_datasets = first_datasets_growing_3b, batch_size = batch_size_3b,
+  batch_size = batch_size_3b,
   work = function(batch, model) {
     batch_3b(batch[names(growing_cells_3b)], replications_of(batch), growing_bayes_factor_3b)
   },

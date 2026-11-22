@@ -43,11 +43,6 @@ if (smoke) {
       (k == 1 | (covariates_r_squared == 0.3 & predictor_correlation == 0.3))
   )
 }
-## A timing run (engine/run_time/): only the slowest cells, n = 800 and k = 12
-## (30 cells), whose cost per dataset bounds every other cell's
-if (!is.na(timing_fraction)) {
-  cells_stage1_1a <- subset(cells_stage1_1a, n == 800 & k == 12)
-}
 rownames(cells_stage1_1a) <- NULL
 
 
@@ -60,13 +55,9 @@ alpha_1a <- 0.05
 ## ---- How many (README.md, "Stopping") ------------------------------------------------
 ## Every rate of the cell must have a Monte Carlo SE of at most Δ / 1.96,
 ## computed with the floor (rate_mcse()); the cap is 100 datasets per cell
-## (dataset_caps, settings/stopping_rule.R)
+## (dataset_caps, settings/stopping_rule.R). First datasets and batch size:
+## the project's (part_sizes, settings/settings.R).
 deltas_1a <- c(rate = 0.10)
-first_datasets_stage1_1a <- datasets(50, in_smoke = 4)
-
-
-## ---- Bookkeeping (no effect on the results) ------------------------------------
-batch_size_stage1_1a <- if (smoke) 2 else 25
 
 
 ## ---- How it runs (engine/study_form.R) ------------------------------------------
@@ -77,7 +68,6 @@ batch_size_stage1_1a <- if (smoke) 2 else 25
 ## own, and stage 1's stay untouched.
 declared_parts[["1a-stage1"]] <- part_until_target(
   study = "1a", cells = cells_stage1_1a, by = names(cells_stage1_1a),
-  first_datasets = first_datasets_stage1_1a, batch_size = batch_size_stage1_1a,
   work = function(batch, model) {
     datasets_1a(batch[names(cells_stage1_1a)], replications_of(batch))
   },

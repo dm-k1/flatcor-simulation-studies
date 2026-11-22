@@ -35,38 +35,22 @@ from `cmdstanr::install_cmdstan()`.
 
 ## How long it takes
 
-The workflow "Run-time estimate" ([`.github/workflows/timing.yml`](../.github/workflows/timing.yml))
-measures it on GitHub's runners, for free on a public repository. It runs on
-demand only, from Actions > Run-time estimate > Run workflow (it first waits
-for an image build still running; a newer run cancels one still going). Each study runs its full design on 4% and
-6% of its datasets (at least 2 per cell; 1a and 1b in full), each on its own
-4-core runner; `engine/run_time/estimate_run_time.R`
-separates the fixed part of a study's cost from the part per dataset and reads
-off the full run. The run's summary page shows the hours per study on 4, 8, 16
-and 32 cores.
-
-The same can be run anywhere, a study at a time:
+The estimate is the run itself, stopped after its first round: every cell
+runs its first datasets and is judged by the stopping rule, which then asks
+for what the cell is estimated to lack. With `VALIDATION_FIRST_ROUND=1` the
+run plans those datasets without running them, prints what they are
+expected to cost (core hours per part, per study and in all, and hours on
+its workers), and stops:
 
 ```bash
-VALIDATION_TIMING=0.04 Rscript engine/run_time/time_study.R 3a
-VALIDATION_TIMING=0.06 Rscript engine/run_time/time_study.R 3a
-Rscript engine/run_time/estimate_run_time.R
+VALIDATION_FIRST_ROUND=1 Rscript run_all.R project_1_validation   # the first round, then the estimate
+Rscript run_all.R project_1_validation                            # later: continues where it stopped
 ```
 
-Timing runs write only to `cache/<project>/timing/`, so they never mix with a real run.
-
-**For your own machine.** GitHub's runners differ (several processor types),
-so every timing run first times a reference task: one fixed flatcor Bayes
-factor (`project_1_validation/settings/timing_reference.R`, about a minute). The estimate counts each
-timing in multiples of its own runner's reference, so a faster or slower
-runner divides out. To read the estimate off for the machine you plan to
-use, run the reference task there and give its seconds to the estimate (the
-artifact `run-time-estimate` holds the timing runs, in `timing/`):
-
-```bash
-Rscript project_1_validation/settings/timing_reference.R          # e.g. "8.9 seconds" on an M-series Mac
-Rscript engine/run_time/estimate_run_time.R timing --reference=8.9
-```
+Nothing is lost: the first round's batches are kept, so the run without
+`VALIDATION_FIRST_ROUND` continues from them. The first round is the least
+the run needs anyway; a cell may still ask for more once its next datasets
+are back, so read the estimate as a likely figure, not a maximum.
 
 ## On a cluster
 
@@ -81,8 +65,8 @@ scheduler ([`engine/workers/scheduler.R`](../engine/workers/scheduler.R)):
 each cell is judged as soon as its own batch is done and, if it needs more
 datasets, its next batch goes out at once, without waiting for the other
 cells. When what the run has spent plus what it still expects to cost is
-more than its budget, it stops and reports what is left (the run-time
-estimate below; `Rscript engine/run_time/remaining_time.R` shows the same
+more than its budget, it stops and reports what is left (as the first
+round does, above; `Rscript engine/run_time/remaining_time.R` shows the same
 from outside, at any moment). The
 parts that run once (1a, 2a, 3b.1 and 3b.2) go out first and run
 alongside. Then the pipeline runs once, in minutes: every study's results,

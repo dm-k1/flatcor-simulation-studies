@@ -1,7 +1,7 @@
 ## =====================================================================
 ##  The per-dataset files: results/per_dataset/study_<cell>_<what>.csv(.gz)
 ##  (cache/smoke_results/per_dataset/ for the smoke test, cache/dry_results/
-##  for the dry run, cache/timing/ for a timing run)
+##  for the dry run)
 ##
 ##  Three layers. Layer 1: every study writes, per dataset (and prior or
 ##  method), everything it computed, in one step per file (format = "file"):

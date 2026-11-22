@@ -17,7 +17,7 @@
 plan_file <- function(part, store) file.path(store, "plans", paste0(part, ".rds"))
 
 ## The plan of a part: its cells, each with the number of datasets so far.
-## Without a plan file (a first start, or a timing run), every cell has its
+## Without a plan file (a first start), every cell has its
 ## first datasets.
 read_plan <- function(part, store, cells, first_datasets) {
   file <- plan_file(part, store)
@@ -111,7 +111,7 @@ read_batch <- function(part, batch, store) {
 }
 
 ## A batch's rows in the pipeline's step: the scheduler's, read back, or, if
-## the scheduler has not run it (a plain tar_make(), a timing run), computed
+## the scheduler has not run it (a plain tar_make()), computed
 ## here
 batch_rows <- function(part, batch, model = NULL) {
   finished <- read_batch(part, batch, targets::tar_path_store())

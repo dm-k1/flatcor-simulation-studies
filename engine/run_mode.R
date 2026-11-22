@@ -12,8 +12,10 @@
 ##                      expensive calls replayed (engine/tests/dry_run.R)
 ##    a recording       VALIDATION_SMOKE=1 VALIDATION_RECORD=1  a smoke test that
 ##                      records those calls for the dry run
-##    a timing run      VALIDATION_TIMING=<fraction>  the full design with that
-##                      fraction of the datasets (engine/run_time/)
+##    the first round   VALIDATION_FIRST_ROUND=1  a real run that stops once
+##                      every cell is judged, and reports what the stopping
+##                      rule asks for next (engine/workers/scheduler.R): the
+##                      run-time estimate; without it the run continues
 ##
 ##  Every process sources this file (engine/load_code.R), so each project
 ##  and each kind of run keeps its own store and results, and none mixes
@@ -42,8 +44,8 @@ if (!dir.exists(project)) stop("No project folder ", project, call. = FALSE)
 # set, so every process the run starts (the pipeline, the workers) has it
 Sys.setenv(PROJECT = project)
 
-## The project's own folder in cache/: its smoke test, dry run, recordings
-## and timing runs
+## The project's own folder in cache/: its smoke test, dry run and
+## recordings
 project_cache <- file.path("cache", project)
 
 ## The dry run's recordings (engine/tests/dry_run.R)
@@ -55,22 +57,20 @@ recording <- identical(Sys.getenv("VALIDATION_RECORD"), "1")
 # starts inherits it)
 if (dry) Sys.setenv(VALIDATION_SMOKE = "1")
 smoke <- identical(Sys.getenv("VALIDATION_SMOKE"), "1")
-timing_fraction <- suppressWarnings(as.numeric(Sys.getenv("VALIDATION_TIMING", NA)))
+first_round <- identical(Sys.getenv("VALIDATION_FIRST_ROUND"), "1")
 
 
 ## ---- Where the files go ------------------------------------------------------------
 
 ## The folder of the results: the project's results/ for a full run, its
 ## folder in cache/ otherwise
-results_root_of <- function(dry, smoke, timing = FALSE) {
+results_root_of <- function(dry, smoke) {
   if (dry) return(file.path(project_cache, "dry_results"))
   if (smoke) return(file.path(project_cache, "smoke_results"))
-  if (timing) return(file.path(project_cache, "timing", "results"))
   file.path(project, "results")
 }
 
-## The targets store, one per project (a timing run gives its own,
-## engine/run_time/time_study.R)
+## The targets store, one per project
 store <- if (dry) {
   file.path(project_cache, "targets_dry")
 } else if (smoke) {
@@ -78,28 +78,11 @@ store <- if (dry) {
 } else {
   file.path("_targets", project)
 }
-results_root <- results_root_of(dry, smoke, timing = !is.na(timing_fraction))
+results_root <- results_root_of(dry, smoke)
 
 
 ## ---- How much to run ---------------------------------------------------------------
 
-## How often datasets() was asked: a study whose design never asks runs in
-## full also in a timing run (engine/run_time/time_study.R)
-datasets_asked <- new.env()
-datasets_asked$times <- 0
-
 ## The number of datasets to run: `full` normally, `in_smoke` in the smoke
-## test, and in a timing run that fraction of `full`, at least 2. The floor
-## is 2, not more, so that the two fractions of the estimate (4% and 6%)
-## give different numbers of datasets also for 50 or 100 per cell (2 and 3,
-## or 4 and 6), and both stay small enough for a 6-hour GitHub runner.
-datasets <- function(full, in_smoke) {
-  datasets_asked$times <- datasets_asked$times + 1
-  if (smoke) {
-    return(in_smoke)
-  }
-  if (!is.na(timing_fraction)) {
-    return(min(full, max(2, ceiling(full * timing_fraction))))
-  }
-  full
-}
+## test
+datasets <- function(full, in_smoke) if (smoke) in_smoke else full

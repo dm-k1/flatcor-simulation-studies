@@ -53,7 +53,7 @@ alone or with any other studies, on any number of workers.
 | Path | What it does |
 |---|---|
 | `load_code.R` | Which files are loaded, in which order |
-| `run_mode.R` | Which kind of run this is (full run, smoke test, dry run, timing run) and where its files go |
+| `run_mode.R` | Which kind of run this is (full run, smoke test, dry run, first round) and where its files go |
 | `full_run.R` | A full run from start to finish |
 | `study_form.R` | What a study tells the engine about itself |
 | `seeds.R` | Every random draw gets a seed from its name |
@@ -66,7 +66,7 @@ alone or with any other studies, on any number of workers.
 | `results/results_files.R` | Writing a study's results file (layer 2) |
 | `results/per_dataset_files.R` | Writing and reading every dataset's rows (layer 1) |
 | `tests/` | The four tests (`tests/README.md`) |
-| `run_time/` | Before a run: time a study on a share of its datasets (`time_study.R`), and scale that up to the full run (`estimate_run_time.R`). During a run: the time left, per part, per study and in all (`remaining_time.R`) |
+| `run_time/` | During a run, beside it: the time left, per part, per study and in all (`remaining_time.R`). The estimate before a run is a real run's first round (`VALIDATION_FIRST_ROUND=1`, `workers/scheduler.R`) |
 
 ## What the project provides
 
@@ -75,10 +75,9 @@ name.
 
 | File | What it gives the engine |
 |---|---|
-| `settings.R` | `tested_package`, `step_packages`, `cores_per_batch`, `prepare_models()`, `batch_model()`, `project_setup()`, `project_file_functions`, `prepare_workers()` |
+| `settings.R` | `tested_package`, `step_packages`, `cores_per_batch`, `part_sizes`, `prepare_models()`, `batch_model()`, `project_setup()`, `project_file_functions`, `prepare_workers()` |
 | `stopping_rule.R` | `next_plan(plan, table, by, batch_size, one_batch)`: a cell's plan after judging its table |
 | `dry_run_seams.R` | `expensive_calls`, `replayed_functions`, `skipped_in_dry_run`, and the replacements the dry run uses |
-| `timing_reference.R` | `reference_seconds()`: a fixed task that measures how fast a machine is |
 
 Everything else in `<project>/` is the project's own: what its studies
 share (`shared/`, with the data generators in `data/`), its studies, its

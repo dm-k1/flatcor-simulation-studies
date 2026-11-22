@@ -28,16 +28,10 @@ deltas_3a <- c(
 )
 ## The first rounds (the Chow-Robbins rule's): parts A and B each have their
 ## own plan, and later rounds add datasets until their quantities reach
-## their targets (engine/workers/batches.R)
-first_datasets_3a         <- datasets(50, in_smoke = 40)   # part A, datasets per cell
-first_datasets_repeats_3a <- datasets(50, in_smoke = 2)    # part B, datasets per cell
+## their targets (engine/workers/batches.R). Both start with the project's
+## first datasets (part_sizes, settings/settings.R).
 repeat_runs_3a         <- 5                             # part B: runs per dataset
 bin_minimum_3a         <- if (smoke) 2 else 10          # part A: datasets a bin needs to be shown
-
-
-## ---- Bookkeeping (no effect on the results) ------------------------------------
-batch_size_3a         <- if (smoke) 4 else 25   # part A: datasets per batch
-batch_size_repeats_3a <- if (smoke) 2 else 5    # part B: datasets (of 5 runs) per batch
 
 
 ## ---- How it runs (engine/study_form.R) ------------------------------------------
@@ -47,7 +41,6 @@ batch_size_repeats_3a <- if (smoke) 2 else 5    # part B: datasets (of 5 runs) p
 ## the spread of its repeated log Bayes factors.
 declared_parts[["3a"]] <- part_until_target(
   study = "3a", cells = cells_3a, by = c("prior", "k", "n"),
-  first_datasets = first_datasets_3a, batch_size = batch_size_3a,
   work = function(batch, model) {
     calibration_batch_3a(batch[names(cells_3a)], replications_of(batch))
   },
@@ -55,9 +48,17 @@ declared_parts[["3a"]] <- part_until_target(
 )
 declared_parts[["3a-repeats"]] <- part_until_target(
   study = "3a", cells = cells_3a, by = c("prior", "k", "n"),
-  first_datasets = first_datasets_repeats_3a, batch_size = batch_size_repeats_3a,
+  # 5 per batch, not the project's 25: a dataset is run five times, so
+  # smaller batches are saved more often; and the v2 run's batches keep
+  # their names
+  batch_size = 5,
   work = function(batch, model) {
     repeats_3a(batch[names(cells_3a)], replications_of(batch), repeat_runs_3a)
   },
   table = function(rows) list(repeat_spread_3a(rows, repeat_runs_3a))
 )
+
+## For the check at the end of a run (engine/tests/check_results.R): the smoke
+## test's few datasets per cell (4) rarely put bin_minimum_3a of them in one
+## of the 14 bins, so the calibration bins can be empty there
+declared_empty_in_smoke[["3a"]] <- "calibration_bins"

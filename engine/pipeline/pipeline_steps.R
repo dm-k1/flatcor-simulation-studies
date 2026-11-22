@@ -7,7 +7,7 @@
 ##    steps_once("samples_1a", "1a")        batches_samples_1a, samples_1a
 ##
 ##  A batch's rows are the ones the scheduler saved in the store, read back,
-##  or, if the scheduler has not run it (a plain tar_make(), a timing run),
+##  or, if the scheduler has not run it (a plain tar_make()),
 ##  computed in the step itself (batch_rows(), engine/workers/batches.R).
 ##  Every batch gets the pipeline's step `model` (batch_model(),
 ##  <project>/settings/settings.R).
