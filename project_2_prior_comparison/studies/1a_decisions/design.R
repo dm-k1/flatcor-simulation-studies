@@ -43,11 +43,6 @@ if (smoke) {
       (k == 1 | (covariates_r_squared == 0.3 & predictor_correlation == 0.3))
   )
 }
-## A timing run (engine/run_time/): only the slowest cells, n = 800 and k = 12
-## (30 cells), whose cost per dataset bounds every other cell's
-if (!is.na(timing_fraction)) {
-  cells_stage1_1a <- subset(cells_stage1_1a, n == 800 & k == 12)
-}
 rownames(cells_stage1_1a) <- NULL
 
 

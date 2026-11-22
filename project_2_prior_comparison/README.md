@@ -154,20 +154,14 @@ VALIDATION_SMOKE=1 VALIDATION_RECORD=1 Rscript run_all.R project_2_prior_compari
 VALIDATION_DRY=1 Rscript run_all.R project_2_prior_comparison               # then after every change
 ```
 
-### The timing run
+### The run-time estimate
 
-Before the real run, the cost comes from a timing run
-([`engine/run_time/`](../engine/run_time/)) on the slowest cells: in timing
-mode the design keeps only n = 800 and k = 12 (30 cells), 2 or 3 datasets
-each. Two fractions, so the estimate can separate a fixed cost from the cost
-per dataset:
+The estimate is the real run's first round: every cell's first 50 datasets,
+judged by the stopping rule, which then plans what each cell lacks (at most
+100 per cell, the cap) and reports what that is expected to cost, and stops
+(`cluster/README.md`, "How long it takes"):
 
 ```bash
-PROJECT=project_2_prior_comparison VALIDATION_TIMING=0.04 Rscript engine/run_time/time_study.R 1a
-PROJECT=project_2_prior_comparison VALIDATION_TIMING=0.06 Rscript engine/run_time/time_study.R 1a
-PROJECT=project_2_prior_comparison Rscript engine/run_time/estimate_run_time.R cache/project_2_prior_comparison/timing
+VALIDATION_FIRST_ROUND=1 Rscript run_all.R project_2_prior_comparison   # the first round, then the estimate
+Rscript run_all.R project_2_prior_comparison                            # later: continues where it stopped
 ```
-
-The estimate it prints is for those 30 cells, at 50 datasets each. Their
-cost per dataset bounds every other cell's, so the full stage 1 costs at most
-570 cells × 100 datasets × that cost per dataset.

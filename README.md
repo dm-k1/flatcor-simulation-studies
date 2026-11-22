@@ -40,12 +40,13 @@ VALIDATION_SMOKE=1 Rscript run_all.R project_1_validation   # first: a corner of
 Rscript run_all.R project_1_validation                      # the studies
 Rscript run_all.R project_1_validation 3a                   # one study
 VALIDATION_FRESH=1 Rscript run_all.R project_1_validation   # the studies, from scratch
+VALIDATION_FIRST_ROUND=1 Rscript run_all.R project_1_validation   # the run-time estimate: the first round, then what is left
 PROJECT=project_1_validation Rscript engine/run_time/remaining_time.R   # during a run, beside it: the time left
 ```
 
 Each project has its own store (`_targets/<project>/`), its own results
 (`<project>/results/`) and its own folder in `cache/` for its smoke test,
-dry run and timing runs, so projects never mix.
+dry run and recordings, so projects never mix.
 
 A run has a budget of 2,500 core hours (`VALIDATION_BUDGET_CORE_HOURS`).
 It estimates as it goes what is left: every dataset asked for and not yet
@@ -167,9 +168,9 @@ corner of each design.
 | `_targets.R` | The pipeline: collects the chosen project's steps |
 | `engine/` | The engine, with no study or package named in it, meant to carry over to another project unchanged: the scheduler and its workers, the pipeline steps, the results files, the four tests and the run-time estimate. Its README explains the words it uses, how a run goes, and what a project and a study provide |
 | `project_1_validation/` | Project 1, the validation of flatcor's three priors: its settings, studies, results and docs (its README) |
-| `cluster/` | The container image, the run-time estimate, and how to run a project on a cluster or AWS |
+| `cluster/` | The container image, how long a run takes, and how to run a project on a cluster or AWS |
 | `ci/` | Helpers for the checks |
-| `.github/workflows/` | The checks on every push (`check.yml`), the image build (`image.yml`) and the run-time estimate, on demand (`timing.yml`) |
+| `.github/workflows/` | The checks on every push (`check.yml`) and the image build (`image.yml`) |
 | `renv.lock`, `.lintr` | The pinned packages, shared by the projects; the code style |
 
 ## Author

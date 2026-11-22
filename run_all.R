@@ -11,6 +11,10 @@
 ##                                         minute or two (engine/tests/dry_run.R)
 ##    VALIDATION_FRESH=1 Rscript run_all.R <project>   the project from scratch
 ##    VALIDATION_BUDGET_CORE_HOURS=3000 Rscript run_all.R <project>   a raised budget
+##    VALIDATION_FIRST_ROUND=1 Rscript run_all.R <project>   the run-time estimate: a
+##                                         real run that stops after every cell's
+##                                         first round and reports what is left;
+##                                         without it, the run continues
 ##
 ##  <project> is a project folder, such as project_1_validation; it may be
 ##  left out when there is only one (or set as PROJECT=<project>).

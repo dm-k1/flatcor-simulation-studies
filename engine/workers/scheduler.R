@@ -29,6 +29,14 @@
 ##  starts again: the run continues where it was.
 ##  docs/validation_tests.md, "How many datasets".
 ##
+##  The first round only (full_run(), VALIDATION_FIRST_ROUND=1): every cell
+##  runs the datasets its plan has (at first, its first datasets) and is
+##  judged, but what the stopping rule then asks for is written in the plan
+##  and not run. The run reports what that is expected to cost, per part,
+##  per study and in all, and stops: the estimate of a run before it is
+##  paid for in full. The same command without VALIDATION_FIRST_ROUND
+##  continues it, so nothing of the first round is lost.
+##
 ##  Each finished batch is saved in the store (run_batch(),
 ##  engine/workers/batches.R), so a run that stops continues where it
 ##  was, and the pipeline reads the batches afterwards instead of computing
@@ -173,10 +181,12 @@ one_decimal <- function(x) format(round(x, 1), nsmall = 1)
 ## start_workers(). `spent_elsewhere`: core hours the pipeline's own steps
 ## have cost so far (a run that continues). `one_extension`: at most one
 ## extra batch per cell (the smoke test, which tests the step, not the
-## numbers). Returns TRUE when every cell is done, FALSE when the budget
-## stopped the run.
+## numbers). `first_round`: what the stopping rule asks for after a cell's
+## batches is planned but not run (see above). Returns TRUE when every cell
+## is done (or, with first_round, judged), FALSE when the budget stopped the
+## run.
 run_parts <- function(until_target, once, store, budget_core_hours, workers, spent_elsewhere,
-                      one_extension = FALSE) {
+                      one_extension = FALSE, first_round = FALSE) {
   pool <- start_workers(workers)
   on.exit(pool$stop())
   files <- code_files()
@@ -201,6 +211,7 @@ run_parts <- function(until_target, once, store, budget_core_hours, workers, spe
   run$waiting <- list()     # tasks waiting for a free worker, in order
   run$running <- 0
   run$left <- list()        # per cell: its batches not back yet
+  run$planned <- list()     # per cell: batches planned, not run (first_round)
   run$extended <- character(0)
   run$cells_done <- list()  # per part: how many of its cells are done
   run$stopped <- FALSE
@@ -219,10 +230,10 @@ run_parts <- function(until_target, once, store, budget_core_hours, workers, spe
     stats::median(per_dataset) * cores_per_batch / 3600
   }
   # what every asked-for dataset not yet done is expected to cost, per part
-  # (NA for a part whose hours per dataset are not known yet)
-  expected_per_part <- function() {
-    # every batch not back yet, waiting or running
-    tasks <- unlist(unname(run$left), recursive = FALSE)
+  # (NA for a part whose hours per dataset are not known yet): by default
+  # every batch not back yet, waiting or running
+  expected_per_part <- function(cells = run$left) {
+    tasks <- unlist(unname(cells), recursive = FALSE)
     datasets <- tapply(
       vapply(tasks, function(task) datasets_in(task$batch), numeric(1)),
       factor(vapply(tasks, `[[`, "", "part"), levels = parts),
@@ -263,12 +274,17 @@ run_parts <- function(until_target, once, store, budget_core_hours, workers, spe
     plan <- run$plans[[name]][rows, , drop = FALSE]
     not_run(name, batches_of_plan(plan, until_target[[name]]$batch_size))
   }
-  # into the line; `key`: the cell, NA for a part that runs once
-  add_batches <- function(name, key, batches) {
+  # into the line; `key`: the cell, NA for a part that runs once. With
+  # run_them = FALSE only planned (first_round), not run.
+  add_batches <- function(name, key, batches, run_them = TRUE) {
     cell <- paste(name, key)
     for (i in seq_len(nrow(batches))) {
       task <- list(part = name, key = key, batch = batch_row(batches, i), store = store,
                    files = files)
+      if (!run_them) {
+        run$planned[[cell]] <- c(run$planned[[cell]], list(task))
+        next
+      }
       run$left[[cell]] <- c(run$left[[cell]], list(task))
       run$waiting <- c(run$waiting, list(task))
     }
@@ -303,7 +319,7 @@ run_parts <- function(until_target, once, store, budget_core_hours, workers, spe
     run$extended <- c(run$extended, cell)
     run$plans[[name]]$datasets[rows] <- plan_next$datasets[rows]
     write_plan(run$plans[[name]], name, store)
-    add_batches(name, key, cell_not_run(name, rows))
+    add_batches(name, key, cell_not_run(name, rows), run_them = !first_round)
   }
 
   ## ---- The run ----
@@ -343,6 +359,10 @@ run_parts <- function(until_target, once, store, budget_core_hours, workers, spe
   }
 
   status()
+  if (!run$stopped && first_round) {
+    report_first_round(expected_per_part(run$planned), until_target, workers)
+    return(invisible(TRUE))
+  }
   if (!run$stopped) {
     cli::cli_alert_success("Every cell is done.")
     return(invisible(TRUE))
@@ -353,4 +373,34 @@ run_parts <- function(until_target, once, store, budget_core_hours, workers, spe
   lines <- sprintf("%-14s %.1f", names(left), left)
   cli::cli_bullets(stats::setNames(lines, rep("*", length(lines))))
   invisible(FALSE)
+}
+
+## After the first round only: what the stopping rule has asked for and is
+## not run, in core hours, per part, per study and in all, and in hours on
+## this run's workers. `planned`: core hours per part (NA: fewer than two
+## of its batches back, so no cost per dataset yet).
+report_first_round <- function(planned, until_target, workers) {
+  planned <- planned[names(planned) %in% names(until_target)]
+  studies <- vapply(names(planned), function(name) until_target[[name]]$study, "")
+  per_study <- tapply(planned, studies, sum)
+  total <- sum(planned, na.rm = TRUE)
+  unknown <- if (anyNA(planned)) {
+    paste0(" Not known yet for ", paste(names(planned)[is.na(planned)], collapse = ", "), ".")
+  } else {
+    ""
+  }
+  n_workers <- max(1, workers)
+  cli::cli_alert_success("First round done: every cell has been judged.")
+  cli::cli_text("What the stopping rule asks for next, per part (core hours, NA: not known):")
+  lines <- sprintf("%-14s %.1f", names(planned), planned)
+  cli::cli_bullets(stats::setNames(lines, rep("*", length(lines))))
+  cli::cli_text("Per study:")
+  lines <- sprintf("%-14s %.1f", names(per_study), per_study)
+  cli::cli_bullets(stats::setNames(lines, rep("*", length(lines))))
+  total_hours <- one_decimal(total)
+  clock_hours <- one_decimal(total / (n_workers * cores_per_batch))
+  cli::cli_alert_info(paste(
+    "In all about {total_hours} more core hours ({clock_hours} hours on {n_workers}",
+    "worker{?s}).{unknown} A cell may ask for more once those datasets are back."
+  ))
 }

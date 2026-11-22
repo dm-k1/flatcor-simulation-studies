@@ -5,7 +5,9 @@
 ##    2. one commit of the package under test per run
 ##    3. what the workers share, built once (prepare_models())
 ##    4. the scheduler: every batch of every part the studies declare
-##       (engine/workers/scheduler.R)
+##       (engine/workers/scheduler.R); with VALIDATION_FIRST_ROUND=1 the run
+##       stops here, after every cell's first round, with the estimate of
+##       what is left
 ##    5. the pipeline: every study's results, from the saved batches (_targets.R)
 ##    6. which results there are, and the check of them
 ##       (engine/tests/check_results.R)
@@ -100,7 +102,8 @@ full_run <- function(requested = character(0)) {
     # the dry run samples nothing: every batch in this process
     workers = if (dry) 0 else worker_count(),
     spent_elsewhere = pipeline_core_hours(),
-    one_extension = smoke
+    one_extension = smoke,
+    first_round = first_round
   )
   if (!all_done) {
     stop(
@@ -111,6 +114,16 @@ full_run <- function(requested = character(0)) {
       "cell is done.",
       call. = FALSE
     )
+  }
+
+  ## The first round only: the scheduler has reported what is left; the
+  ## results wait for the run's end
+  if (first_round) {
+    cli::cli_alert_info(paste(
+      "Stopped after the first round. To continue, run the same command without",
+      "VALIDATION_FIRST_ROUND=1: the first round's batches are kept."
+    ))
+    return(invisible())
   }
 
   ## ---- 5. The pipeline: every study's results -----------------------------------------
