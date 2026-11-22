@@ -10,7 +10,7 @@ how they were made is in that tag's copy of this file.
 
 ## The files
 
-Every file here comes from one run, **v2-real-2** (commit 094e95e, flatcor
+Every file here comes from one run, **v2-real-2** (commit 6d34574, flatcor
 a0d2ac9, root seed 0, not a smoke test), 21 November 2026:
 
 | Files | Made by |
@@ -26,8 +26,16 @@ files.
 Each results file records its own commit, flatcor commit, R and CmdStan
 versions, root seed and finishing time (`readRDS(file)$setup`).
 
+**Commit hashes changed on 22 November 2026.** The history of this
+repository and of flatcor was rewritten that day (an author name in old
+files), so every commit hash changed. The results files still record the
+old hashes: commit 094e95e is now 6d34574, and flatcor 4b53d50 is now
+a0d2ac9. Every hash in the text of this file is a new one. Because
+`renv.lock` names flatcor by its hash, the image fingerprint changed too:
+the image below (`env-c4893495cf21`) was built from the old `renv.lock`.
+
 **Made with the code before the restructure.** These files come from
-commit 094e95e, before the code was reorganised into `engine/` and this
+commit 6d34574, before the code was reorganised into `engine/` and this
 project folder. The reorganised code gives each cell's bootstrap Monte
 Carlo SE its own random stream (2b's prediction, 3b's slopes), so those
 SEs, and through the stopping rule possibly some cells' numbers of
@@ -61,7 +69,7 @@ Every worker uses one BLAS thread (`_targets.R`).
 
 ## The run
 
-**v2-real-2** (all studies; commit 094e95e), 21 November 2026, 15:42–19:00
+**v2-real-2** (all studies; commit 6d34574), 21 November 2026, 15:42–19:00
 UTC, about 3.3 hours. On one spot m7a.48xlarge in Stockholm (AWS EC2, Amazon
 Linux 2023; AMD EPYC Zen 4, 192 cores), with `Rscript run_all.R` inside the
 image (`cluster/aws/user-data.sh`). Every piece of work runs Stan's 4 chains;
@@ -78,12 +86,12 @@ The run went in rounds (core hours so far, budget 2,500):
 - Round 4: 553.7 (2b). After it every cell had reached its targets.
 
 553.7 core hours in all (a piece's duration × 4 cores). An earlier attempt
-the same day (v2-real, commit de6f1ec) stopped after ten minutes with a full
+the same day (v2-real, commit fd40a04) stopped after ten minutes with a full
 disk: flatcor kept every fit's CSV files until the worker ended; flatcor
 a0d2ac9 deletes them once read. None of its pieces is used here.
 
 **Compared with v1.** The rules for how many datasets are the same as v1's
-(467b18d), and with root seed 0 every dataset and every Stan seed is the
+(ed3d5e6), and with root seed 0 every dataset and every Stan seed is the
 same as in v1. v2 made exactly v1's datasets in every study (the same rows
 in `per_dataset/`). Of the log Bayes factors of 3b, all but 8 of 11,100
 (growing *k*) and 85 of 5,170 (rates) agree with v1's to within 10⁻⁶; the
@@ -115,6 +123,6 @@ test of a multi-machine setup, a smoke run on one machine and on several gave
 the same 32 tables). Across processor families, Stan's floating-point
 arithmetic can differ in the last digits, and a sampler carries that into
 different draws. An earlier run of 1a–2b in a GitHub codespace (AMD Zen 3,
-commit b75a082, not part of these results) gave an identical 1a, and for 1b,
+commit 4de8eb9, not part of these results) gave an identical 1a, and for 1b,
 2a and 2b the same conclusions, with numbers that differ within their Monte
 Carlo error.

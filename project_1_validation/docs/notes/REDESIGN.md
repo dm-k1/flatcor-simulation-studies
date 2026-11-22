@@ -4,8 +4,8 @@ Working plan of the validation redesign (on `main` since 17 November 2026): what
 the decisions behind it, and what is left. When the redesign is done, this
 file is replaced by the finished validation document. Earlier plans are in
 the git history: the ten-study structure and the run of 4 November 2026 last
-in commit 9ffd1bf, the four-study plan built on flatcor's own Bayes factor
-formulas in commit 248d5d6.
+in commit 980741f, the four-study plan built on flatcor's own Bayes factor
+formulas in commit 6f7331d.
 
 ## What the validation is for
 
@@ -87,14 +87,14 @@ whether the estimates are sensible; the software gives no verdict per row.
   reported as counts. Per-row pass/fail on Monte Carlo estimates misleads:
   with dozens of estimates some lie beyond 2 MCSE by chance (as check 4.8
   at few draws, and a bridge-sampling difference of 0.006 against a
-  threshold of 0.0057, did in the timing run of 248d5d6).
+  threshold of 0.0057, did in the timing run of 6f7331d).
 - Every study reports this way. No study has a tripwire yet; the notebook
   shows any that a study records.
 
 How the priors behave in use beyond estimation (how often the test of a
 term finds an effect, confirms a null or stays undecided) is a separate
 study, for later. Its earlier code, with a factor extension of the data, is
-in commit 9ffd1bf (`project_1_validation/studies/05_behaviour.R` there, parts A and B).
+in commit 980741f (`project_1_validation/studies/05_behaviour.R` there, parts A and B).
 
 ## The software: flatcor
 
@@ -231,7 +231,7 @@ points of practical advice). What flatcor and the studies take from it:
 **Open questions:**
 
 - Resolved (17 November 2026): the two bridge-sampling misses for flat R²
-  with one predictor (timing run of 248d5d6; an earlier smoke run) were not
+  with one predictor (timing run of 6f7331d; an earlier smoke run) were not
   bias. 50 runs of that case (n = 80, 16,000 draws each) averaged -1.7303
   (MCSE 0.0004) against the exact -1.7301, but spread with SD 0.0025 where
   bridgesampling reported 0.0018: its approximate error is about 1.4 times

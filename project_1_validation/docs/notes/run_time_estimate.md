@@ -2,7 +2,7 @@
 
 18 November 2026: run-time estimate run
 44223161415 (GitHub Actions; in the repository's earlier history, no longer public)
-(commit a92e096, flatcor 86b66b3, fractions 4% and 6% of the datasets) for
+(commit ea0b103, flatcor 86b66b3, fractions 4% and 6% of the datasets) for
 1a to 3a; for 3b a calculation from timed Bayes factors (below), as its
 timing runs do not fit in a GitHub runner's 6 hours. A rough estimate,
 about ±30-40%: enough to choose where to run, not a number to report. The
