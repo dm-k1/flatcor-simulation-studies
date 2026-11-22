@@ -122,11 +122,13 @@ full_run <- function(requested = character(0)) {
   results_folder <- file.path(results_root, "studies")
   for (file in sort(list.files(results_folder, pattern = "^study_.*[.]rds$", full.names = TRUE))) {
     setup <- readRDS(file)$setup
-    cat(sprintf(
-      "%s: finished %s, commit %s, %s %s (%s)%s\n", basename(file), setup$finished,
-      setup$commit, tested_package, setup[[tested_package]],
-      substr(setup[[paste0(tested_package, "_commit")]], 1, 7),
-      if (isTRUE(setup$smoke)) " (smoke test)" else ""
+    name <- basename(file)
+    version <- setup[[tested_package]]
+    package_short <- substr(setup[[paste0(tested_package, "_commit")]], 1, 7)
+    kind <- if (isTRUE(setup$smoke)) " (smoke test)" else ""
+    cli::cli_alert_info(paste(
+      "{name}: finished {setup$finished}, commit {setup$commit},",
+      "{tested_package} {version} ({package_short}){kind}"
     ))
   }
   studies_run <- if (length(requested) > 0) {
@@ -137,5 +139,6 @@ full_run <- function(requested = character(0)) {
   check_results(results_folder, studies_run, package_commit, smoke)
 
   minutes <- as.numeric(difftime(Sys.time(), started, units = "mins"))
-  cat(sprintf("Run took %.1f minutes.\n", minutes))
+  minutes <- format(round(minutes, 1), nsmall = 1)
+  cli::cli_alert_success("Run took {minutes} minutes.")
 }

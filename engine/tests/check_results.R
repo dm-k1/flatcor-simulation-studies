@@ -87,12 +87,17 @@ check_results <- function(results_folder, studies, package_commit, smoke) {
   }
 
   if (length(problems) == 0) {
-    message("Check of the outputs: every results file is there, every number is a number.")
+    cli::cli_alert_success(
+      "Check of the outputs: every results file is there, every number is a number."
+    )
     return(invisible(TRUE))
   }
-  report <- paste0("Check of the outputs found ", length(problems), " problem(s):\n",
-                   paste0("  - ", problems, collapse = "\n"))
-  if (smoke) stop(report, call. = FALSE)
-  message(report)
+  # one bullet per problem; each is a value, never read as cli markup
+  report <- c(
+    "Check of the outputs found {length(problems)} problem{?s}:",
+    stats::setNames(sprintf("{problems[[%d]]}", seq_along(problems)), rep("*", length(problems)))
+  )
+  if (smoke) cli::cli_abort(report, call = NULL)
+  cli::cli_warn(report)
   invisible(FALSE)
 }

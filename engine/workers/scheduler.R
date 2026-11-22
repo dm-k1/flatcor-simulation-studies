@@ -163,6 +163,9 @@ judge_cell <- function(part, plan, rows, store, one_batch) {
 
 ## ---- The scheduler's run ----------------------------------------------------------
 
+## A number with one decimal, for the messages
+one_decimal <- function(x) format(round(x, 1), nsmall = 1)
+
 ## Runs the batches of `once` (per part that runs once, its batches), and
 ## every cell of `until_target` (the parts that run until their targets
 ## are reached, engine/study_form.R, each with its `name`) to its
@@ -232,14 +235,17 @@ run_parts <- function(until_target, once, store, budget_core_hours, workers, spe
     cells <- vapply(names(until_target), function(name) {
       length(cells_of(run$plans[[name]], until_target[[name]]$by))
     }, numeric(1))
-    message(sprintf(
-      paste(
-        "Status: %d of %d cells done; %.1f core hours spent, about %.1f more expected",
-        "(%.1f hours on %d workers)%s"
-      ),
-      sum(unlist(run$cells_done)), sum(cells), spent(), expected(),
-      expected() / (max(1, workers) * cores_per_batch), max(1, workers),
-      if (anyNA(expected_per_part())) "; not known yet for some parts" else ""
+    done <- sum(unlist(run$cells_done))
+    total <- sum(cells)
+    n_workers <- max(1, workers)
+    spent_hours <- one_decimal(spent())
+    expected_hours <- one_decimal(expected())
+    clock_hours <- one_decimal(expected() / (n_workers * cores_per_batch))
+    unknown <- if (anyNA(expected_per_part())) "; not known yet for some parts" else ""
+    cli::cli_alert_info(paste(
+      "Status: {done} of {total} cell{?s} done; {spent_hours} core hours spent,",
+      "about {expected_hours} more expected ({clock_hours} hours on {n_workers}",
+      "worker{?s}){unknown}"
     ))
     run$last_status <- Sys.time()
   }
@@ -291,9 +297,9 @@ run_parts <- function(until_target, once, store, budget_core_hours, workers, spe
     if (added == 0 || (one_extension && cell %in% run$extended)) {
       run$cells_done[[name]] <- (run$cells_done[[name]] %||% 0) + 1
       datasets <- sum(run$plans[[name]]$datasets[rows])
-      return(message(sprintf("%s: done, %d datasets", cell, datasets)))
+      return(cli::cli_alert_success("{cell}: done, {datasets} dataset{?s}"))
     }
-    message(sprintf("%s: %d more datasets", cell, added))
+    cli::cli_alert_info("{cell}: {added} more dataset{?s}")
     run$extended <- c(run$extended, cell)
     run$plans[[name]]$datasets[rows] <- plan_next$datasets[rows]
     write_plan(run$plans[[name]], name, store)
@@ -301,7 +307,7 @@ run_parts <- function(until_target, once, store, budget_core_hours, workers, spe
   }
 
   ## ---- The run ----
-  message("Budget: ", budget_core_hours, " core hours")
+  cli::cli_alert_info("Budget: {budget_core_hours} core hours")
   for (name in names(once)) add_batches(name, NA, not_run(name, once[[name]]))
   for (name in names(until_target)) {
     for (key in names(cells_of(run$plans[[name]], until_target[[name]]$by))) next_step(name, key)
@@ -317,18 +323,20 @@ run_parts <- function(until_target, once, store, budget_core_hours, workers, spe
     run$left[[cell]] <- run$left[[cell]][-which(back)[1]]
     if (length(run$left[[cell]]) == 0 && !run$stopped) {
       if (is.na(task$key)) {
-        message(sprintf("%s: done", task$part))
+        cli::cli_alert_success("{task$part}: done")
       } else {
         next_step(task$part, task$key)
       }
     }
     if (!run$stopped && spent() + expected() > budget_core_hours) {
       run$stopped <- TRUE
-      message(sprintf(
-        "Stopping: %.1f core hours spent and about %.1f more expected: more than the budget, %.1f.",
-        spent(), expected(), budget_core_hours
+      spent_hours <- one_decimal(spent())
+      expected_hours <- one_decimal(expected())
+      cli::cli_alert_danger(paste(
+        "Stopping: {spent_hours} core hours spent and about {expected_hours} more",
+        "expected: more than the budget, {budget_core_hours}."
       ))
-      message("No new batch starts; the running ones finish and are saved.")
+      cli::cli_text("No new batch starts; the running ones finish and are saved.")
     }
     if (difftime(Sys.time(), run$last_status, units = "mins") > 10) status()
     start_waiting()
@@ -336,12 +344,13 @@ run_parts <- function(until_target, once, store, budget_core_hours, workers, spe
 
   status()
   if (!run$stopped) {
-    message("Every cell is done.")
+    cli::cli_alert_success("Every cell is done.")
     return(invisible(TRUE))
   }
   left <- expected_per_part()
   left <- left[is.na(left) | left > 0]
-  message("What is left, per part (core hours, NA: not known yet):")
-  for (name in names(left)) message(sprintf("  %-14s %.1f", name, left[[name]]))
+  cli::cli_text("What is left, per part (core hours, NA: not known yet):")
+  lines <- sprintf("%-14s %.1f", names(left), left)
+  cli::cli_bullets(stats::setNames(lines, rep("*", length(lines))))
   invisible(FALSE)
 }

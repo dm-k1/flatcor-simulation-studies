@@ -77,8 +77,13 @@ saveRDS(
   ),
   file.path(project_cache, "timing", sprintf("time_%s_at_%s.rds", study, fraction))
 )
-cat(sprintf(
-  "\nStudy %s at fraction %s: %.1f minutes elapsed%s\n", study, fraction, elapsed / 60,
-  if (is.na(error)) "" else paste0("; stopped with an error: ", error)
-))
+minutes <- format(round(elapsed / 60, 1), nsmall = 1)
+if (is.na(error)) {
+  cli::cli_alert_success("Study {study} at fraction {fraction}: {minutes} minutes elapsed")
+} else {
+  cli::cli_alert_danger(paste(
+    "Study {study} at fraction {fraction}: {minutes} minutes elapsed;",
+    "stopped with an error: {error}"
+  ))
+}
 if (!is.na(error)) quit(status = 1)

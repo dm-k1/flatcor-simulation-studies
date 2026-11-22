@@ -57,13 +57,21 @@ per_study <- stats::aggregate(
   cbind(core_hours_spent, core_hours_left) ~ study, data = table, FUN = sum, na.action = na.pass
 )
 workers <- worker_count()
-cat("\nPer part:\n")
+cli::cli_h2("Per part")
 print(table, row.names = FALSE, digits = 3)
-cat("\nPer study:\n")
+cli::cli_h2("Per study")
 print(per_study, row.names = FALSE, digits = 3)
-left <- sum(table$core_hours_left, na.rm = TRUE)
-cat(sprintf(
-  "\nIn all: %.1f core hours spent, about %.1f left: %.1f hours on %d workers%s.\n",
-  sum(table$core_hours_spent), left, left / (workers * cores_per_batch), workers,
-  if (anyNA(table$core_hours_left)) " (NA: fewer than two batches of that part back yet)" else ""
+one_decimal <- function(x) format(round(x, 1), nsmall = 1)
+spent <- one_decimal(sum(table$core_hours_spent))
+left_hours <- sum(table$core_hours_left, na.rm = TRUE)
+left <- one_decimal(left_hours)
+clock <- one_decimal(left_hours / (workers * cores_per_batch))
+unknown <- if (anyNA(table$core_hours_left)) {
+  " (NA: fewer than two batches of that part back yet)"
+} else {
+  ""
+}
+cli::cli_alert_info(paste(
+  "In all: {spent} core hours spent, about {left} left: {clock} hours on",
+  "{workers} worker{?s}{unknown}."
 ))

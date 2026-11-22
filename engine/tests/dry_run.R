@@ -88,11 +88,11 @@ replayable <- function(name, shape, inputs, expression) {
     )
   }
   if (!isTRUE(getOption(paste0("validation_replay_warned_", name)))) {
-    message(
-      "Dry run: ", name, " called with inputs the recording run did not have; ",
-      "using recordings of the same shape (the design or a data step changed ",
+    cli::cli_alert_warning(paste(
+      "Dry run: {name} called with inputs the recording run did not have;",
+      "using recordings of the same shape (the design or a data step changed",
       "since the recordings were made)"
-    )
+    ))
     options(stats::setNames(list(TRUE), paste0("validation_replay_warned_", name)))
   }
   # the same recording for the same inputs, different ones for different inputs

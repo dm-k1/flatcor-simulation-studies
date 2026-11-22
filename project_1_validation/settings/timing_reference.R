@@ -45,8 +45,7 @@ reference_seconds <- function() {
 
 ## run as a script (not sourced by time_study.R): print the seconds
 if (sys.nframe() == 0) {
-  cat(sprintf(
-    "Reference task: %.1f seconds on this machine (%d cores)\n",
-    reference_seconds(), parallelly::availableCores()
-  ))
+  seconds <- format(round(reference_seconds(), 1), nsmall = 1)
+  cores <- parallelly::availableCores()
+  cli::cli_alert_info("Reference task: {seconds} seconds on this machine ({cores} core{?s})")
 }

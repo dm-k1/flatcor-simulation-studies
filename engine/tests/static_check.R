@@ -33,7 +33,7 @@ for (file in r_files) {
   parsed <- tryCatch(parse(file), error = function(e) e)
   if (inherits(parsed, "error")) note("%s does not parse: %s", file, conditionMessage(parsed))
 }
-cat(sprintf("1. %d R files parsed\n", length(r_files)))
+cli::cli_alert_success("1. {length(r_files)} R file{?s} parsed")
 
 ## ---- 2. The pipeline --------------------------------------------------------------
 manifest <- tryCatch(
@@ -46,7 +46,9 @@ manifest <- tryCatch(
     NULL
   }
 )
-if (!is.null(manifest)) cat(sprintf("2. the pipeline is valid: %d steps\n", nrow(manifest)))
+if (!is.null(manifest)) {
+  cli::cli_alert_success("2. the pipeline is valid: {nrow(manifest)} step{?s}")
+}
 
 ## ---- 3. Every function called exists ------------------------------------------------
 ## The pipeline's code as the workers have it: the files _targets.R sources
@@ -134,7 +136,9 @@ if (!is.null(manifest)) {
     check_calls(str2lang(manifest$command[[i]]), sprintf("step %s", manifest$name[[i]]))
   }
 }
-cat(sprintf("3. calls checked in %d functions and the pipeline's steps\n", length(functions)))
+cli::cli_alert_success(
+  "3. calls checked in {length(functions)} function{?s} and the pipeline's steps"
+)
 
 ## ---- 4. The declared way -------------------------------------------------------------
 ## The pipeline's code keeps to three rules, so that targets knows what every
@@ -257,7 +261,9 @@ if (!is.null(manifest)) {
     }
   }
 }
-cat("4. the declared way: expensive calls in seams, files declared, results made by steps\n")
+cli::cli_alert_success(
+  "4. the declared way: expensive calls in seams, files declared, results made by steps"
+)
 
 ## ---- The verdict ----------------------------------------------------------------------
 if (length(found$problems) > 0) {
@@ -267,4 +273,4 @@ if (length(found$problems) > 0) {
     call. = FALSE
   )
 }
-cat("The static check found no problems.\n")
+cli::cli_alert_success("The static check found no problems.")
