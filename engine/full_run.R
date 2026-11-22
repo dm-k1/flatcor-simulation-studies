@@ -69,6 +69,10 @@ full_run <- function(requested = character(0)) {
   ## A study run alone brings along the parts its results also use (`needs`),
   ## so it gives the same results as in a full run
   parts <- declared_parts
+  unknown <- setdiff(requested, vapply(parts, `[[`, "", "study"))
+  if (length(unknown) > 0) {
+    stop("No study ", paste(unknown, collapse = ", "), " in ", project, call. = FALSE)
+  }
   if (length(requested) > 0) {
     wanted <- names(Filter(function(part) part$study %in% requested, parts))
     needed <- unlist(lapply(parts[wanted], `[[`, "needs"))

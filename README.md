@@ -128,11 +128,26 @@ job, resubmitting until it is done).
 
 Every push, to any branch, is checked automatically
 ([`.github/workflows/check.yml`](.github/workflows/check.yml)): lintr, the
-links, the workflow files, and for every project folder the static check
-and the smoke test inside the published image (once per change: a push that
+links, the workflow files, for every project folder the static check, and
+the smoke test inside the published image (once per change: a push that
 builds a new image is smoke-tested by that build, and the check then skips
 it). A push that changes the environment (the Dockerfile, `renv.lock`)
 builds and publishes its image first (`image.yml`), on any branch too.
+
+The check's smoke test runs only what changed since the last commit on the
+same branch that passed it
+([`ci/smoke_selection.sh`](ci/smoke_selection.sh)):
+
+| Changed | Smoke-tested |
+|---|---|
+| a study's folder, `project_X/studies/<code>_*/` | that study, the parts it needs, and the studies that use its parts ([`ci/smoke_studies.R`](ci/smoke_studies.R)) |
+| any other file in `project_X/` (`shared/`, `settings/`, ...) | all of project X |
+| any file outside `project_*/` (`engine/`, `_targets.R`, `run_all.R`, `renv.lock`, `ci/`, `cluster/`) | every project |
+| only docs: `project_*/docs/`, `*.md`, `.github/`, `cluster/aws/`, `.lintr` | nothing |
+| a branch with no passed check yet | every project |
+
+The image build always smoke-tests every project. By hand, a project's
+studies run alone as `Rscript run_all.R <project> 1b 3b`.
 
 The smoke test is meant to run the way a real run does, because a bug can
 hide anywhere the two differ. So it runs in the same image (the same
