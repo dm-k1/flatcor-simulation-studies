@@ -22,15 +22,15 @@ FROM rocker/r-ver:4.6.1
 # stringi; libuv for fs; GMP and MPFR for Rmpfr; libxml2 for igraph; zlib for
 # data.table, whose fwrite writes the .csv.gz files, and pkg-config, through
 # which data.table's configure finds zlib: without either, data.table
-# compiles without compression and the run stops; the list
-# follows the SystemRequirements of the packages in renv.lock) and git (each
-# results file records the commit). The image only runs the simulations:
+# compiles without compression and the run stops; GLPK, which Posit's
+# ready-built igraph loads; the list follows what the compiled packages in
+# renv.lock load) and git (each results file records the commit). The image only runs the simulations:
 # nothing for figures or a notebook (graphics, fonts, V8, ZeroMQ), which live
 # in another repository (a separate private repository).
 RUN apt-get update && apt-get install -y --no-install-recommends \
       git curl make cmake g++ \
       libcurl4-openssl-dev libssl-dev libxml2-dev libicu-dev libuv1-dev \
-      libgmp-dev libmpfr-dev zlib1g-dev pkg-config \
+      libgmp-dev libmpfr-dev zlib1g-dev pkg-config libglpk40 \
     && rm -rf /var/lib/apt/lists/*
 
 # CmdStan, the version the validation was last run with, from its release
