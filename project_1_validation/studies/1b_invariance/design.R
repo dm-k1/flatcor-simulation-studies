@@ -17,13 +17,9 @@ deltas_1b <- c(
   "change in log BF, rescaled" = log(1.1),   # .095: the Bayes factor off by 10%
   "change in log BF, recoded"  = log(1.1)
 )
-## The first round (the Chow-Robbins rule's, per prior); later rounds add
-## datasets until both changes reach their targets (engine/workers/batches.R)
-first_datasets_1b <- datasets(50, in_smoke = 2)
-
-
-## ---- Bookkeeping (no effect on the results) ------------------------------------
-batch_size_1b <- if (smoke) 2 else 5   # datasets per batch, saved as it finishes
+## The first round (the Chow-Robbins rule's, per prior) has the project's
+## size (part_sizes, settings/settings.R); later rounds add datasets until
+## both changes reach their targets (engine/workers/batches.R)
 
 
 ## ---- How it runs (engine/study_form.R) ------------------------------------------
@@ -33,7 +29,10 @@ batch_size_1b <- if (smoke) 2 else 5   # datasets per batch, saved as it finishe
 ## measures it, so that part runs with 1b.
 declared_parts[["1b"]] <- part_until_target(
   study = "1b", cells = priors_1b, by = "prior",
-  first_datasets = first_datasets_1b, batch_size = batch_size_1b,
+  # 5 per batch, not the project's 25: a dataset is five Bayes factors, so
+  # smaller batches are saved more often; and the v2 run's batches keep
+  # their names
+  batch_size = 5,
   work = function(batch, model) invariance_batch_1b(batch["prior"], replications_of(batch)),
   table = function(rows) list(pooled_1b(changes_of_1b(rows))),
   needs = "3a-repeats"

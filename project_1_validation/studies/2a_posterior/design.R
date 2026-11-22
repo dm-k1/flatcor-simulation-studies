@@ -30,12 +30,15 @@ deltas_2a <- c(
 )
 ## Computed, not measured: the ranks (0-100, thinned) have SD .2915, so the
 ## mean rank needs (.2915 x 1.96 / .05)^2 = 130.6, so 131 fits per cell; the
-## SD of the ranks needs 76
-fits_2a <- datasets(131, in_smoke = 10)
+## SD of the ranks needs 76. In the smoke test the project's first datasets
+## (part_sizes, settings/settings.R).
+fits_2a <- datasets(131, in_smoke = part_sizes$smoke$first_datasets)
 
 
 ## ---- Bookkeeping (no effect on the results) ------------------------------------
-batch_size_2a <- if (smoke) 10 else 50   # fits per batch, saved as it finishes
+## 50 fits per batch, not the project's 25: kept so that the v2 run's batches
+## keep their names
+batch_size_2a <- batch_size_of_run(real = 50)
 
 
 ## ---- How it runs (engine/study_form.R) ------------------------------------------

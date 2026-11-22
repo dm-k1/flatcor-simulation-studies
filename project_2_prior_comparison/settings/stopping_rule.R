@@ -83,6 +83,9 @@ next_plan <- function(plan, table, by, batch_size, one_batch = FALSE) {
 
   plan_key <- do.call(paste, plan[by])
   caps <- cap_of(plan)
+  if (any(is.finite(caps) & caps %% batch_size != 0)) {
+    stop("A cap in dataset_caps is not whole batches of ", batch_size, call. = FALSE)
+  }
   for (i in seq_len(nrow(worst))) {
     rows <- which(plan_key == do.call(paste, worst[i, by, drop = FALSE]))
     lacking <- plan$datasets[rows] * (worst$needed_share[i] - 1)

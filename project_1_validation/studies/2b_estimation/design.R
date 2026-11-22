@@ -38,14 +38,11 @@ deltas_2b <- c(
   "coverage of x1's 95% interval" = 0.0196,  # an MCSE of 1%, the coverage convention
   "prediction error / OLS"        = 0.1      # 10% of OLS's
 )
-## The first round: computed for coverage, .95 x .05 / .01^2 = 475. Bias and
-## prediction are measured: a cell gets more datasets in later rounds until
-## they reach their targets too (engine/workers/batches.R).
-first_datasets_2b <- datasets(475, in_smoke = 10)
-
-
-## ---- Bookkeeping (no effect on the results) ------------------------------------
-batch_size_2b <- if (smoke) 5 else 25   # datasets per batch, saved as it finishes
+## The first round: computed for coverage, .95 x .05 / .01^2 = 475 (the
+## project's 50 would be too few). Bias and prediction are measured: a cell
+## gets more datasets in later rounds until they reach their targets too
+## (engine/workers/batches.R).
+first_datasets_2b <- 475
 
 
 ## ---- How it runs (engine/study_form.R) ------------------------------------------
@@ -53,7 +50,7 @@ batch_size_2b <- if (smoke) 5 else 25   # datasets per batch, saved as it finish
 ## method; a cell is judged on its bias, coverage and prediction error
 declared_parts[["2b"]] <- part_until_target(
   study = "2b", cells = cells_2b, by = c("k", "n", "rho", "others"),
-  first_datasets = first_datasets_2b, batch_size = batch_size_2b,
+  first_datasets = first_datasets_2b,
   work = function(batch, model) {
     estimates_batch_2b(batch[names(cells_2b)], replications_of(batch), model)
   },

@@ -75,7 +75,7 @@ name.
 
 | File | What it gives the engine |
 |---|---|
-| `settings.R` | `tested_package`, `step_packages`, `cores_per_batch`, `prepare_models()`, `batch_model()`, `project_setup()`, `project_file_functions`, `prepare_workers()` |
+| `settings.R` | `tested_package`, `step_packages`, `cores_per_batch`, `part_sizes`, `prepare_models()`, `batch_model()`, `project_setup()`, `project_file_functions`, `prepare_workers()` |
 | `stopping_rule.R` | `next_plan(plan, table, by, batch_size, one_batch)`: a cell's plan after judging its table |
 | `dry_run_seams.R` | `expensive_calls`, `replayed_functions`, `skipped_in_dry_run`, and the replacements the dry run uses |
 | `timing_reference.R` | `reference_seconds()`: a fixed task that measures how fast a machine is |

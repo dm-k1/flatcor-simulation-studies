@@ -17,6 +17,19 @@ step_packages <- c("flatcor", "dplyr")
 ## engine/workers/worker_setup.R); a batch's core hours are its hours times this.
 cores_per_batch <- 4
 
+## Datasets per cell at first, and per batch, for every part that runs
+## until its targets are reached (part_until_target(), engine/study_form.R).
+## In a real run a study gives its own only as an exception, with its reason.
+## The smoke test, which only tests that every step runs and gives complete
+## results, has one minimal size for every study: one batch of 2 per cell
+## (and one more batch, to test the extension). The first datasets are whole
+## batches. A batch is saved as it finishes; its size has no effect on the
+## results.
+part_sizes <- list(
+  real  = list(first_datasets = 50, batch_size = 25),
+  smoke = list(first_datasets = 2, batch_size = 2)
+)
+
 ## Before any worker starts, once: build what the workers share, flatcor's
 ## models (shared/flatcor_models.R). The dry run skips it.
 prepare_models <- function() compile_flatcor_models()
