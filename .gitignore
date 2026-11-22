@@ -27,6 +27,6 @@ Rplots.pdf
 _targets/
 
 # Per-dataset detail files: too big for git, attached to a release instead
-# (results/per_dataset/README.md)
-results/per_dataset/*_variables*.csv.gz
-results/per_dataset/*_chains*.csv.gz
+# (project_1_validation/results/per_dataset/README.md)
+project_1_validation/results/per_dataset/*_variables*.csv.gz
+project_1_validation/results/per_dataset/*_chains*.csv.gz

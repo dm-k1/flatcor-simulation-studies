@@ -1,0 +1,103 @@
+## =====================================================================
+##  The check at the end of every run (run_all.R): are all outputs there,
+##  and is every number in them a number?
+##
+##    - a results file for every study that was run, all with the commit of
+##      the package under test the run used (tested_package, <project>/settings/settings.R)
+##    - every table of every file: no NaN, no Inf, no NA except the blanks
+##      its study declares (each with its reason), and no empty table except
+##      those its study declares for the smoke test (each column checked with
+##      checkmate, check_column() below)
+##
+##  The smoke test (and so every push, check.yml, and every image build)
+##  stops with an error when something is wrong; a real run reports it in
+##  its log, as its results are written and should not be lost.
+## =====================================================================
+
+## Blanks by design (a column NA on purpose) and tables empty in the smoke
+## test are declared by each study in its design.R (declared_blanks,
+## declared_empty_in_smoke; engine/study_form.R)
+
+## One column: TRUE, or what is wrong with it (checkmate's message, as
+## "Contains missing values (element 3)": element = row). A number must be
+## finite and present (no NaN, Inf or NA); any other value present. `blank`:
+## the rows where its study declares an NA on purpose; there NA is fine, but
+## NaN or Inf still not.
+check_column <- function(values, blank) {
+  declared_na <- blank & is.na(values)
+  if (is.numeric(values)) {
+    declared_na <- declared_na & !is.nan(values)
+    values[declared_na] <- 0 # stands in for the declared NA: a finite number
+    return(checkmate::check_numeric(values, finite = TRUE, any.missing = FALSE))
+  }
+  values <- as.character(values)
+  values[declared_na] <- "" # stands in for the declared NA
+  checkmate::check_character(values, any.missing = FALSE)
+}
+
+## The problems in one study's results file (character(0) for none)
+check_results_file <- function(file, study, package_commit, smoke) {
+  if (!file.exists(file)) return(sprintf("%s: no results file", study))
+  results <- readRDS(file)
+  problems <- character(0)
+
+  made_with <- results$setup[[paste0(tested_package, "_commit")]]
+  if (!identical(made_with, package_commit)) {
+    problems <- c(problems, sprintf(
+      "%s: made with %s %s, not %s", study, tested_package, made_with, package_commit
+    ))
+  }
+
+  for (name in names(results$tables)) {
+    table <- as.data.frame(results$tables[[name]])
+    where <- sprintf("%s, table %s", study, name)
+
+    if (nrow(table) == 0) {
+      if (!(smoke && name %in% declared_empty_in_smoke[[study]])) {
+        problems <- c(problems, sprintf("%s: empty", where))
+      }
+      next
+    }
+
+    # the blanks this table may have
+    allowed <- matrix(FALSE, nrow(table), ncol(table), dimnames = list(NULL, names(table)))
+    for (blank in declared_blanks) {
+      if (blank$study == study && blank$table == name) {
+        allowed[blank$when(table), blank$columns] <- TRUE
+      }
+    }
+
+    for (column in names(table)) {
+      found <- check_column(table[[column]], allowed[, column])
+      if (!isTRUE(found)) {
+        problems <- c(problems, sprintf("%s, column %s: %s", where, column, found))
+      }
+    }
+  }
+  problems
+}
+
+## Checks the results of the studies that were run; stops in the smoke test
+## when anything is wrong
+check_results <- function(results_folder, studies, package_commit, smoke) {
+  problems <- character(0)
+  for (study in studies) {
+    file <- file.path(results_folder, sprintf("study_%s.rds", study))
+    problems <- c(problems, check_results_file(file, study, package_commit, smoke))
+  }
+
+  if (length(problems) == 0) {
+    cli::cli_alert_success(
+      "Check of the outputs: every results file is there, every number is a number."
+    )
+    return(invisible(TRUE))
+  }
+  # one bullet per problem; each is a value, never read as cli markup
+  report <- c(
+    "Check of the outputs found {length(problems)} problem{?s}:",
+    stats::setNames(sprintf("{problems[[%d]]}", seq_along(problems)), rep("*", length(problems)))
+  )
+  if (smoke) cli::cli_abort(report, call = NULL)
+  cli::cli_warn(report)
+  invisible(FALSE)
+}

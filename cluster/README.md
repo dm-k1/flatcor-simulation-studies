@@ -1,13 +1,12 @@
 # Running the validation elsewhere, and how long it takes
 
 The validation is one pipeline ([`_targets.R`](../_targets.R)); `Rscript
-run_all.R` runs it (only the simulation: the figures come after, from the
-results files, with `Rscript make_figures.R`, on any machine). It saves every finished piece as it
-goes, so it can run anywhere a run may stop (a laptop, Colab, a cloud
+run_all.R` runs it, up to the results files. It saves every
+finished batch as it goes, so it can run anywhere a run may stop (a laptop, Colab, a cloud
 machine) and continue where it was, as long as the project folder (with its
-`_targets/` store) survives and flatcor stays the same: `run_all.R` refuses
+`_targets/<project>/` store) survives and flatcor stays the same: `run_all.R` refuses
 to continue with another flatcor commit than the run started with.
-`VALIDATION_FRESH=1 Rscript run_all.R` starts from scratch. This folder
+`VALIDATION_FRESH=1 Rscript run_all.R <project>` starts from scratch. This folder
 holds what helps with that: a container image with the exact environment,
 the run-time estimate, and how to run it on a cluster.
 
@@ -21,7 +20,11 @@ mode inside it, and only then publishes it as
 hash of the three files the image is built from (the Dockerfile, its ignore
 file and `renv.lock`); [`image_tag.sh`](image_tag.sh) prints it for the
 checkout you are in, so every commit finds the image of its own environment,
-whatever the branch. To run the validation in it, from the project folder:
+whatever the branch. That build's smoke test counts for the check on every
+push (`check.yml` skips its own when an image build tested the same code),
+and whatever runs inside the image in CI first waits for an image build still
+running ([`ci/wait_for_image.sh`](../ci/wait_for_image.sh)). To run the
+validation in it, from the project folder:
 
 ```bash
 docker run --rm -v "$PWD":/project "ghcr.io/dm-k1/flatcor-validation:$(cluster/image_tag.sh)"
@@ -37,7 +40,7 @@ measures it on GitHub's runners, for free on a public repository. It runs on
 demand only, from Actions > Run-time estimate > Run workflow (it first waits
 for an image build still running; a newer run cancels one still going). Each study runs its full design on 4% and
 6% of its datasets (at least 2 per cell; 1a and 1b in full), each on its own
-4-core runner; `R/timing/estimate_run_time.R`
+4-core runner; `engine/run_time/estimate_run_time.R`
 separates the fixed part of a study's cost from the part per dataset and reads
 off the full run. The run's summary page shows the hours per study on 4, 8, 16
 and 32 cores.
@@ -45,33 +48,45 @@ and 32 cores.
 The same can be run anywhere, a study at a time:
 
 ```bash
-VALIDATION_TIMING=0.04 Rscript R/timing/time_study.R 3a
-VALIDATION_TIMING=0.06 Rscript R/timing/time_study.R 3a
-Rscript R/timing/estimate_run_time.R
+VALIDATION_TIMING=0.04 Rscript engine/run_time/time_study.R 3a
+VALIDATION_TIMING=0.06 Rscript engine/run_time/time_study.R 3a
+Rscript engine/run_time/estimate_run_time.R
 ```
 
-Timing runs write only to `cache/timing/`, so they never mix with a real run.
+Timing runs write only to `cache/<project>/timing/`, so they never mix with a real run.
 
 **For your own machine.** GitHub's runners differ (several processor types),
 so every timing run first times a reference task: one fixed flatcor Bayes
-factor (`R/timing/reference_task.R`, about a minute). The estimate counts each
+factor (`project_1_validation/settings/timing_reference.R`, about a minute). The estimate counts each
 timing in multiples of its own runner's reference, so a faster or slower
 runner divides out. To read the estimate off for the machine you plan to
 use, run the reference task there and give its seconds to the estimate (the
 artifact `run-time-estimate` holds the timing runs, in `timing/`):
 
 ```bash
-Rscript R/timing/reference_task.R          # e.g. "8.9 seconds" on an M-series Mac
-Rscript R/timing/estimate_run_time.R timing --reference=8.9
+Rscript project_1_validation/settings/timing_reference.R          # e.g. "8.9 seconds" on an M-series Mac
+Rscript engine/run_time/estimate_run_time.R timing --reference=8.9
 ```
 
 ## On a cluster
 
 The run uses one machine with many cores: the pipeline starts a worker for
-every 4 cores it is given (each piece of work runs Stan's 4 chains in
-parallel) and keeps every finished piece in `_targets/`. On a cluster that is
+every 4 cores it is given (each batch runs Stan's 4 chains in parallel)
+and keeps every finished batch in `_targets/<project>/`. On a cluster that is
 one job on one node, resubmitted until the pipeline is done. (Several nodes
 would need crew's cluster controllers instead; not set up.)
+
+The workers stay busy until the end. Every batch goes through the
+scheduler ([`engine/workers/scheduler.R`](../engine/workers/scheduler.R)):
+each cell is judged as soon as its own batch is done and, if it needs more
+datasets, its next batch goes out at once, without waiting for the other
+cells. When what the run has spent plus what it still expects to cost is
+more than its budget, it stops and reports what is left (the run-time
+estimate below; `Rscript engine/run_time/remaining_time.R` shows the same
+from outside, at any moment). The
+parts that run once (1a, 2a, 3b.1 and 3b.2) go out first and run
+alongside. Then the pipeline runs once, in minutes: every study's results,
+from the finished batches.
 
 **1. The project, at the commit to run.** Clone it onto storage that survives
 between jobs (your home or project space, not a node's local scratch):
@@ -104,7 +119,7 @@ project; adjust the partition, cores, memory and time to the cluster):
 
 cd "$SLURM_SUBMIT_DIR"
 apptainer exec --bind "$PWD":/project --pwd /project flatcor-validation.sif \
-  Rscript run_all.R
+  Rscript run_all.R project_1_validation
 ```
 
 ```bash
@@ -113,13 +128,14 @@ sbatch run_validation.sbatch
 ```
 
 - **Cores.** The pipeline uses the job's allocation (`--cpus-per-task`), not
-  all cores of the node (`parallelly::availableCores()` in `_targets.R`),
+  all cores of the node (`parallelly::availableCores()`, in
+  `worker_count()` in `engine/workers/worker_setup.R`),
   and starts (cores - 1) / 4 workers, rounded down: one core is for the
   pipeline itself. So ask for 4 × workers + 1: 33 cores give 8 workers,
   where 32 would give 7 and leave 3 idle.
 - **Memory.** Not measured yet for a full run. Bayes factor fits no longer
   keep per-observation draws, so a worker needs well under a gigabyte for
-  most pieces; 2 GB per core is a safe start. After the first job,
+  most batches; 2 GB per core is a safe start. After the first job,
   `sacct -j <job id> --format=MaxRSS,Elapsed` shows what it used.
 - **Time.** The run-time estimate gives the core hours; divided by the cores,
   that is the wall time, longer than most clusters allow for one job. When a
@@ -128,9 +144,9 @@ sbatch run_validation.sbatch
   the run started with (the image fixes flatcor, so this only happens with a
   new `.sif`), and `VALIDATION_FRESH=1` (as `apptainer exec --env
   VALIDATION_FRESH=1 ...`) starts from scratch.
-- **Afterwards.** The results are in `results/studies/` (one file per
-  study). Copy them back, draw the figures with `Rscript make_figures.R`,
-  and commit both; the notebook and the docs read them from there.
+- **Afterwards.** The results are in the project's `results/studies/` (one
+  file per study) and `results/per_dataset/`. Copy them back and commit them; the
+  docs read them from there.
 
 A SLURM array script was here until 17 November 2026 (in the git history);
 one job on one node replaces it.
@@ -138,12 +154,15 @@ one job on one node replaces it.
 ## On AWS
 
 [`aws/user-data.sh`](aws/user-data.sh) runs the validation on one EC2 spot
-instance (Amazon Linux 2023), given to it as user data with five values
-filled in: the S3 bucket, a name for the run, smoke test or not, the studies,
-and a safety cutoff in hours. It installs Docker, clones this repository,
+instance (Amazon Linux 2023), given to it as user data with eight values
+filled in: the S3 bucket, a name for the run, smoke test or not, where to
+download the code from and which commit of it (or a branch), the project,
+the studies, and a safety cutoff in hours; the script itself names no
+repository and no branch, and a value left unfilled stops it at once,
+saying which. It installs Docker, downloads the code at that commit,
 runs `run_all.R` in the published image (only the simulation), copies the
-results and logs to `s3://<bucket>/<run name>/`, and shuts down. The figures
-are drawn afterwards from the downloaded results: `Rscript make_figures.R`. Launched with shutdown behaviour
+results and logs to `s3://<bucket>/<run name>/`, and shuts down. Launched
+with shutdown behaviour
 "terminate", the instance then deletes itself.
 
 AWS can take a spot instance back at any moment, its disk included. A real
