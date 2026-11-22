@@ -1,7 +1,7 @@
 ## Estimated run time of the full validation
 
 18 November 2026: run-time estimate run
-[44223161415](https://github.com/dm-k1/flatcor-validation/actions/runs/44223161415)
+44223161415 (GitHub Actions; in the repository's earlier history, no longer public)
 (commit a92e096, flatcor 86b66b3, fractions 4% and 6% of the datasets) for
 1a to 3a; for 3b a calculation from timed Bayes factors (below), as its
 timing runs do not fit in a GitHub runner's 6 hours. A rough estimate,
