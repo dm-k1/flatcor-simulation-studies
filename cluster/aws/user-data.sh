@@ -20,7 +20,7 @@
 ##    RUN_NAME    a folder in the bucket for this run
 ##    SMOKE       1 for the smoke test, 0 for a real run
 ##    REPOSITORY  where to download the code from (a git address, as
-##                https://github.com/dm-k1/flatcor-validation.git)
+##                https://github.com/dm-k1/flatcor-simulation-studies.git)
 ##    CHECKOUT    which version of it to run: a commit (or a branch); every
 ##                machine of a run should run the same commit, so pin one
 ##    PROJECT     the project folder to run, as project_1_validation

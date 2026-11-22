@@ -5,7 +5,7 @@ each file, with what software, on which machine, and what happened on the
 way. What the studies test and why is in
 [`docs/validation_tests.md`](../docs/validation_tests.md). The results of v1,
 reported in the paper, are at tag
-[`v1-results`](https://github.com/dm-k1/flatcor-validation/tree/v1-results);
+[`v1-results`](https://github.com/dm-k1/flatcor-simulation-studies/tree/v1-results);
 how they were made is in that tag's copy of this file.
 
 ## The files

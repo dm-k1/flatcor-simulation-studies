@@ -92,7 +92,7 @@ from the finished batches.
 between jobs (your home or project space, not a node's local scratch):
 
 ```bash
-git clone https://github.com/dm-k1/flatcor-validation.git
+git clone https://github.com/dm-k1/flatcor-simulation-studies.git
 cd flatcor-validation
 ```
 

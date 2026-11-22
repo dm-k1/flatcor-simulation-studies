@@ -1,4 +1,4 @@
-# flatcor-validation: simulation studies of flatcor
+# flatcor-simulation-studies: simulation studies of flatcor
 
 Simulation studies of [flatcor](https://github.com/dm-k1/flatcor), an R
 package for objective Bayes factors and estimation in linear regression.
@@ -7,11 +7,11 @@ paper are in [Objective-bayes](https://github.com/dm-k1/Objective-bayes).
 
 > **`main`.** The validation's results here are those of the full v2 run
 > (`project_1_validation/results/`; as first published at tag
-> [`v2-results`](https://github.com/dm-k1/flatcor-validation/tree/v2-results)).
+> [`v2-results`](https://github.com/dm-k1/flatcor-simulation-studies/tree/v2-results)).
 > The results reported in the paper are at tag
-> [`v1-results`](https://github.com/dm-k1/flatcor-validation/tree/v1-results).
+> [`v1-results`](https://github.com/dm-k1/flatcor-simulation-studies/tree/v1-results).
 > Project 2 has not run yet. Work continues on branch
-> [`v2`](https://github.com/dm-k1/flatcor-validation/tree/v2).
+> [`v2`](https://github.com/dm-k1/flatcor-simulation-studies/tree/v2).
 
 The repository holds an engine, which runs simulation studies on parallel
 workers up to their results files, and the projects that use it, each in a

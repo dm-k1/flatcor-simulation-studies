@@ -23,7 +23,7 @@ model against the intercept-only model instead (`log_bf_intercept_a`, ...).
 
 **Files `_variables.csv.gz` and `_chains.csv.gz`** (not in git: 197 MB;
 attached to the release of tag
-[`v2-results`](https://github.com/dm-k1/flatcor-validation/releases/tag/v2-results),
+[`v2-results`](https://github.com/dm-k1/flatcor-simulation-studies/releases/tag/v2-results),
 with their SHA-256 sums; a run writes them here) hold, joined by `id` and `model` (`a`, `b`): the summary of every Stan
 variable (mean, median, sd, mad, quantiles, rhat, ess_bulk, ess_tail) and
 the sampler per chain (divergences, treedepth hits, E-BFMI, step size,
