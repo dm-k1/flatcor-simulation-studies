@@ -15,7 +15,9 @@
 ##
 ##  For the three priors a Bayes factor is flatcor's: each model fitted
 ##  with its Stan model, its marginal likelihood estimated by bridge
-##  sampling. For the references it is BayesFactor's, from R-squared, n and k.
+##  sampling. For the references it is BayesFactor's, from R-squared, n and k,
+##  and their posterior, for estimation, is BayesFactor's too (lmBF() and
+##  posterior() with the same scale).
 ## =====================================================================
 
 
@@ -50,6 +52,47 @@ models_as_formulas <- function(predictors_a, predictors_b, outcome) {
   )
 }
 
+## Posterior draws for estimation with the references (BayesFactor's
+## posterior()): as many as a Bayes factor's draws per model, fewer in the
+## smoke test
+posterior_draws <- bayes_factor_draws
+
+## The summary of every variable of some posterior draws, in the columns
+## flatcor gives (mean, median, sd, mad, quantiles, R-hat, bulk and tail ESS)
+summarise_posterior <- function(draws) {
+  as.data.frame(posterior::summarise_draws(
+    draws,
+    "mean", "median", "sd", "mad",
+    ~ posterior::quantile2(.x, probs = c(0.025, 0.05, 0.95, 0.975)),
+    "rhat", "ess_bulk", "ess_tail"
+  ))
+}
+
+## The estimates every Bayes factor method gives, from the full model's
+## summary, as one row in the same columns for all five: x1's slope
+## (flatcor's b[1], BayesFactor's x1) as slope_x1_*, and the population
+## R-squared (R_squared in both) as posterior_r_squared_*, each with its
+## mean, median, sd and the 90% and 95% intervals
+estimates_of <- function(summary, slope_variable) {
+  one <- function(variable, prefix) {
+    row <- summary[summary$variable == variable, ]
+    values <- unlist(row[c("mean", "median", "sd", "q2.5", "q5", "q95", "q97.5")])
+    tibble::as_tibble_row(stats::setNames(as.list(values), paste0(prefix, "_", names(values))))
+  }
+  bind_cols(one(slope_variable, "slope_x1"), one("R_squared", "posterior_r_squared"))
+}
+
+## The population R-squared of each posterior draw of a regression, as
+## flatcor defines it: b' S b / (b' S b + sigma^2), with S the predictors'
+## covariance (divided by n). `slopes`: a draw per row; `noise_variance`:
+## sigma^2 per draw.
+r_squared_of_draws <- function(slopes, noise_variance, predictors) {
+  centred <- scale(predictors, scale = FALSE)
+  covariance <- crossprod(centred) / nrow(predictors)
+  explained <- rowSums((slopes %*% covariance) * slopes)
+  explained / (explained + noise_variance)
+}
+
 ## The sample R-squared of the outcome on some predictors (0 for none)
 sample_r_squared <- function(predictors, outcome) {
   if (ncol(predictors) == 0) 0 else summary(lm(outcome ~ predictors))$r.squared
@@ -70,10 +113,18 @@ sample_r_squared <- function(predictors, outcome) {
 ##                   divergences, bridge sampling's iterations, seconds, and
 ##                   the largest R-hat and smallest bulk and tail ESS over
 ##                   its Stan variables
+##   slope_x1_mean, slope_x1_median, slope_x1_sd, slope_x1_q2.5, ... q97.5,
+##   posterior_r_squared_mean, ... _q97.5
+##                   model A's posterior of x1's slope (its first column)
+##                   and of the population R-squared (estimates_of())
 ##   variables       per model, the summary of every Stan variable (flatcor)
 ##   chains          per model, the sampler per chain (flatcor)
 ## For JZS and Zellner-Siow: BayesFactor's Bayes factor of each model against
-## the intercept-only model and its error, no Stan.
+## the intercept-only model and its error, no Stan; and model A's posterior
+## under the same prior (BayesFactor's posterior()), with R_squared added per
+## draw as flatcor defines it: the same estimates as the three priors, the
+## summary of every variable (`variables`, model "a", in flatcor's columns),
+## posterior_draws and seconds_posterior.
 log_bayes_factor_between <- function(method, predictors_a, predictors_b, outcome, name) {
   seed <- seed_of(name)
   common <- tibble(
@@ -125,6 +176,7 @@ log_bayes_factor_between <- function(method, predictors_a, predictors_b, outcome
       tibble(log_bf = result$log_bayes_factor, error = result$error,
              divergent = sum(result$divergent)),
       per_model("a"), per_model("b"),
+      if (ncol(predictors_a) > 0) estimates_of(result$models$a$summary, "b[1]"),
       tibble(variables = list(long("summary")), chains = list(long("sampler")))
     ))
   }
@@ -150,13 +202,40 @@ log_bayes_factor_between <- function(method, predictors_a, predictors_b, outcome
   a <- log_bf_against_intercept(predictors_a)
   b <- log_bf_against_intercept(predictors_b)
 
-  bind_cols(common, tibble(
-    log_bf = a[["bf"]] - b[["bf"]],
-    error = sqrt(a[["error"]]^2 + b[["error"]]^2),
-    divergent = 0,
-    log_bf_intercept_a = a[["bf"]], error_intercept_a = a[["error"]],
-    log_bf_intercept_b = b[["bf"]], error_intercept_b = b[["error"]]
+  # estimation: model A's posterior under the same prior (BayesFactor's
+  # lmBF() and posterior(), with the same scale), drawn in the stream of
+  # its own name (engine/seeds.R). Columns x1 ... xk, so x1 is model A's
+  # first predictor; also mu, sig2 and g.
+  started <- Sys.time()
+  data_a <- data.frame(outcome = outcome, predictors_a)
+  names(data_a) <- c("outcome", paste0("x", seq_len(ncol(predictors_a))))
+  draws <- with_stream_of(name_of(name, "posterior"), {
+    model_a <- BayesFactor::lmBF(outcome ~ ., data = data_a, rscaleCont = scale, progress = FALSE)
+    BayesFactor::posterior(model_a, iterations = posterior_draws, progress = FALSE)
+  })
+  draws <- unclass(as.matrix(draws))
+  # and the population R-squared of every draw, as flatcor's R_squared
+  draws <- cbind(draws, R_squared = r_squared_of_draws(
+    draws[, names(data_a)[-1], drop = FALSE], draws[, "sig2"], predictors_a
   ))
+  summary <- summarise_posterior(posterior::as_draws_matrix(draws))
+
+  bind_cols(
+    common,
+    tibble(
+      log_bf = a[["bf"]] - b[["bf"]],
+      error = sqrt(a[["error"]]^2 + b[["error"]]^2),
+      divergent = 0,
+      log_bf_intercept_a = a[["bf"]], error_intercept_a = a[["error"]],
+      log_bf_intercept_b = b[["bf"]], error_intercept_b = b[["error"]]
+    ),
+    estimates_of(summary, "x1"),
+    tibble(
+      posterior_draws = posterior_draws,
+      seconds_posterior = as.numeric(difftime(Sys.time(), started, units = "secs")),
+      variables = list(cbind(model = "a", summary))
+    )
+  )
 }
 
 ## ---- The p-value -------------------------------------------------------------------------

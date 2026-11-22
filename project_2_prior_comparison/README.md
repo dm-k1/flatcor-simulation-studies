@@ -62,7 +62,7 @@ Every dataset goes to every method (common random numbers):
 | Method | How | Cost |
 |---|---|---|
 | flat partial r, flat R, flat R² | flatcor: both models fitted in Stan, each marginal likelihood by bridge sampling | almost all of it |
-| Zellner–Siow (scale 1), JZS (scale √2/4) | BayesFactor, from R², n and k | negligible |
+| Zellner–Siow (scale 1), JZS (scale √2/4) | BayesFactor: the Bayes factor from R², n and k; the full model's posterior by `lmBF()` and `posterior()`, with the same scale | negligible (about a second per dataset) |
 | p-value of x₁'s slope | the OLS fit | none |
 
 The Bayes factor is always for x₁: the model with all k predictors against
@@ -83,15 +83,19 @@ method; "full" is the model with x₁, "reduced" the model without it.
 | `log_ml_full`, `error_full`, `log_ml_reduced`, `error_reduced` | The three priors: each model's log marginal likelihood and bridge sampling's error, so any Bayes factor can be formed afterwards |
 | `log_ml_null`, `error_null`, `seconds_null` | The three priors: the intercept-only model's log marginal likelihood (below) |
 | `log_bf_intercept_full`, `log_bf_intercept_reduced` (and their `error_`) | The references: each model's log Bayes factor against the intercept-only model |
+| `slope_x1_mean`, `_median`, `_sd`, `_q2.5`, `_q5`, `_q95`, `_q97.5`; `posterior_r_squared_` (the same) | All five priors: the full model's posterior of x₁'s slope (flatcor's `b[1]`, BayesFactor's `x1`) and of the population R², in the same columns, so the priors' estimates compare directly across the matrix. R² is flatcor's definition, b′Sb / (b′Sb + σ²) with S the predictors' covariance; for the references it is computed per draw from BayesFactor's slopes and `sig2` (`r_squared_of_draws()`) |
+| `posterior_draws`, `seconds_posterior` | The references: posterior draws (one chain) and seconds of their posterior |
 | `divergent`, `divergent_full`, `divergent_reduced`, `rhat_max_*`, `ess_bulk_min_*`, `ess_tail_min_*`, `bridge_iterations_*` | Stan's and bridge sampling's diagnostics, per model |
 | `t_value`, `p_value` | The p-value row: x₁'s t statistic and its two-sided p-value |
-| `seconds`, `seconds_sampling_*`, `seconds_bridge_*`, `draws`, `machine` | Run descriptives: seconds per method and per model, posterior draws per model, the machine |
+| `seconds`, `seconds_sampling_*`, `seconds_bridge_*`, `draws`, `machine` | Run descriptives: seconds per method and per model, flatcor's posterior draws per chain (4 chains), the machine |
 
-Two more files hold the details of every Stan fit, per k:
+Two more files hold the details of every posterior, per k:
 `study_1a_stage1_variables_<k>.csv.gz` (every variable's mean, median, sd,
-mad, quantiles, R-hat and bulk and tail ESS, per model) and
-`study_1a_stage1_chains_<k>.csv.gz` (the sampler per chain). Both join to
-the main file by `id`; their column `model` is `a` for the full model, `b`
+mad, quantiles, R-hat and bulk and tail ESS, per model; for the references
+the full model's `mu`, `x1` … `xk`, `sig2`, `g` and `R_squared`, in the same
+columns) and
+`study_1a_stage1_chains_<k>.csv.gz` (flatcor's sampler per chain). Both join
+to the main file by `id`; their column `model` is `a` for the full model, `b`
 for the reduced one.
 
 **The intercept-only model** is kept: its marginal likelihood is the same
