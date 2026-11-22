@@ -20,8 +20,9 @@ FROM rocker/r-ver:4.6.1
 
 # System libraries that the R packages compile against (networking; ICU for
 # stringi; libuv for fs; GMP and MPFR for Rmpfr; libxml2 for igraph; zlib for
-# data.table, whose fwrite writes the .csv.gz files: without its headers
-# data.table compiles without compression and the run stops; the list
+# data.table, whose fwrite writes the .csv.gz files, and pkg-config, through
+# which data.table's configure finds zlib: without either, data.table
+# compiles without compression and the run stops; the list
 # follows the SystemRequirements of the packages in renv.lock) and git (each
 # results file records the commit). The image only runs the simulations:
 # nothing for figures or a notebook (graphics, fonts, V8, ZeroMQ), which live
@@ -29,7 +30,7 @@ FROM rocker/r-ver:4.6.1
 RUN apt-get update && apt-get install -y --no-install-recommends \
       git curl make cmake g++ \
       libcurl4-openssl-dev libssl-dev libxml2-dev libicu-dev libuv1-dev \
-      libgmp-dev libmpfr-dev zlib1g-dev \
+      libgmp-dev libmpfr-dev zlib1g-dev pkg-config \
     && rm -rf /var/lib/apt/lists/*
 
 # R packages at the versions in renv.lock, into the image's site library
@@ -37,6 +38,11 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 COPY renv.lock /tmp/renv.lock
 RUN Rscript -e 'install.packages("renv", repos = "https://cloud.r-project.org")' \
  && Rscript -e 'renv::restore(lockfile = "/tmp/renv.lock", library = .libPaths()[1], prompt = FALSE)'
+
+# A check right away, so a package compiled without a feature the run needs
+# fails the build here, not in the smoke test: data.table writes a
+# compressed file (it compiles without compression when it cannot find zlib)
+RUN Rscript -e 'data.table::fwrite(data.frame(x = 1), tempfile(fileext = ".csv.gz"))'
 
 # CmdStan, the version the validation was last run with
 ENV CMDSTAN_VERSION=2.40.0
