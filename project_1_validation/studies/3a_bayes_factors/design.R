@@ -7,13 +7,12 @@
 
 
 ## ---- The design -------------------------------------------------------------------
-##   prior (3) × setting (k = 3, n = 50; k = 8, n = 200) = 6 cells,
+##   prior (4) × setting (k = 3, n = 50; k = 8, n = 200) = 8 cells,
 ##   data from the prior (shared/data/from_the_prior.R), half from the model
 ##   without x1
-cells_3a <- data.frame(
-  prior = rep(c("joint_partial_r", "flat_r", "flat_r_squared"), each = 2),
-  k     = c(3, 8),
-  n     = c(50, 200)
+cells_3a <- merge(
+  data.frame(prior = project_priors),
+  data.frame(k = c(3, 8), n = c(50, 200))
 )
 if (smoke) cells_3a <- cells_3a[cells_3a$k == 3, ]
 

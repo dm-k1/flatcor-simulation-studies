@@ -2,8 +2,10 @@
 ##  The methods compared in the validation studies: one set, used
 ##  everywhere.
 ##
-##  The three priors, all R-squared ~ Beta(a, 1) with a uniform direction
-##  (flatcor):
+##  The four priors of flatcor, in flatcor's order (flatcor::prior_labels()):
+##    independent flat partial r   each partial correlation flat on its own
+##                     (-1, 1); no Beta shape for R-squared
+##  The other three are R-squared ~ Beta(a, 1) with a uniform direction:
 ##    joint flat partial r   a = k/2: every correlation matrix of (y, x1 ... xk)
 ##                     equally likely; rstanarm stan_lm's prior with eta = 1
 ##    flat R           a = 1/2: R flat for every k
@@ -13,7 +15,7 @@
 ##    Zellner-Siow     Cauchy prior, scale 1 (R-squared ~ Beta(k/2, 1/2))
 ##
 ##  Every Bayes factor is a comparison of two models, each with its own
-##  prior. For the three priors it is flatcor's: each model fitted with its
+##  prior. For the four priors it is flatcor's: each model fitted with its
 ##  Stan model, its marginal likelihood estimated by bridge sampling. The
 ##  references appear in studies 2b and 3b.
 ## =====================================================================
@@ -21,8 +23,8 @@
 
 ## ---- Method names (the same in every study) ------------------------------------
 
-## The labels come from flatcor; the three priors are this project's design.
-project_priors <- c("joint_partial_r", "flat_r", "flat_r_squared")
+## The priors and their labels come from flatcor, in flatcor's order.
+project_priors <- names(flatcor::prior_labels())
 contenders <- stats::setNames(project_priors, flatcor::prior_labels()[project_priors])
 model_methods <- c(names(contenders), "JZS default", "Zellner-Siow")
 
@@ -76,7 +78,7 @@ log_bayes_factor_between <- function(method, predictors_a, predictors_b, outcome
     r_squared_a = sample_r_squared(predictors_a), r_squared_b = sample_r_squared(predictors_b)
   )
 
-  # the three priors: flatcor
+  # the four priors: flatcor
   if (method %in% names(contenders)) {
     # once per worker, one worker at a time (shared/flatcor_models.R)
     compile_flatcor_models()

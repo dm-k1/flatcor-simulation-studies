@@ -6,9 +6,9 @@
 
 
 ## ---- The design -------------------------------------------------------------------
-##   prior (3) × dataset (ordinary regression,
+##   prior (4) × dataset (ordinary regression,
 ##   shared/data/ordinary_regression.R) × change (rescaled, recoded)
-priors_1b <- data.frame(prior = c("joint_partial_r", "flat_r", "flat_r_squared"))
+priors_1b <- data.frame(prior = project_priors)
 
 
 ## ---- How many (docs/validation_tests.md, "How many datasets") -------------------------
