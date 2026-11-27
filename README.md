@@ -3,15 +3,15 @@
 Simulation studies of [flatcor](https://github.com/dm-k1/flatcor), an R
 package for objective Bayes factors and estimation in linear regression.
 The argument for its priors, the priors and their derivations, and the
-paper are in [Objective-bayes](https://github.com/dm-k1/Objective-bayes).
+paper are in [flatcor-paper](https://github.com/dm-k1/flatcor-paper).
 
 > **`main`.** The validation's results here are those of the full v2 run
 > (`project_1_validation/results/`; as first published at tag
 > [`v2-results`](https://github.com/dm-k1/flatcor-simulation-studies/tree/v2-results)).
 > The results reported in the paper are at tag
 > [`v1-results`](https://github.com/dm-k1/flatcor-simulation-studies/tree/v1-results).
-> Project 2 has not run yet. Work continues on branch
-> [`v2`](https://github.com/dm-k1/flatcor-simulation-studies/tree/v2).
+> Project 2 has not run yet.
+
 
 The repository holds an engine, which runs simulation studies on parallel
 workers up to their results files, and the projects that use it, each in a
@@ -64,7 +64,7 @@ with its results in `cache/` (never mixed with real ones).
 
 This repository ends at the results files. The figures and the notebook
 that show project 1's results live in
-a separate private repository (a private repository),
+a separate private repository,
 which only reads those files; nothing here knows of it.
 
 ### Faster checks while working on the code

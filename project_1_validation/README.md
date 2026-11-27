@@ -4,7 +4,7 @@ The validation of [flatcor](https://github.com/dm-k1/flatcor), an R package
 for objective Bayes factors and estimation in linear regression: whether each
 of its three default priors works correctly within the Bayesian framework.
 The argument for the priors, the priors and their derivations, and the paper
-are in [Objective-bayes](https://github.com/dm-k1/Objective-bayes).
+are in [flatcor-paper](https://github.com/dm-k1/flatcor-paper).
 
 > The results in `results/` are those of the full v2 run (tag
 > [`v2-results`](https://github.com/dm-k1/flatcor-simulation-studies/tree/v2-results));
@@ -18,6 +18,8 @@ are in [Objective-bayes](https://github.com/dm-k1/Objective-bayes).
 | **joint flat partial r** (`prior = "joint_partial_r"`) | every valid correlation matrix of $(y, x_1 \ldots x_k)$ | Beta($k/2$, 1), grows with $k$ | a flat partial correlation, for every $k$ |
 | **flat R** (`prior = "flat_r"`) | the multiple correlation $R$ | Beta(½, 1), for every $k$ | its share of the flat total; narrows as $k$ grows |
 | **flat R²** (`prior = "flat_r_squared"`) | $R^2$ | Beta(1, 1), for every $k$ | its share of the flat total; narrows as $k$ grows |
+
+Project 1 tests the three priors with $R^2$ ~ Beta($a$, 1). The fourth prior, independent flat partial r, was added later and is tested in project 2.
 
 All three are $R^2$ ~ Beta($a$, 1) with $a$ = $k/2$, ½ or 1, and divide the
 total over the predictors without preference. As a density on the
@@ -53,11 +55,11 @@ Carlo errors; nothing is judged pass or fail per row.
 
 ## Reading order
 
-Background, in [Objective-bayes](https://github.com/dm-k1/Objective-bayes):
-[the three priors](https://github.com/dm-k1/Objective-bayes/blob/main/docs/2_the_four_priors.md)
+Background, in [flatcor-paper](https://github.com/dm-k1/flatcor-paper):
+[the three priors](https://github.com/dm-k1/flatcor-paper/blob/main/docs/2_the_four_priors.md)
 (part 2: the family $R^2 \sim$ Beta($a$, 1), what each keeps flat and
 expects, how the total is divided, what the package computes) and
-[their derivations](https://github.com/dm-k1/Objective-bayes/blob/main/docs/appendix/A_derivations.md)
+[their derivations](https://github.com/dm-k1/flatcor-paper/blob/main/docs/appendix/A_derivations.md)
 (appendix A: the density factor by factor, the Stan model, the Bayes factors
 and the g-prior forms behind them, the default-prior criteria). The table
 above is enough to follow the validation. In this repository:
@@ -65,7 +67,7 @@ above is enough to follow the validation. In this repository:
 | | Document | What it is |
 |---|---|---|
 | 1 | [`docs/validation_tests.md`](docs/validation_tests.md) | **What the validation tests**: per study its design, what is tested, what is expected and why, with what Monte Carlo error and how many datasets, and the data sets |
-| 2 | a separate private repository (a private repository) | **The results**, shown: per study its question, its estimates against what is expected, and figures (a separate repository that reads this one's results files) |
+| 2 | a separate private repository | **The results**, shown: per study its question, its estimates against what is expected, and figures (a separate repository that reads this one's results files) |
 
 Working notes: [`docs/notes/`](docs/notes/) (the plan of the redesign, the
 run-time estimate).
@@ -85,7 +87,7 @@ run-time estimate).
 
 - **Choosing the prior.** Without `prior =`, flatcor uses joint flat partial r and
   says so once per session. What each prior assumes:
-  [`2_the_four_priors.md`](https://github.com/dm-k1/Objective-bayes/blob/main/docs/2_the_four_priors.md) (in Objective-bayes).
+  [`2_the_four_priors.md`](https://github.com/dm-k1/flatcor-paper/blob/main/docs/2_the_four_priors.md) (in flatcor-paper).
 - **Shrinkage at small $n$.** With several predictors and a small sample, the
   prior pulls estimates towards zero (study 2b shows how much).
 - **Leaving the null model.** Against the intercept-only model, evidence for
@@ -120,7 +122,7 @@ Rscript run_all.R project_1_validation 3a                   # one study
 The results go to [`results/`](results/): each study's results
 (`results/studies/study_<study>.rds`) and every dataset's rows
 (`results/per_dataset/`). The figures and the notebook that show them live
-in a separate private repository (a private repository).
+in a separate private repository.
 
 ## What's where
 

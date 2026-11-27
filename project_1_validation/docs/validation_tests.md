@@ -40,13 +40,13 @@ targets' own seed, with which it seeds R before each step, is the root seed too,
 
 | Data set | File | One dataset | Used by | Why this data |
 |------------------|------------------|------------------|------------------|------------------|
-| **Prior-only designs** | `1_prior_only_designs.R` | fixed predictors, *n* = 60: one; three with correlation .4; eight uncorrelated (no outcome: the model draws the prior) | 1a | one predictor (where joint flat partial r and flat R coincide), a few correlated (the direction is defined relative to their covariance), and more |
-| **Ordinary regression** | `2_ordinary_regression.R` | *n* = 60, three predictors with correlation .4, slopes 0.3, 0.2, 0, noise SD 1 | 1b | the package's own example: realistic, and the same for every prior |
-| **Data from the prior** | `3_from_the_prior.R` | predictors (correlation .3) × coefficients drawn from the prior being tested + noise; with *x*₁ = "reduced", *x*₁ = 0 and the others from the prior of the model without *x*₁ | 2a, 3a | SBC and Bayes factor calibration are statements about data drawn from the prior itself |
-| **Known slopes** | `4_known_slopes.R` | predictors (correlation ρ) × fixed slopes (*x*₁ = 0.2; the others sparse, one at 0.3, or dense, all 0.1) + noise SD 1 | 2b | estimation is judged against a known truth |
-| **Set R²** | `5_set_r_squared.R` | predictors and an outcome built so that the sample *R*² is exactly a given value | 3b.1, 3b.2 | predictive matching and information consistency are statements about given values of *R*² |
-| **Nested models** | `6_nested_models.R` | standard normal predictors for a smaller and a larger model (the larger adds *q* null predictors, or, for the alternative, a real *x*₁ = 0.15), noise SD 1 | 3b.3–3b.6 | the rate at which the Bayes factor for the true model grows with *n* |
-| **Growing *k*** | `7_growing_k.R` | *k* = *n*/4 or √*n* standard normal predictors (at most 90); no slope (null true), or 3 slopes of 0.3 | 3b.8, 3b.9 | consistency when the number of predictors grows with *n* |
+| **Prior-only designs** | `prior_only_designs.R` | fixed predictors, *n* = 60: one; three with correlation .4; eight uncorrelated (no outcome: the model draws the prior) | 1a | one predictor (where joint flat partial r and flat R coincide), a few correlated (the direction is defined relative to their covariance), and more |
+| **Ordinary regression** | `ordinary_regression.R` | *n* = 60, three predictors with correlation .4, slopes 0.3, 0.2, 0, noise SD 1 | 1b | the package's own example: realistic, and the same for every prior |
+| **Data from the prior** | `from_the_prior.R` | predictors (correlation .3) × coefficients drawn from the prior being tested + noise; with *x*₁ = "reduced", *x*₁ = 0 and the others from the prior of the model without *x*₁ | 2a, 3a | SBC and Bayes factor calibration are statements about data drawn from the prior itself |
+| **Known slopes** | `known_slopes.R` | predictors (correlation ρ) × fixed slopes (*x*₁ = 0.2; the others sparse, one at 0.3, or dense, all 0.1) + noise SD 1 | 2b | estimation is judged against a known truth |
+| **Set R²** | `set_r_squared.R` | predictors and an outcome built so that the sample *R*² is exactly a given value | 3b.1, 3b.2 | predictive matching and information consistency are statements about given values of *R*² |
+| **Nested models** | `nested_models.R` | standard normal predictors for a smaller and a larger model (the larger adds *q* null predictors, or, for the alternative, a real *x*₁ = 0.15), noise SD 1 | 3b.3–3b.6 | the rate at which the Bayes factor for the true model grows with *n* |
+| **Growing *k*** | `growing_k.R` | *k* = *n*/4 or √*n* standard normal predictors (at most 90); no slope (null true), or 3 slopes of 0.3 | 3b.8, 3b.9 | consistency when the number of predictors grows with *n* |
 
 **Data from the prior, in detail.** One dataset = predictors × coefficients + noise:
 

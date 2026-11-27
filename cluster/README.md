@@ -23,7 +23,11 @@ checkout you are in, so every commit finds the image of its own environment,
 whatever the branch. That build's smoke test counts for the check on every
 push (`check.yml` skips its own when an image build tested the same code),
 and whatever runs inside the image in CI first waits for an image build still
-running ([`ci/wait_for_image.sh`](../ci/wait_for_image.sh)). To run the
+running ([`ci/wait_for_image.sh`](../ci/wait_for_image.sh)).
+
+The image name `ghcr.io/dm-k1/flatcor-validation` is historical (from this repository's old name) and stays as it is.
+
+To run the
 validation in it, from the project folder:
 
 ```bash
