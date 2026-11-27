@@ -79,6 +79,16 @@ jobs:
               flatcor-validation:test Rscript run_all.R "${project%/}"
           done
 
+      - name: Keep the smoke test's results
+        # The smoke results of every project, to look at when the job has run
+        # (also when the smoke test failed).
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: smoke-results
+          path: cache/*/smoke_results/
+          retention-days: 14
+
       - uses: docker/login-action@v3
         with:
           registry: ghcr.io
