@@ -1,8 +1,8 @@
-# Project 1: the validation. Do flatcor's three priors work?
+# Project 1: the validation. Do flatcor's four priors work?
 
 The validation of [flatcor](https://github.com/dm-k1/flatcor), an R package
 for objective Bayes factors and estimation in linear regression: whether each
-of its three default priors works correctly within the Bayesian framework.
+of its four priors works correctly within the Bayesian framework.
 The argument for the priors, the priors and their derivations, and the paper
 are in [flatcor-paper](https://github.com/dm-k1/flatcor-paper).
 
@@ -11,17 +11,18 @@ are in [flatcor-paper](https://github.com/dm-k1/flatcor-paper).
 > the results reported in the paper are at tag
 > [`v1-results`](https://github.com/dm-k1/flatcor-simulation-studies/tree/v1-results).
 
-## The three priors
+## The four priors
 
 | | What is flat | Implied $R^2$ | One coefficient's prior |
 |---|---|---|---|
+| **independent flat partial r** (`prior = "independent_partial_r"`) | each partial correlation, on its own | no closed form for $k > 1$ (Beta(½, 1) for $k = 1$) | a flat partial correlation, for every $k$ |
 | **joint flat partial r** (`prior = "joint_partial_r"`) | every valid correlation matrix of $(y, x_1 \ldots x_k)$ | Beta($k/2$, 1), grows with $k$ | a flat partial correlation, for every $k$ |
 | **flat R** (`prior = "flat_r"`) | the multiple correlation $R$ | Beta(½, 1), for every $k$ | its share of the flat total; narrows as $k$ grows |
 | **flat R²** (`prior = "flat_r_squared"`) | $R^2$ | Beta(1, 1), for every $k$ | its share of the flat total; narrows as $k$ grows |
 
-Project 1 tests the three priors with $R^2$ ~ Beta($a$, 1). The fourth prior, independent flat partial r, was added later and is tested in project 2.
+Project 1 tests all four priors.
 
-All three are $R^2$ ~ Beta($a$, 1) with $a$ = $k/2$, ½ or 1, and divide the
+The last three are $R^2$ ~ Beta($a$, 1) with $a$ = $k/2$, ½ or 1, and divide the
 total over the predictors without preference. As a density on the
 coefficients:
 
@@ -30,10 +31,10 @@ P(beta) = P(total) x P(this combination | total) x unit conversion
           R^2 ~ Beta(a, 1)     every split equally likely   noise units -> data units
 ```
 
-flatcor does everything with one Stan model, the same for the three priors:
+flatcor does everything with one Stan model, the same for the four priors:
 it draws the prior, gives the posterior, and gives the Bayes factor between
 any two linear models, from each model's marginal likelihood estimated by
-bridge sampling. Why these three, and why the default is joint flat partial r: the
+bridge sampling. Why these four, and why the default is joint flat partial r: the
 paper's repository.
 
 ## The validation
@@ -56,7 +57,7 @@ Carlo errors; nothing is judged pass or fail per row.
 ## Reading order
 
 Background, in [flatcor-paper](https://github.com/dm-k1/flatcor-paper):
-[the three priors](https://github.com/dm-k1/flatcor-paper/blob/main/docs/2_the_four_priors.md)
+[the four priors](https://github.com/dm-k1/flatcor-paper/blob/main/docs/2_the_four_priors.md)
 (part 2: the family $R^2 \sim$ Beta($a$, 1), what each keeps flat and
 expects, how the total is divided, what the package computes) and
 [their derivations](https://github.com/dm-k1/flatcor-paper/blob/main/docs/appendix/A_derivations.md)
@@ -99,7 +100,7 @@ run-time estimate).
   penalised.
 - **Flat R-squared with one predictor is not Jeffreys' prior.** Its prior on
   $r$ has density $|r|$, which gives little weight to correlations near zero.
-- **Information consistency needs $n \ge k + 3$**, for all three priors.
+- **Information consistency needs $n \ge k + 3$**, for all four priors.
 - **Bayes factors are estimates.** Each comes with a Monte Carlo error
   (bridge sampling's approximate error, which can be optimistic), and models
   up to about 90 predictors stay within the sizes bridge sampling has been

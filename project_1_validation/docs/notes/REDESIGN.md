@@ -9,7 +9,7 @@ formulas in commit 6f7331d.
 
 ## What the validation is for
 
-What someone needs to trust that each of the three priors works within the
+What someone needs to trust that each of the four priors works within the
 Bayesian framework, and nothing else. Three things are validated for every
 prior, each with checks the field already uses:
 
@@ -98,11 +98,11 @@ in commit 980741f (`project_1_validation/studies/05_behaviour.R` there, parts A 
 
 ## The software: flatcor
 
-flatcor does the three things for all three priors in one integration:
+flatcor does the three things for all four priors in one integration:
 
 | | How | Whose code |
 |---|---|---|
-| The prior | flatcor's Stan model: R ~ Beta(2a, 1) on R (not R²), direction uniform; only a changes (joint flat partial r k/2, flat R 1/2, flat R² 1) | ours: stating the prior |
+| The prior | flatcor's Stan model: for independent flat partial r, each partial correlation flat on its own (a flag, `independent_effects`); for the others R ~ Beta(2a, 1) on R (not R²), direction uniform, only a changes (joint flat partial r k/2, flat R 1/2, flat R² 1) | ours: stating the prior |
 | Prior sampling | the same model with the data switched off (`prior_only = 1`) | Stan |
 | Posterior | the same model with the data | Stan |
 | Bayes factor | bridgesampling on two fits of the model: with the term and without it | bridgesampling, with a short wrapper of ours |
@@ -138,8 +138,8 @@ points of practical advice). What flatcor and the studies take from it:
    posterior from Stan, and the Bayes factor between two models (a term
    tested as the model with it against the model without it; a factor is the
    same).
-2. **One implementation for all three priors:** one Stan model in which only
-   a changes. Every check runs the same way for every prior.
+2. **One implementation for all four priors:** one Stan model in which only
+   a changes (or the independent flag is set). Every check runs the same way for every prior.
 3. **No numerical software of our own.** Exact Bayes factor formulas
    (flatcor 2.0.0's likelihood ratio averaged by `integrate()`, and the
    Kummer-series route tried on 17 November 2026) kept breaking in corners:
@@ -155,7 +155,7 @@ points of practical advice). What flatcor and the studies take from it:
    k up to about 90; growing k (Bayarri's model-selection consistency as k
    grows with n) is tested within that range, not at k = 500.
 6. **Two reference methods, JZS and Zellner–Siow** (BayesFactor), next to
-   the three priors in the default-prior checks and in study 2b (with OLS
+   the four priors in the default-prior checks and in study 2b (with OLS
    there), and later in the behaviour study.
 7. **Established frameworks, all in R:** `targets` (with `crew` for parallel
    workers) runs the studies, `SBC`, `bridgesampling`, `cmdstanr`. Not

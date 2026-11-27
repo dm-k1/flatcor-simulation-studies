@@ -6,11 +6,11 @@ Is the Bayes factor invariant to units and coding? Rescaling, shifting or recodi
 
 ## Design
 
-The design, what is expected and why: [study 1b in `validation_tests.md`](../../docs/validation_tests.md#1b-is-the-bayes-factor-invariant-to-units-and-coding). `design.R` holds the three priors, the ordinary-regression data, the two changes (rescaled, recoded), and how many datasets are needed.
+The design, what is expected and why: [study 1b in `validation_tests.md`](../../docs/validation_tests.md#1b-is-the-bayes-factor-invariant-to-units-and-coding). `design.R` holds the four priors, the ordinary-regression data, the two changes (rescaled, recoded), and how many datasets are needed.
 
 ## Code
 
-- `design.R`: the three priors, the ordinary-regression data, the two changes (rescaled, recoded), and how many datasets are needed.
+- `design.R`: the four priors, the ordinary-regression data, the two changes (rescaled, recoded), and how many datasets are needed.
 - `steps.R`: the pipeline steps: the log Bayes factors, run in rounds until their targets are reached, the changes, and the results file.
 - `code.R`: rescaling and recoding a dataset, the five log Bayes factors of each, and the changes pooled per prior.
 

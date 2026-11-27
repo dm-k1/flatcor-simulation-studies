@@ -6,11 +6,11 @@ Does the software draw the prior it claims? flatcor's Stan model, with the data 
 
 ## Design
 
-The design, what is expected and why: [study 1a in `validation_tests.md`](../../docs/validation_tests.md#1a-does-the-software-draw-the-prior-it-claims). `design.R` holds the nine settings (prior by predictor design), the percentiles compared, and how many draws are needed.
+The design, what is expected and why: [study 1a in `validation_tests.md`](../../docs/validation_tests.md#1a-does-the-software-draw-the-prior-it-claims). `design.R` holds the twelve settings (prior by predictor design), the percentiles compared, and how many draws are needed.
 
 ## Code
 
-- `design.R`: the nine settings (prior by predictor design), the percentiles compared, and how many draws are needed.
+- `design.R`: the twelve settings (prior by predictor design), the percentiles compared, and how many draws are needed.
 - `steps.R`: the pipeline steps: each setting's prior draws, the prior as a recipe (a second route), their comparison, and the results file.
 - `code.R`: drawing each setting's prior, drawing the recipe, and comparing both with the expected distribution.
 

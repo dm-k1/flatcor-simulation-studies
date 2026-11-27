@@ -2,14 +2,14 @@
 
 Every study of the validation in one place: its design, what is tested, what is expected and why, with what Monte Carlo error and how many datasets, and the data it uses. It is written before anything is run; the studies report back the same rows, filled in with the estimate and its distance from the expectation in Monte Carlo standard errors (MCSE). No row is judged pass or fail: the table under each result counts how many estimates lie beyond 2 and 3 MCSEs, against what chance alone gives (about 4.6% and 0.3%).
 
-The validation checks three things for each of the three priors (joint flat partial r, flat R, flat R²), each in two ways:
+The validation checks three things for each of the four priors (independent flat partial r, joint flat partial r, flat R, flat R²), each in two ways:
 
 |   | 1\. Prior sampling | 2\. Posterior estimation | 3\. Bayes factors |
 |------------------|------------------|------------------|------------------|
 | **a. Computed correctly?** | [1a](#1a-does-the-software-draw-the-prior-it-claims) | [2a](#2a-is-the-posterior-computed-correctly) | [3a](#3a-are-the-bayes-factors-right) |
 | **b. Behaves like a default?** | [1b](#1b-is-the-bayes-factor-invariant-to-units-and-coding) | [2b](#2b-how-close-are-the-estimates-to-a-known-truth) | [3b](#3b-do-the-bayes-factors-meet-the-default-prior-criteria) |
 
-Notation: *n* the sample size of one dataset, *k* the number of predictors, *a* the shape of the prior (*R*² \~ Beta(*a*, 1): *k*/2 for joint flat partial r, ½ for flat R, 1 for flat R²), *n*<sub>sim</sub> the number of datasets per cell. Designs are written as factors crossed: *k* (2, 10) × *n* (50, 200) means the four combinations.
+Notation: *n* the sample size of one dataset, *k* the number of predictors, *a* the shape of the prior (*R*² \~ Beta(*a*, 1): *k*/2 for joint flat partial r, ½ for flat R, 1 for flat R²; independent flat partial r has no such shape), *n*<sub>sim</sub> the number of datasets per cell. Designs are written as factors crossed: *k* (2, 10) × *n* (50, 200) means the four combinations.
 
 **How many datasets.** By the standard procedure for simulation studies (Burton et al., 2006; Morris et al., 2019), every quantity gets an accuracy Δ in advance: the smallest deviation from its expectation that should show. Its Monte Carlo SE must be at most Δ / 1.96, so that a deviation of Δ reaches the 95% line; equivalently *n*<sub>sim</sub> = (1.96 σ / Δ)², with σ the SD of the quantity's estimate over datasets. (Burton et al.'s optional power term is left out: 95%, without power.)
 
@@ -50,13 +50,13 @@ targets' own seed, with which it seeds R before each step, is the root seed too,
 
 **Data from the prior, in detail.** One dataset = predictors × coefficients + noise:
 
-| Part | How | Shared by the three priors? |
+| Part | How | Shared by the four priors? |
 |------------------------|------------------------|------------------------|
 | Predictors | *n* × *k*, normal, correlation .3, centred | **yes** |
 | Noise | standard normal draws, times the noise SD | **yes** |
 | Intercept and noise SD | 2a: drawn from N(0, 10) and lognormal(0, 1), the Stan model's proper stand-ins (σ is a parameter whose rank is checked); 3a: 0 and 1 (the Bayes factor does not depend on them) | **yes** |
 | Which model it comes from | 3a: odd replications from the model without *x*₁, even ones from the model with all *k* | **yes** |
-| Coefficients | **drawn afresh for every dataset from the prior being tested**: *R*² \~ Beta(*a*, 1) and a uniform direction | **no**: each prior gets effects from itself |
+| Coefficients | **drawn afresh for every dataset from the prior being tested**: *R*² \~ Beta(*a*, 1) and a uniform direction (independent flat partial r: each partial correlation flat on its own, through `draw_coefficients_from_prior()`) | **no**: each prior gets effects from itself |
 
 - **No fixed effect size.** SBC and calibration are statements about data drawn from the prior: over all datasets the effect sizes cover everything the prior allows, as often as it allows. With one fixed effect size the check would test something else (a frequentist property, as in 2b).
 - **Everything but the coefficients shared** (common random numbers; Morris et al., 2019): only the prior differs between the priors' datasets, so a difference between priors cannot come from different data.
@@ -68,13 +68,17 @@ targets' own seed, with which it seeds R before each step, is the root seed too,
 
 flatcor's Stan model with the data switched off should draw exactly the prior.
 
-**Design:** prior (3) × predictor design (one, three correlated, eight) = 9 settings. Data: the prior-only designs.
+**Design:** prior (4) × predictor design (one, three correlated, eight) = 12 settings. Data: the prior-only designs.
 
 | Quantity | Expected | Why | MCSE | Δ | *n*<sub>sim</sub> |
 |------------|------------|------------|------------|------------|------------|
 | 5th, 25th, 50th, 75th, 95th percentile of *r*² (one predictor) | those of Beta(*a*, 1) | the prior is *R*² \~ Beta(*a*, 1) | `posterior::mcse_quantile()` (allows for autocorrelated draws) | 10% of the quantity's SD under the prior | measured: the chains are lengthened until every percentile reaches its target |
 | the same of *R*² (three, eight predictors) | those of Beta(*a*, 1) | the same | the same | the same | the same |
 | the same of each partial correlation (three predictors) | those of the prior as a recipe (`draw_coefficients_from_prior()`) | a second, independent route to the same prior | the same, plus the recipe's own | the same | the same |
+| **independent flat partial r** only: the same of each partial correlation (three predictors) | those of the exact U(−1, 1) | each partial correlation is flat on (−1, 1) by definition, so its marginal is known exactly (this and the recipe above) | the same | the same | the same |
+| **independent flat partial r** only: the same of *R*² (three, eight predictors) | those of the recipe's *R*² (the `R_squared` attribute of `draw_coefficients_from_prior(prior = "independent_partial_r")`) | its *R*² has no closed form for *k* > 1, so the recipe is the reference | the same, plus the recipe's own | the same | the same |
+
+**Independent flat partial r in 1a.** It has no Beta(*a*, 1) shape for *R*². With one predictor, *R*² = *r*² with *r* flat on (−1, 1), so *R*² \~ Beta(½, 1), the quantity is compared with that as for the other priors. With three and eight predictors, *R*² is compared with the recipe's draws. The pass rule is the same as for the other quantities.
 
 Also shown: the KS distance of each quantity to its expected distribution, next to its .01 critical value, as a description of the whole distribution.
 
@@ -84,7 +88,7 @@ Also shown: the KS distance of each quantity to its expected distribution, next 
 
 Bayarri et al. (2012): rescaling, shifting or recoding the predictors and the outcome leaves the Bayes factor unchanged.
 
-**Design:** prior (3) × change (rescaled: *x*₁ → 100 *x*₁ + 7, *x*₂ → −0.01 *x*₂, *x*₃ → *x*₃ − 50, *y* → 1000 *y* − 3; recoded: *x*₁, *x*₂ → *x*₁ + *x*₂, *x*₁ − *x*₂) × Bayes factor (whole model against intercept only; *x*₁ with against without). Data: the ordinary regression data.
+**Design:** prior (4) × change (rescaled: *x*₁ → 100 *x*₁ + 7, *x*₂ → −0.01 *x*₂, *x*₃ → *x*₃ − 50, *y* → 1000 *y* − 3; recoded: *x*₁, *x*₂ → *x*₁ + *x*₂, *x*₁ − *x*₂) × Bayes factor (whole model against intercept only; *x*₁ with against without). Data: the ordinary regression data.
 
 | Quantity | Expected | Why | MCSE | Δ | *n*<sub>sim</sub> |
 |------------|------------|------------|------------|------------|------------|
@@ -97,7 +101,7 @@ Bayarri et al. (2012): rescaling, shifting or recoding the predictors and the ou
 
 Simulation-based calibration (Talts et al., 2018): draw the parameters from the prior, data from them, fit; if the posterior is right, the rank of each true value among its posterior draws is uniform.
 
-**Design:** prior (3) × setting (*k* = 8, *n* = 60; *k* = 3, *n* = 50) = 6 cells. Data: data from the prior, intercept and noise SD drawn.
+**Design:** prior (4) × setting (*k* = 8, *n* = 60; *k* = 3, *n* = 50) = 8 cells. Data: data from the prior, intercept and noise SD drawn.
 
 | Quantity, for *R*², *b*₁ and σ | Expected | Why | MCSE | Δ | *n*<sub>sim</sub> |
 |------------|------------|------------|------------|------------|------------|
@@ -113,7 +117,7 @@ Also shown: Stan's divergent transitions (counts) and the SBC package's ECDF plo
 
 How each prior's posterior estimates behave on data with fixed slopes. The references are not guaranteed for a Bayesian estimate, so this study describes.
 
-**Design:** *k* (2, 10) × *n* (50, 200) × predictor correlation (0, .7) × other slopes (sparse, dense) = 16 cells; slope of *x*₁ = 0.2. Methods: the three priors (Stan), JZS and Zellner–Siow (BayesFactor), OLS. Data: known slopes.
+**Design:** *k* (2, 10) × *n* (50, 200) × predictor correlation (0, .7) × other slopes (sparse, dense) = 16 cells; slope of *x*₁ = 0.2. Methods: the four priors (Stan), JZS and Zellner–Siow (BayesFactor), OLS. Data: known slopes.
 
 | Quantity, for *x*₁ | Reference | Why | MCSE | Δ | *n*<sub>sim</sub> |
 |------------|------------|------------|------------|------------|------------|
@@ -125,7 +129,7 @@ How each prior's posterior estimates behave on data with fixed slopes. The refer
 
 ## 3a. Are the Bayes factors right?
 
-**Design:** prior (3) × setting (*k* = 3, *n* = 50; *k* = 8, *n* = 200) = 6 cells; each prior generates its own data and computes its own Bayes factor for *x*₁. Data: data from the prior, intercept 0 and noise SD 1, half the datasets from the model without *x*₁.
+**Design:** prior (4) × setting (*k* = 3, *n* = 50; *k* = 8, *n* = 200) = 8 cells; each prior generates its own data and computes its own Bayes factor for *x*₁. Data: data from the prior, intercept 0 and noise SD 1, half the datasets from the model without *x*₁.
 
 | Part | Quantity | Expected | Why | MCSE | Δ | *n*<sub>sim</sub> |
 |------------|------------|------------|------------|------------|------------|------------|
@@ -146,11 +150,11 @@ The criteria of Bayarri, Berger, Forte and García-Donato (2012); invariance is 
 
 **Designs:**
 
-- 3b.1: prior (3) × *k* (1, 2, 3) at *n* = *k* + 1 = 9 cells. Data: set R².
-- 3b.2: prior (3) × *R*² (.9, .99, .999, .9999) at *n* = 20, *k* = 3 = 12 cells. Data: set R².
-- 3b.3–3b.6: setting (3b.3: one null next to two real; 3b.4: *x*₁ real, *q* = 1, 3, 6; 3b.5: intercept only, *q* = 1, 3, 6; 3b.6: alternative) × *n* (50, 200, 1,000, 5,000; the alternative from 200) × prior (3) = 93 cells. Data: nested models.
-- 3b.7: prior (3) × *n* (30, 300, 100,000) = 9 cells; the prior as a recipe, no Bayes factors.
-- 3b.8, 3b.9: growth (*k* = *n*/4 at *n* = 50, 100, 200, 360; *k* = √*n* at *n* = 50 to 2,000) × truth (null; a small model) × method (the three priors, JZS, Zellner–Siow) = 100 cells. Data: growing *k*.
+- 3b.1: prior (4) × *k* (1, 2, 3) at *n* = *k* + 1 = 12 cells. Data: set R².
+- 3b.2: prior (4) × *R*² (.9, .99, .999, .9999) at *n* = 20, *k* = 3 = 16 cells. Data: set R².
+- 3b.3–3b.6: setting (3b.3: one null next to two real; 3b.4: *x*₁ real, *q* = 1, 3, 6; 3b.5: intercept only, *q* = 1, 3, 6; 3b.6: alternative) × *n* (50, 200, 1,000, 5,000; the alternative from 200) × prior (4) = 124 cells. Data: nested models.
+- 3b.7: prior (4) × *n* (30, 300, 100,000) = 12 cells; the prior as a recipe, no Bayes factors.
+- 3b.8, 3b.9: growth (*k* = *n*/4 at *n* = 50, 100, 200, 360; *k* = √*n* at *n* = 50 to 2,000) × truth (null; a small model) × method (the four priors, JZS, Zellner–Siow) = 120 cells. Data: growing *k*.
 
 | Item | Quantity | Expected | Why | MCSE | Δ | *n*<sub>sim</sub> |
 |------------|------------|------------|------------|------------|------------|------------|
@@ -164,6 +168,8 @@ The criteria of Bayarri, Berger, Forte and García-Donato (2012); invariance is 
 | 3b.8, 3b.9 | slope of the median log BF for the truth against log *n* | positive (a direction) | consistency as *k* grows | bootstrap | 10% of the slope, at least .05 per log *n* (a direction: relative rule) | measured |
 
 Also shown: Stan's divergent transitions.
+
+**Independent flat partial r in 3b.** It runs 3b.1 to 3b.4 and 3b.6 to 3b.9 with the same tests and rules as the other priors. It has no Beta(*a*, 1) shape, so 3b.5 needs its own expected rate: *q*/2, the same local shape as joint flat partial r (near zero its prior is flat on the *q* partial correlations, so its mass within a small *R* grows like *R*^*q*, as for Beta(*q*/2, 1)). **This value is pending a local check** (`checks/2026-11-27_independent-rate`) and is confirmed there before the run.
 
 **Choices.** *n* from 50 to 5,000 for the rates: a slope against log *n* needs a wide range. *k* at most 90 for growing *k*: a model has *k* + 3 parameters, and bridge sampling has been shown to work up to 96 (Gronau et al., 2017). Not included: whether information consistency starts exactly at *n* = *k* + 3 (it needs *R*² within 10⁻⁸ of 1, beyond what a sampler resolves).
 

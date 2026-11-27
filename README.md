@@ -19,7 +19,7 @@ folder of its own:
 
 | Project | What it asks |
 |---|---|
-| [`project_1_validation/`](project_1_validation/) | Do flatcor's three default priors work within the Bayesian framework? |
+| [`project_1_validation/`](project_1_validation/) | Do flatcor's four priors work within the Bayesian framework? |
 | [`project_2_prior_comparison/`](project_2_prior_comparison/) | How do the priors' Bayes factors differ in the decisions they lead to? (stage 1 built, not run) |
 
 The engine ([`engine/`](engine/), its README) names no study and no
@@ -167,7 +167,7 @@ corner of each design.
 | `run_all.R` | Runs a project (only the simulation): every study's batches through the scheduler, each cell until it has enough datasets, then the pipeline for the results (`engine/full_run.R`) |
 | `_targets.R` | The pipeline: collects the chosen project's steps |
 | `engine/` | The engine, with no study or package named in it, meant to carry over to another project unchanged: the scheduler and its workers, the pipeline steps, the results files, the four tests and the run-time estimate. Its README explains the words it uses, how a run goes, and what a project and a study provide |
-| `project_1_validation/` | Project 1, the validation of flatcor's three priors: its settings, studies, results and docs (its README) |
+| `project_1_validation/` | Project 1, the validation of flatcor's four priors: its settings, studies, results and docs (its README) |
 | `cluster/` | The container image, how long a run takes, and how to run a project on a cluster or AWS |
 | `ci/` | Helpers for the checks |
 | `.github/workflows/` | The checks on every push (`check.yml`) and the image build (`image.yml`) |

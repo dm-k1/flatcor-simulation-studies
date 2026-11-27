@@ -32,7 +32,7 @@ skipped_in_dry_run <- list(
 )
 
 
-## flatcor's Bayes factor between two models (the three priors; the
+## flatcor's Bayes factor between two models (the four priors; the
 ## references are cheap and run as they are)
 replace_function("log_bayes_factor_between", function(original) {
   function(method, predictors_a, predictors_b, outcome, name) {

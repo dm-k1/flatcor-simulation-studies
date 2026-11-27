@@ -6,11 +6,11 @@ Are the Bayes factors right? Part A checks their calibration; part B measures br
 
 ## Design
 
-The design, what is expected and why: [study 3a in `validation_tests.md`](../../docs/validation_tests.md#3a-are-the-bayes-factors-right). `design.R` holds the six cells (prior by setting), the data from the prior, and how many datasets each part needs.
+The design, what is expected and why: [study 3a in `validation_tests.md`](../../docs/validation_tests.md#3a-are-the-bayes-factors-right). `design.R` holds the eight cells (prior by setting), the data from the prior, and how many datasets each part needs.
 
 ## Code
 
-- `design.R`: the six cells (prior by setting), the data from the prior, and how many datasets each part needs.
+- `design.R`: the eight cells (prior by setting), the data from the prior, and how many datasets each part needs.
 - `steps.R`: the pipeline steps: part A (calibration) and part B (repeated runs), their tables, and the results file.
 - `code.R`: one dataset's Bayes factor, the calibration summaries, the repeated-run spread, and the shortfall of the reported error.
 

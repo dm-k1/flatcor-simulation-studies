@@ -6,11 +6,11 @@ Is the posterior computed correctly? Simulation-based calibration (Talts et al.,
 
 ## Design
 
-The design, what is expected and why: [study 2a in `validation_tests.md`](../../docs/validation_tests.md#2a-is-the-posterior-computed-correctly). `design.R` holds the six cells (prior by setting), the data from the prior, the Stan iterations, and how many fits are needed.
+The design, what is expected and why: [study 2a in `validation_tests.md`](../../docs/validation_tests.md#2a-is-the-posterior-computed-correctly). `design.R` holds the eight cells (prior by setting), the data from the prior, the Stan iterations, and how many fits are needed.
 
 ## Code
 
-- `design.R`: the six cells (prior by setting), the data from the prior, the Stan iterations, and how many fits are needed.
+- `design.R`: the eight cells (prior by setting), the data from the prior, the Stan iterations, and how many fits are needed.
 - `steps.R`: the pipeline steps: the SBC fits, one batch per setting, and the results file.
 - `code.R`: one SBC dataset and its fit, a batch of them, the rank summaries and the divergences.
 
