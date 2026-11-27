@@ -133,6 +133,6 @@ repository's engine, next to it.
 |---|---|
 | `settings/` | This project's answers to the engine: its settings (the package under test, the packages every step loads, the cores a batch keeps busy), the stopping rule, and the dry run's seams |
 | `shared/` | What the studies share: flatcor's Stan model (`flatcor_models.R`), the comparison methods and the data generators (`data/`; what each is and which study needs it: `docs/validation_tests.md`, "The data sets") |
-| `studies/` | The six studies, one folder each: `design.R` (the design, and what the study declares), `code.R` and `steps.R` (its pipeline steps). A new study is a new folder; no other file changes |
+| `studies/` | The six studies, one folder each: a `README.md` (the question, how to run it, where its results go), `design.R` (the design, and what the study declares), `code.R` and `steps.R` (its pipeline steps). A new study is a new folder; no other file changes. Each study: [1a](studies/1a_prior_sampling/README.md), [1b](studies/1b_invariance/README.md), [2a](studies/2a_posterior/README.md), [2b](studies/2b_estimation/README.md), [3a](studies/3a_bayes_factors/README.md), [3b](studies/3b_default_criteria/README.md) |
 | `results/` | Each study's metrics and setup, `studies/study_<study>.rds` (layer 2); every dataset's numbers and everything else computed, `per_dataset/` (layer 1, its README lists the files and columns); the record of runs, `RUNS.md` |
 | `docs/` | What the validation tests (`validation_tests.md`), and notes (`notes/`: the plan of the redesign, the run-time estimate) |
