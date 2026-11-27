@@ -178,7 +178,8 @@ settings_table_1a <- function(samples) {
 ## design. The stream's name keeps the three-predictor design's draws as
 ## they were.
 recipe_draws_1a <- function(prior, design, covariance) {
-  stream <- paste0("prior-recipe-", prior, "-", if (design == "three_correlated") "three" else design)
+  suffix <- if (design == "three_correlated") "three" else design
+  stream <- paste0("prior-recipe-", prior, "-", suffix)
   with_stream_of(stream, draw_coefficients_from_prior(reference_size_1a, covariance, prior = prior))
 }
 
@@ -324,7 +325,8 @@ compare_1a <- function(draws, recipe, settings, predictors) {
       x[cbind(of_quantity$iteration, of_quantity$chain)] <- of_quantity$value
       if (startsWith(name, "partial")) {
         # against the recipe; independent_partial_r also against the exact U(-1, 1)
-        compared <- list(compare_quantity_1a(x, name, setting, a, recipe_of("three_correlated", name)))
+        recipe_draws <- recipe_of("three_correlated", name)
+        compared <- list(compare_quantity_1a(x, name, setting, a, recipe_draws))
         if (independent) {
           compared[[2]] <- compare_quantity_1a(
             x, name, setting, a, "uniform", label = paste(name, "(exact)")
