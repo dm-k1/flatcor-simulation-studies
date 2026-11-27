@@ -24,17 +24,15 @@ sbc_dataset_2a <- function(setting, replication) {
     `b[1]` = data$coefficients[1],
     sigma = data$noise_sd
   )
-  stan_data <- list(
+  stan_data <- c(list(
     N = setting$n,
     K = setting$k,
     X = data$predictors,
     y = data$outcome,
     prior_only = 0L,
     proper_stand_ins = 1L,
-    per_observation = 0L,   # no log_lik or y_rep: not needed here
-    r_squared_shape = prior_shape(setting$prior, setting$k),
-    independent_effects = 0L   # project 1 uses the R-squared ~ Beta(a, 1) priors only
-  )
+    per_observation = 0L    # no log_lik or y_rep: not needed here
+  ), stan_prior_data(setting$prior, setting$k))
 
   true_values <- posterior::as_draws_rvars(lapply(truth, posterior::rvar))
   SBC::SBC_datasets(

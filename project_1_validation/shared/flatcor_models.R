@@ -45,3 +45,17 @@ flatcor_stan_model <- function() {
   flatcor::flatcor_model("cmdstanr")
 }
 prior_shape <- function(prior, k) utils::getFromNamespace("prior_shape", "flatcor")(prior, k)
+
+## The two fields of the Stan data that depend on the prior, for the studies
+## that build the data themselves (1a, 2a), as flatcor's stan_data_of() sets
+## them (flatcor's model.R): independent_partial_r has no Beta shape, so Stan
+## gets independent_effects = 1 and a dummy shape of 1 that it ignores; the
+## other priors get independent_effects = 0 and their Beta shape for k
+## predictors.
+stan_prior_data <- function(prior, k) {
+  independent <- identical(prior, "independent_partial_r")
+  list(
+    r_squared_shape = if (independent) 1 else prior_shape(prior, k),
+    independent_effects = as.integer(independent)
+  )
+}
