@@ -3,13 +3,13 @@
 ##  random numbers). Project 1's set (project_1_validation/shared/
 ##  comparison_methods.R), with the p-value added.
 ##
-##  The four priors of flatcor. Three are R-squared ~ Beta(a, 1) with a
-##  uniform direction:
+##  The four priors of flatcor, in flatcor's order. One gives each
+##  predictor's partial correlation its own flat prior:
+##    independent flat partial r   R-squared has no closed form for k > 1
+##  and three are R-squared ~ Beta(a, 1) with a uniform direction:
 ##    joint flat partial r   a = k/2
 ##    flat R                 a = 1/2
 ##    flat R-squared         a = 1
-##  and one gives each predictor's partial correlation its own flat prior:
-##    independent flat partial r   R-squared has no closed form for k > 1
 ##  Two references, the standard defaults (BayesFactor / JASP; Liang et al., 2008):
 ##    JZS default      Cauchy prior, scale sqrt(2)/4 ("medium")
 ##    Zellner-Siow     Cauchy prior, scale 1 (R-squared ~ Beta(k/2, 1/2))
@@ -25,8 +25,8 @@
 
 ## ---- Method names --------------------------------------------------------------------
 
-## The labels come from flatcor; the four priors are this project's design.
-project_priors <- c("joint_partial_r", "independent_partial_r", "flat_r", "flat_r_squared")
+## The priors and their labels come from flatcor, in flatcor's order.
+project_priors <- names(flatcor::prior_labels())
 contenders <- stats::setNames(project_priors, flatcor::prior_labels()[project_priors])
 model_methods <- c(names(contenders), "JZS default", "Zellner-Siow")
 

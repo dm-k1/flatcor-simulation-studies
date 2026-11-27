@@ -4,9 +4,8 @@ At the n and k of ordinary studies, how do the Bayes factors of
 [flatcor](https://github.com/dm-k1/flatcor)'s four priors differ in the
 decisions they lead to, against two reference priors and the p-value?
 
-Project 1 showed that the priors are computed correctly and that they
-differ. The fourth, independent flat partial r, came after project 1;
-flatcor's own tests check it (its `tests/testthat/README.md`). This project shows what that difference does to decisions. It
+Project 1 showed that the four priors are computed correctly and that they
+differ. This project shows what that difference does to decisions. It
 compares, so only what the run needs is fixed in advance (this file); the
 analyses are exploratory and are chosen after the run, from the kept data.
 A finding that will carry a claim is confirmed on new data first (stage 2,
@@ -62,7 +61,7 @@ Every dataset goes to every method (common random numbers):
 
 | Method | How | Cost |
 |---|---|---|
-| joint flat partial r, independent flat partial r, flat R, flat R² | flatcor: both models fitted in Stan, each marginal likelihood by bridge sampling | almost all of it |
+| independent flat partial r, joint flat partial r, flat R, flat R² | flatcor: both models fitted in Stan, each marginal likelihood by bridge sampling | almost all of it |
 | Zellner–Siow (scale 1), JZS (scale √2/4) | BayesFactor: the Bayes factor from R², n and k; the full model's posterior by `lmBF()` and `posterior()`, with the same scale | negligible (about a second per dataset) |
 | p-value of x₁'s slope | the OLS fit | none |
 
@@ -107,8 +106,8 @@ two models of a Bayes factor, so it costs two fits of a two-parameter model
 per dataset; the first is kept. Measured on 22 Nov 2026 (an Apple M-series
 laptop, n = 800, k = 12, 10,000 draws per chain): about 7 seconds per
 dataset, against about 22 seconds for each of the three R²-Beta priors' Bayes
-factors for x₁, so about 10% more per dataset in the slowest cell (measured before
-independent flat partial r was added).
+factors for x₁, so about 10% more per dataset in the slowest cell (measured with
+the three R²-Beta priors, before independent flat partial r was added to the run).
 
 ### Stopping
 
