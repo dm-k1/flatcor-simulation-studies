@@ -3,17 +3,19 @@
 ##  random numbers). Project 1's set (project_1_validation/shared/
 ##  comparison_methods.R), with the p-value added.
 ##
-##  The three priors, all R-squared ~ Beta(a, 1) with a uniform direction
-##  (flatcor):
-##    flat partial r   a = k/2
-##    flat R           a = 1/2
-##    flat R-squared   a = 1
+##  The four priors of flatcor. Three are R-squared ~ Beta(a, 1) with a
+##  uniform direction:
+##    joint flat partial r   a = k/2
+##    flat R                 a = 1/2
+##    flat R-squared         a = 1
+##  and one gives each predictor's partial correlation its own flat prior:
+##    independent flat partial r   R-squared has no closed form for k > 1
 ##  Two references, the standard defaults (BayesFactor / JASP; Liang et al., 2008):
 ##    JZS default      Cauchy prior, scale sqrt(2)/4 ("medium")
 ##    Zellner-Siow     Cauchy prior, scale 1 (R-squared ~ Beta(k/2, 1/2))
 ##  And the p-value of x1's slope in the ordinary least squares fit.
 ##
-##  For the three priors a Bayes factor is flatcor's: each model fitted
+##  For the four priors a Bayes factor is flatcor's: each model fitted
 ##  with its Stan model, its marginal likelihood estimated by bridge
 ##  sampling. For the references it is BayesFactor's, from R-squared, n and k,
 ##  and their posterior, for estimation, is BayesFactor's too (lmBF() and
@@ -24,7 +26,8 @@
 ## ---- Method names --------------------------------------------------------------------
 
 contenders <- c(
-  `flat partial r` = "flat_partial_r",
+  `joint flat partial r` = "joint_partial_r",
+  `independent flat partial r` = "independent_partial_r",
   `flat R` = "flat_r",
   `flat R-squared` = "flat_r_squared"
 )
@@ -69,7 +72,7 @@ summarise_posterior <- function(draws) {
 }
 
 ## The estimates every Bayes factor method gives, from the full model's
-## summary, as one row in the same columns for all five: x1's slope
+## summary, as one row in the same columns for all six: x1's slope
 ## (flatcor's b[1], BayesFactor's x1) as slope_x1_*, and the population
 ## R-squared (R_squared in both) as posterior_r_squared_*, each with its
 ## mean, median, sd and the 90% and 95% intervals
@@ -122,7 +125,7 @@ sample_r_squared <- function(predictors, outcome) {
 ## For JZS and Zellner-Siow: BayesFactor's Bayes factor of each model against
 ## the intercept-only model and its error, no Stan; and model A's posterior
 ## under the same prior (BayesFactor's posterior()), with R_squared added per
-## draw as flatcor defines it: the same estimates as the three priors, the
+## draw as flatcor defines it: the same estimates as the four priors, the
 ## summary of every variable (`variables`, model "a", in flatcor's columns),
 ## posterior_draws and seconds_posterior.
 log_bayes_factor_between <- function(method, predictors_a, predictors_b, outcome, name) {
@@ -134,7 +137,7 @@ log_bayes_factor_between <- function(method, predictors_a, predictors_b, outcome
     r_squared_b = sample_r_squared(predictors_b, outcome)
   )
 
-  # the three priors: flatcor
+  # the four priors: flatcor
   if (method %in% names(contenders)) {
     # once per worker, one worker at a time (shared/flatcor_models.R)
     compile_flatcor_models()

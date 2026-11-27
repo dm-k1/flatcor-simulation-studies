@@ -20,7 +20,7 @@ dataset_name_1a <- function(cell, replication) {
   )
 }
 
-## One dataset of a cell, and its rows: one per method (the five Bayes
+## One dataset of a cell, and its rows: one per method (the six Bayes
 ## factors, then the p-value). Every row starts with the dataset's name,
 ## the cell, its truth and both models' sample R-squared; "full" is the
 ## model with x1, "reduced" the model without it.
@@ -39,7 +39,7 @@ dataset_1a <- function(cell, replication) {
     value
   }
 
-  # the five Bayes factors for x1 (shared/comparison_methods.R), each seeded
+  # the six Bayes factors for x1 (shared/comparison_methods.R), each seeded
   # from the dataset's name and the method
   bayes_factors <- bind_rows(lapply(model_methods, function(method) {
     timed(log_bayes_factor_between(
@@ -48,7 +48,7 @@ dataset_1a <- function(cell, replication) {
   }))
 
   # the intercept-only model's marginal likelihood, kept so that the whole
-  # model can be tested afterwards: the same under the three priors (it has
+  # model can be tested afterwards: the same under the four priors (it has
   # no R-squared), so fitted once, with flatcor (two fits of it, of which
   # the first is kept)
   intercept_only <- timed(log_bayes_factor_between(
@@ -159,7 +159,7 @@ decision_rates_1a <- function(rows) {
 
 ## ---- Also reported: bridge sampling's errors and Stan's diagnostics ----------------
 
-## Per cell and prior (the three priors: the references have no Stan fits)
+## Per cell and prior (the four priors: the references have no Stan fits)
 diagnostics_1a <- function(rows) {
   rows |>
     filter(method %in% names(contenders)) |>

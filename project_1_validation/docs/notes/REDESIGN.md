@@ -102,7 +102,7 @@ flatcor does the three things for all three priors in one integration:
 
 | | How | Whose code |
 |---|---|---|
-| The prior | flatcor's Stan model: R ~ Beta(2a, 1) on R (not R²), direction uniform; only a changes (flat partial r k/2, flat R 1/2, flat R² 1) | ours: stating the prior |
+| The prior | flatcor's Stan model: R ~ Beta(2a, 1) on R (not R²), direction uniform; only a changes (joint flat partial r k/2, flat R 1/2, flat R² 1) | ours: stating the prior |
 | Prior sampling | the same model with the data switched off (`prior_only = 1`) | Stan |
 | Posterior | the same model with the data | Stan |
 | Bayes factor | bridgesampling on two fits of the model: with the term and without it | bridgesampling, with a short wrapper of ours |

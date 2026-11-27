@@ -15,7 +15,7 @@ are in [Objective-bayes](https://github.com/dm-k1/Objective-bayes).
 
 | | What is flat | Implied $R^2$ | One coefficient's prior |
 |---|---|---|---|
-| **flat partial r** (`prior = "flat_partial_r"`) | every valid correlation matrix of $(y, x_1 \ldots x_k)$ | Beta($k/2$, 1), grows with $k$ | a flat partial correlation, for every $k$ |
+| **joint flat partial r** (`prior = "joint_partial_r"`) | every valid correlation matrix of $(y, x_1 \ldots x_k)$ | Beta($k/2$, 1), grows with $k$ | a flat partial correlation, for every $k$ |
 | **flat R** (`prior = "flat_r"`) | the multiple correlation $R$ | Beta(½, 1), for every $k$ | its share of the flat total; narrows as $k$ grows |
 | **flat R²** (`prior = "flat_r_squared"`) | $R^2$ | Beta(1, 1), for every $k$ | its share of the flat total; narrows as $k$ grows |
 
@@ -31,7 +31,7 @@ P(beta) = P(total) x P(this combination | total) x unit conversion
 flatcor does everything with one Stan model, the same for the three priors:
 it draws the prior, gives the posterior, and gives the Bayes factor between
 any two linear models, from each model's marginal likelihood estimated by
-bridge sampling. Why these three, and why the default is flat partial r: the
+bridge sampling. Why these three, and why the default is joint flat partial r: the
 paper's repository.
 
 ## The validation
@@ -83,7 +83,7 @@ run-time estimate).
 
 ## Using the priors: what to watch out for
 
-- **Choosing the prior.** Without `prior =`, flatcor uses flat partial r and
+- **Choosing the prior.** Without `prior =`, flatcor uses joint flat partial r and
   says so once per session. What each prior assumes:
   [`2_the_three_priors.md`](https://github.com/dm-k1/Objective-bayes/blob/main/docs/2_the_three_priors.md) (in Objective-bayes).
 - **Shrinkage at small $n$.** With several predictors and a small sample, the
@@ -91,8 +91,8 @@ run-time estimate).
 - **Leaving the null model.** Against the intercept-only model, evidence for
   the null grows like $a \log n$: ½ log n for flat R and log n for flat
   R-squared, whatever the number of predictors, and $\tfrac k2 \log n$ for
-  flat partial r.
-- **Under flat partial r the claimed $R^2$ grows with $k$.** The median is .63
+  joint flat partial r.
+- **Under joint flat partial r the claimed $R^2$ grows with $k$.** The median is .63
   with 3 predictors and .87 with 10, so a large model with a modest fit is
   penalised.
 - **Flat R-squared with one predictor is not Jeffreys' prior.** Its prior on

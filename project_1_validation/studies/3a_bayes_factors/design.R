@@ -11,7 +11,7 @@
 ##   data from the prior (shared/data/from_the_prior.R), half from the model
 ##   without x1
 cells_3a <- data.frame(
-  prior = rep(c("flat_partial_r", "flat_r", "flat_r_squared"), each = 2),
+  prior = rep(c("joint_partial_r", "flat_r", "flat_r_squared"), each = 2),
   k     = c(3, 8),
   n     = c(50, 200)
 )

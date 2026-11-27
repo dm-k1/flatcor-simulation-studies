@@ -6,10 +6,10 @@
 
 
 ## ---- The design -------------------------------------------------------------------
-##   prior (flat R, flat partial r, flat R²) × predictor design (one, three
+##   prior (flat R, joint flat partial r, flat R²) × predictor design (one, three
 ##   correlated, eight; shared/data/prior_only_designs.R) = 9 settings
 settings_1a <- expand.grid(
-  prior = c("flat_r", "flat_partial_r", "flat_r_squared"),
+  prior = c("flat_r", "joint_partial_r", "flat_r_squared"),
   design = c("one", "three_correlated", "eight"),
   stringsAsFactors = FALSE
 )

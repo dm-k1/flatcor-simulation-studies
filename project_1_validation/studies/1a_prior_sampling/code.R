@@ -70,7 +70,8 @@ sample_setting_1a <- function(setting, predictors, model) {
     prior_only = 1L,
     proper_stand_ins = 1L,
     per_observation = 0L,   # no log_lik or y_rep: not needed here
-    r_squared_shape = prior_shape(setting$prior, ncol(predictors))
+    r_squared_shape = prior_shape(setting$prior, ncol(predictors)),
+    independent_effects = 0L   # project 1 uses the R-squared ~ Beta(a, 1) priors only
   )
   name <- name_of("1a", setting$prior, setting$design)
   seed <- seed_of(name)

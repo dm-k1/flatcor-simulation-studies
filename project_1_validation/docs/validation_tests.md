@@ -2,14 +2,14 @@
 
 Every study of the validation in one place: its design, what is tested, what is expected and why, with what Monte Carlo error and how many datasets, and the data it uses. It is written before anything is run; the studies report back the same rows, filled in with the estimate and its distance from the expectation in Monte Carlo standard errors (MCSE). No row is judged pass or fail: the table under each result counts how many estimates lie beyond 2 and 3 MCSEs, against what chance alone gives (about 4.6% and 0.3%).
 
-The validation checks three things for each of the three priors (flat partial r, flat R, flat R²), each in two ways:
+The validation checks three things for each of the three priors (joint flat partial r, flat R, flat R²), each in two ways:
 
 |   | 1\. Prior sampling | 2\. Posterior estimation | 3\. Bayes factors |
 |------------------|------------------|------------------|------------------|
 | **a. Computed correctly?** | [1a](#1a-does-the-software-draw-the-prior-it-claims) | [2a](#2a-is-the-posterior-computed-correctly) | [3a](#3a-are-the-bayes-factors-right) |
 | **b. Behaves like a default?** | [1b](#1b-is-the-bayes-factor-invariant-to-units-and-coding) | [2b](#2b-how-close-are-the-estimates-to-a-known-truth) | [3b](#3b-do-the-bayes-factors-meet-the-default-prior-criteria) |
 
-Notation: *n* the sample size of one dataset, *k* the number of predictors, *a* the shape of the prior (*R*² \~ Beta(*a*, 1): *k*/2 for flat partial r, ½ for flat R, 1 for flat R²), *n*<sub>sim</sub> the number of datasets per cell. Designs are written as factors crossed: *k* (2, 10) × *n* (50, 200) means the four combinations.
+Notation: *n* the sample size of one dataset, *k* the number of predictors, *a* the shape of the prior (*R*² \~ Beta(*a*, 1): *k*/2 for joint flat partial r, ½ for flat R, 1 for flat R²), *n*<sub>sim</sub> the number of datasets per cell. Designs are written as factors crossed: *k* (2, 10) × *n* (50, 200) means the four combinations.
 
 **How many datasets.** By the standard procedure for simulation studies (Burton et al., 2006; Morris et al., 2019), every quantity gets an accuracy Δ in advance: the smallest deviation from its expectation that should show. Its Monte Carlo SE must be at most Δ / 1.96, so that a deviation of Δ reaches the 95% line; equivalently *n*<sub>sim</sub> = (1.96 σ / Δ)², with σ the SD of the quantity's estimate over datasets. (Burton et al.'s optional power term is left out: 95%, without power.)
 
@@ -40,7 +40,7 @@ targets' own seed, with which it seeds R before each step, is the root seed too,
 
 | Data set | File | One dataset | Used by | Why this data |
 |------------------|------------------|------------------|------------------|------------------|
-| **Prior-only designs** | `1_prior_only_designs.R` | fixed predictors, *n* = 60: one; three with correlation .4; eight uncorrelated (no outcome: the model draws the prior) | 1a | one predictor (where flat partial r and flat R coincide), a few correlated (the direction is defined relative to their covariance), and more |
+| **Prior-only designs** | `1_prior_only_designs.R` | fixed predictors, *n* = 60: one; three with correlation .4; eight uncorrelated (no outcome: the model draws the prior) | 1a | one predictor (where joint flat partial r and flat R coincide), a few correlated (the direction is defined relative to their covariance), and more |
 | **Ordinary regression** | `2_ordinary_regression.R` | *n* = 60, three predictors with correlation .4, slopes 0.3, 0.2, 0, noise SD 1 | 1b | the package's own example: realistic, and the same for every prior |
 | **Data from the prior** | `3_from_the_prior.R` | predictors (correlation .3) × coefficients drawn from the prior being tested + noise; with *x*₁ = "reduced", *x*₁ = 0 and the others from the prior of the model without *x*₁ | 2a, 3a | SBC and Bayes factor calibration are statements about data drawn from the prior itself |
 | **Known slopes** | `4_known_slopes.R` | predictors (correlation ρ) × fixed slopes (*x*₁ = 0.2; the others sparse, one at 0.3, or dense, all 0.1) + noise SD 1 | 2b | estimation is judged against a known truth |
@@ -136,7 +136,7 @@ How each prior's posterior estimates behave on data with fixed slopes. The refer
 
 Also shown: bridge sampling's approximate errors and Stan's divergent transitions. Bins of log BF₁₀ run from −2.5 to 6, finer near 0, where most datasets fall; bins with fewer than 10 datasets are left out.
 
-**Why the data-averaged posterior decides, and the line describes.** Both test the same thing, but they learn from different datasets. The data-averaged posterior uses every dataset's posterior probability in full, also an extreme one (.001 or .999). A logistic line learns only from datasets whose Bayes factor is near 1, as only there is it uncertain which model made the data; where Bayes factors are extreme, few datasets inform it. The first 50 datasets per cell gave the line SEs of .38–1.35: a Δ of .1 for its intercept and slope would ask for 2,800 to 35,000 datasets per cell (63,000 in all; flat partial r at *k* = 8 alone 35,000, as only 4 of its 50 datasets had |log BF₁₀| < 1.5), against 130 to 300 per cell for the data-averaged posterior. The data-averaged posterior cannot see Bayes factors too loud on one side and too timid on the other, which cancel in the mean; the bins and the line show that pattern, and are reported with their Monte Carlo errors. Repeating a dataset's computation does not help the line: bridge sampling's noise (about .005 on the log Bayes factor) is far below the line's, which comes from each dataset adding a single yes or no.
+**Why the data-averaged posterior decides, and the line describes.** Both test the same thing, but they learn from different datasets. The data-averaged posterior uses every dataset's posterior probability in full, also an extreme one (.001 or .999). A logistic line learns only from datasets whose Bayes factor is near 1, as only there is it uncertain which model made the data; where Bayes factors are extreme, few datasets inform it. The first 50 datasets per cell gave the line SEs of .38–1.35: a Δ of .1 for its intercept and slope would ask for 2,800 to 35,000 datasets per cell (63,000 in all; joint flat partial r at *k* = 8 alone 35,000, as only 4 of its 50 datasets had |log BF₁₀| < 1.5), against 130 to 300 per cell for the data-averaged posterior. The data-averaged posterior cannot see Bayes factors too loud on one side and too timid on the other, which cancel in the mean; the bins and the line show that pattern, and are reported with their Monte Carlo errors. Repeating a dataset's computation does not help the line: bridge sampling's noise (about .005 on the log Bayes factor) is far below the line's, which comes from each dataset adding a single yes or no.
 
 ------------------------------------------------------------------------
 

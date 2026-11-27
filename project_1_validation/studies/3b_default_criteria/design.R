@@ -5,7 +5,7 @@
 ## =====================================================================
 
 
-priors_3b <- c("flat_partial_r", "flat_r", "flat_r_squared")
+priors_3b <- c("joint_partial_r", "flat_r", "flat_r_squared")
 
 
 ## ---- 3b.1 predictive matching, 3b.2 information consistency ---------------------
@@ -66,7 +66,8 @@ intrinsic_draws_3b <- if (smoke) 5000 else 26569
 ##   growth (k = n / 4 at n = 50, 100, 200, 360; k = sqrt(n) at n = 50 ... 2,000)
 ##   × truth (null, a small model) × method (3 priors, JZS, Zellner-Siow)
 ##   = 100 cells (shared/data/growing_k.R)
-growing_methods_3b <- c("flat partial r", "flat R", "flat R-squared", "JZS default", "Zellner-Siow")
+growing_methods_3b <- c("joint flat partial r", "flat R", "flat R-squared",
+                        "JZS default", "Zellner-Siow")
 
 growing_cells_3b <- merge(growing_k_cells(), data.frame(truth = c("null", "true")))
 growing_cells_3b <- merge(growing_cells_3b, data.frame(method = growing_methods_3b))

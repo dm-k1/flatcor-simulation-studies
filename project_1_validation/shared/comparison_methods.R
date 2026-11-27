@@ -4,7 +4,7 @@
 ##
 ##  The three priors, all R-squared ~ Beta(a, 1) with a uniform direction
 ##  (flatcor):
-##    flat partial r   a = k/2: every correlation matrix of (y, x1 ... xk)
+##    joint flat partial r   a = k/2: every correlation matrix of (y, x1 ... xk)
 ##                     equally likely; rstanarm stan_lm's prior with eta = 1
 ##    flat R           a = 1/2: R flat for every k
 ##    flat R-squared   a = 1:   R-squared flat for every k
@@ -22,7 +22,7 @@
 ## ---- Method names (the same in every study) ------------------------------------
 
 contenders <- c(
-  `flat partial r` = "flat_partial_r",
+  `joint flat partial r` = "joint_partial_r",
   `flat R` = "flat_r",
   `flat R-squared` = "flat_r_squared"
 )

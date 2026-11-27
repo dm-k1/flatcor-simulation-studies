@@ -32,7 +32,8 @@ sbc_dataset_2a <- function(setting, replication) {
     prior_only = 0L,
     proper_stand_ins = 1L,
     per_observation = 0L,   # no log_lik or y_rep: not needed here
-    r_squared_shape = prior_shape(setting$prior, setting$k)
+    r_squared_shape = prior_shape(setting$prior, setting$k),
+    independent_effects = 0L   # project 1 uses the R-squared ~ Beta(a, 1) priors only
   )
 
   true_values <- posterior::as_draws_rvars(lapply(truth, posterior::rvar))

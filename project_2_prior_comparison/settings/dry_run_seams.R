@@ -28,7 +28,7 @@ skipped_in_dry_run <- list(
 )
 
 
-## flatcor's Bayes factor between two models (the three priors, and the
+## flatcor's Bayes factor between two models (the four priors, and the
 ## intercept-only model's two fits; the references are cheap and run as
 ## they are)
 replace_function("log_bayes_factor_between", function(original) {

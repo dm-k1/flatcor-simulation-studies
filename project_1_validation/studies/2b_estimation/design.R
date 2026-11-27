@@ -22,7 +22,8 @@ if (smoke) {
 }
 
 ## The methods, and their draws
-methods_2b <- c("flat partial r", "flat R", "flat R-squared", "JZS default", "Zellner-Siow", "OLS")
+methods_2b <- c("joint flat partial r", "flat R", "flat R-squared",
+                "JZS default", "Zellner-Siow", "OLS")
 stan_draws_2b <- if (smoke) {
   c(chains = 2, warmup = 200, sampling = 200)
 } else {

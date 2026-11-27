@@ -1,11 +1,12 @@
 # Project 2: which prior for which situation?
 
 At the n and k of ordinary studies, how do the Bayes factors of
-[flatcor](https://github.com/dm-k1/flatcor)'s three priors differ in the
+[flatcor](https://github.com/dm-k1/flatcor)'s four priors differ in the
 decisions they lead to, against two reference priors and the p-value?
 
 Project 1 showed that the priors are computed correctly and that they
-differ. This project shows what that difference does to decisions. It
+differ. The fourth, independent flat partial r, came after project 1;
+flatcor's own tests check it (its `tests/testthat/README.md`). This project shows what that difference does to decisions. It
 compares, so only what the run needs is fixed in advance (this file); the
 analyses are exploratory and are chosen after the run, from the kept data.
 A finding that will carry a claim is confirmed on new data first (stage 2,
@@ -61,7 +62,7 @@ Every dataset goes to every method (common random numbers):
 
 | Method | How | Cost |
 |---|---|---|
-| flat partial r, flat R, flat R² | flatcor: both models fitted in Stan, each marginal likelihood by bridge sampling | almost all of it |
+| joint flat partial r, independent flat partial r, flat R, flat R² | flatcor: both models fitted in Stan, each marginal likelihood by bridge sampling | almost all of it |
 | Zellner–Siow (scale 1), JZS (scale √2/4) | BayesFactor: the Bayes factor from R², n and k; the full model's posterior by `lmBF()` and `posterior()`, with the same scale | negligible (about a second per dataset) |
 | p-value of x₁'s slope | the OLS fit | none |
 
@@ -80,10 +81,10 @@ method; "full" is the model with x₁, "reduced" the model without it.
 | `r_squared_full`, `r_squared_reduced`, `k_full`, `k_reduced` | Both models' sample R² and numbers of predictors |
 | `id`, `method`, `seed` | The row's name (dataset and method), and the seed of its Stan fits and bridge sampling (the reduced model's is seed + 1) |
 | `log_BF10`, `error` | The log Bayes factor for x₁ and its approximate Monte Carlo SE |
-| `log_ml_full`, `error_full`, `log_ml_reduced`, `error_reduced` | The three priors: each model's log marginal likelihood and bridge sampling's error, so any Bayes factor can be formed afterwards |
-| `log_ml_null`, `error_null`, `seconds_null` | The three priors: the intercept-only model's log marginal likelihood (below) |
+| `log_ml_full`, `error_full`, `log_ml_reduced`, `error_reduced` | The four priors: each model's log marginal likelihood and bridge sampling's error, so any Bayes factor can be formed afterwards |
+| `log_ml_null`, `error_null`, `seconds_null` | The four priors: the intercept-only model's log marginal likelihood (below) |
 | `log_bf_intercept_full`, `log_bf_intercept_reduced` (and their `error_`) | The references: each model's log Bayes factor against the intercept-only model |
-| `slope_x1_mean`, `_median`, `_sd`, `_q2.5`, `_q5`, `_q95`, `_q97.5`; `posterior_r_squared_` (the same) | All five priors: the full model's posterior of x₁'s slope (flatcor's `b[1]`, BayesFactor's `x1`) and of the population R², in the same columns, so the priors' estimates compare directly across the matrix. R² is flatcor's definition, b′Sb / (b′Sb + σ²) with S the predictors' covariance; for the references it is computed per draw from BayesFactor's slopes and `sig2` (`r_squared_of_draws()`) |
+| `slope_x1_mean`, `_median`, `_sd`, `_q2.5`, `_q5`, `_q95`, `_q97.5`; `posterior_r_squared_` (the same) | All six priors: the full model's posterior of x₁'s slope (flatcor's `b[1]`, BayesFactor's `x1`) and of the population R², in the same columns, so the priors' estimates compare directly across the matrix. R² is flatcor's definition, b′Sb / (b′Sb + σ²) with S the predictors' covariance; for the references it is computed per draw from BayesFactor's slopes and `sig2` (`r_squared_of_draws()`) |
 | `posterior_draws`, `seconds_posterior` | The references: posterior draws (one chain) and seconds of their posterior |
 | `divergent`, `divergent_full`, `divergent_reduced`, `rhat_max_*`, `ess_bulk_min_*`, `ess_tail_min_*`, `bridge_iterations_*` | Stan's and bridge sampling's diagnostics, per model |
 | `t_value`, `p_value` | The p-value row: x₁'s t statistic and its two-sided p-value |
@@ -99,14 +100,15 @@ to the main file by `id`; their column `model` is `a` for the full model, `b`
 for the reduced one.
 
 **The intercept-only model** is kept: its marginal likelihood is the same
-under the three priors (it has no R²), so it is fitted once per dataset
+under the four priors (it has no R²), so it is fitted once per dataset
 with flatcor, and the whole model can be tested afterwards (log BF =
 `log_ml_full` − `log_ml_null`) without a rerun. flatcor fits it as one of
 two models of a Bayes factor, so it costs two fits of a two-parameter model
 per dataset; the first is kept. Measured on 22 Nov 2026 (an Apple M-series
 laptop, n = 800, k = 12, 10,000 draws per chain): about 7 seconds per
-dataset, against about 22 seconds for each of the three priors' Bayes
-factors for x₁, so about 10% more per dataset in the slowest cell.
+dataset, against about 22 seconds for each of the three R²-Beta priors' Bayes
+factors for x₁, so about 10% more per dataset in the slowest cell (measured before
+independent flat partial r was added).
 
 ### Stopping
 
@@ -130,7 +132,7 @@ project 1:
   (`half_width`).
 
 The results file (`results/studies/study_1a.rds`) holds those rates per
-cell, the datasets per cell, and the diagnostics of the three priors.
+cell, the datasets per cell, and the diagnostics of the four priors.
 
 ## Stage 2 (later)
 
