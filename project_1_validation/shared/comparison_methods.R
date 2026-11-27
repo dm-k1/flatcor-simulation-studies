@@ -21,11 +21,9 @@
 
 ## ---- Method names (the same in every study) ------------------------------------
 
-contenders <- c(
-  `joint flat partial r` = "joint_partial_r",
-  `flat R` = "flat_r",
-  `flat R-squared` = "flat_r_squared"
-)
+## The labels come from flatcor; the three priors are this project's design.
+project_priors <- c("joint_partial_r", "flat_r", "flat_r_squared")
+contenders <- stats::setNames(project_priors, flatcor::prior_labels()[project_priors])
 model_methods <- c(names(contenders), "JZS default", "Zellner-Siow")
 
 ## ---- The Bayes factor between two models -------------------------------------------
