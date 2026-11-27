@@ -77,7 +77,7 @@ between jobs (your home or project space, not a node's local scratch):
 
 ```bash
 git clone https://github.com/dm-k1/flatcor-simulation-studies.git
-cd flatcor-validation
+cd flatcor-simulation-studies
 ```
 
 **2. The image, as an Apptainer file.** Clusters seldom allow Docker, but

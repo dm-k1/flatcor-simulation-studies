@@ -54,7 +54,7 @@ Carlo errors; nothing is judged pass or fail per row.
 ## Reading order
 
 Background, in [Objective-bayes](https://github.com/dm-k1/Objective-bayes):
-[the three priors](https://github.com/dm-k1/Objective-bayes/blob/main/docs/2_the_three_priors.md)
+[the three priors](https://github.com/dm-k1/Objective-bayes/blob/main/docs/2_the_four_priors.md)
 (part 2: the family $R^2 \sim$ Beta($a$, 1), what each keeps flat and
 expects, how the total is divided, what the package computes) and
 [their derivations](https://github.com/dm-k1/Objective-bayes/blob/main/docs/appendix/A_derivations.md)
@@ -85,7 +85,7 @@ run-time estimate).
 
 - **Choosing the prior.** Without `prior =`, flatcor uses joint flat partial r and
   says so once per session. What each prior assumes:
-  [`2_the_three_priors.md`](https://github.com/dm-k1/Objective-bayes/blob/main/docs/2_the_three_priors.md) (in Objective-bayes).
+  [`2_the_four_priors.md`](https://github.com/dm-k1/Objective-bayes/blob/main/docs/2_the_four_priors.md) (in Objective-bayes).
 - **Shrinkage at small $n$.** With several predictors and a small sample, the
   prior pulls estimates towards zero (study 2b shows how much).
 - **Leaving the null model.** Against the intercept-only model, evidence for
