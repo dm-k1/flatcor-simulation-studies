@@ -19,9 +19,7 @@ list(
   ),
   tar_target(
     per_dataset_recipe_1a,
-    write_per_dataset(
-      recipe_table_1a(predictors_1a[["three_correlated"]]), "1a_recipe_draws", gzip = TRUE
-    ),
+    write_per_dataset(recipe_table_1a(predictors_1a), "1a_recipe_draws", gzip = TRUE),
     format = "file"
   ),
   tar_target(

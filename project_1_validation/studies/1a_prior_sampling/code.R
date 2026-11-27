@@ -62,17 +62,15 @@ quantities_1a <- function(draws, covariance) {
 ## Δ = delta_share_1a x the quantity's SD (docs/validation_tests.md)
 sample_setting_1a <- function(setting, predictors, model) {
   covariance <- covariance_of(predictors)
-  stan_data <- list(
+  stan_data <- c(list(
     N = nrow(predictors),
     K = ncol(predictors),
     X = predictors,
     y = data_prior_only_outcome(setting$design, nrow(predictors)),
     prior_only = 1L,
     proper_stand_ins = 1L,
-    per_observation = 0L,   # no log_lik or y_rep: not needed here
-    r_squared_shape = prior_shape(setting$prior, ncol(predictors)),
-    independent_effects = 0L   # project 1 uses the R-squared ~ Beta(a, 1) priors only
-  )
+    per_observation = 0L    # no log_lik or y_rep: not needed here
+  ), stan_prior_data(setting$prior, ncol(predictors)))
   name <- name_of("1a", setting$prior, setting$design)
   seed <- seed_of(name)
   started <- Sys.time()
@@ -176,35 +174,65 @@ settings_table_1a <- function(samples) {
 
 ## ---- Quantiles against their expected values ---------------------------------------
 
-## The prior as a recipe (draw_coefficients_from_prior()), as partial
-## correlations: the second route for the three-predictor design
-recipe_partials_1a <- function(prior, covariance) {
-  draws <- with_stream_of(paste0("prior-recipe-", prior, "-three"), {
-    draw_coefficients_from_prior(reference_size_1a, covariance, prior = prior)
-  })
+## The prior as a recipe (draw_coefficients_from_prior()): its draws for one
+## design. The stream's name keeps the three-predictor design's draws as
+## they were.
+recipe_draws_1a <- function(prior, design, covariance) {
+  stream <- paste0("prior-recipe-", prior, "-", if (design == "three_correlated") "three" else design)
+  with_stream_of(stream, draw_coefficients_from_prior(reference_size_1a, covariance, prior = prior))
+}
+
+## ... as partial correlations: the second route for the three-predictor design
+recipe_partials_1a <- function(draws, covariance) {
   f <- sweep(draws, 2, sqrt(1 / diag(solve(covariance))), "*")
   f / sqrt(1 + f^2)
 }
 
-## Layer 1: the recipe's draws for every prior (the three-predictor design),
-## one row per draw
+## Layer 1: the recipe's draws, one row per draw: every prior's partial
+## correlations (the three-predictor design), and for independent_partial_r
+## also R-squared (every design with more than one predictor), whose
+## distribution has no closed form to compare with. `predictors`: the designs'
+## predictors.
 recipe_table_1a <- function(predictors) {
-  covariance <- covariance_of(predictors)
   bind_rows(lapply(unique(settings_1a$prior), function(prior) {
-    partials <- recipe_partials_1a(prior, covariance)
-    bind_rows(lapply(seq_len(ncol(partials)), function(j) {
-      tibble(
-        prior = prior, design = "three_correlated",
-        quantity = sprintf("partial correlation of x%d", j),
-        draw = seq_len(nrow(partials)), value = partials[, j]
+    bind_rows(lapply(names(predictors), function(design) {
+      covariance <- covariance_of(predictors[[design]])
+      with_partials <- design == "three_correlated"
+      with_r_squared <- prior == "independent_partial_r" && ncol(covariance) > 1
+      if (!with_partials && !with_r_squared) {
+        return(NULL)
+      }
+      draws <- recipe_draws_1a(prior, design, covariance)
+      partials <- if (with_partials) recipe_partials_1a(draws, covariance)
+      bind_rows(
+        if (with_partials) {
+          lapply(seq_len(ncol(partials)), function(j) {
+            tibble(
+              prior = prior, design = design,
+              quantity = sprintf("partial correlation of x%d", j),
+              draw = seq_len(nrow(partials)), value = partials[, j]
+            )
+          })
+        },
+        if (with_r_squared) {
+          tibble(
+            prior = prior, design = design, quantity = "R-squared",
+            draw = seq_len(nrow(draws)), value = as.vector(attr(draws, "R_squared"))
+          )
+        }
       )
     }))
   }))
 }
 
 ## One quantity: its quantiles against the expected ones, and its KS distance
-## to the expected distribution next to the .01 critical value for its ESS
-compare_quantity_1a <- function(x, name, setting, a, recipe) {
+## to the expected distribution next to the .01 critical value for its ESS.
+## The expected distribution is Beta(a, 1) (the default), the draws of the
+## recipe (`reference`, a vector) or the exact U(-1, 1) (reference =
+## "uniform", for the partial correlations of independent_partial_r, which
+## are flat on (-1, 1) by definition). `label` names the variable in the
+## tables.
+compare_quantity_1a <- function(x, name, setting, a, reference = NULL, label = name) {
   estimate <- quantile(as.vector(x), percentiles_1a, names = FALSE)
   mcse_of <- function(values) {
     vapply(percentiles_1a, function(p) posterior::mcse_quantile(values, probs = p), numeric(1))
@@ -212,34 +240,37 @@ compare_quantity_1a <- function(x, name, setting, a, recipe) {
   mcse <- mcse_of(x)
   ess <- posterior::ess_bulk(x)
 
-  if (startsWith(name, "partial")) {
+  if (identical(reference, "uniform")) {
+    # against the exact U(-1, 1)
+    expected <- qunif(percentiles_1a, -1, 1)
+    ks_distance <- suppressWarnings(ks.test(as.vector(x), function(v) punif(v, -1, 1))$statistic)
+    critical <- 1.63 / sqrt(ess)
+    against <- "U(-1, 1)"
+    prior_sd <- sqrt(1 / 3)
+  } else if (!is.null(reference)) {
     # against the recipe, whose own MCSE is added
-    reference <- recipe[, as.integer(sub(".*x", "", name))]
     expected <- quantile(reference, percentiles_1a, names = FALSE)
     mcse <- sqrt(mcse^2 + mcse_of(reference)^2)
     ks_distance <- suppressWarnings(ks.test(as.vector(x), reference)$statistic)
     critical <- 1.63 * sqrt((ess + reference_size_1a) / (ess * reference_size_1a))
     against <- "the recipe"
+    # Δ: 10% of the quantity's SD under the prior (the recipe's)
+    prior_sd <- sd(reference)
   } else {
     # against Beta(a, 1)
     expected <- qbeta(percentiles_1a, a, 1)
     ks_distance <- suppressWarnings(ks.test(as.vector(x), function(v) pbeta(v, a, 1))$statistic)
     critical <- 1.63 / sqrt(ess)
     against <- sprintf("Beta(%g, 1)", a)
-  }
-  # Δ: 10% of the quantity's SD under the prior (the recipe's, or Beta(a, 1)'s)
-  prior_sd <- if (startsWith(name, "partial")) {
-    sd(reference)
-  } else {
-    sqrt(a / ((a + 1)^2 * (a + 2)))
+    prior_sd <- sqrt(a / ((a + 1)^2 * (a + 2)))
   }
 
   quantiles <- expectation_rows(
     prior = setting$prior,
     design = setting$design,
-    variable = name,
+    variable = label,
     percentile = 100 * percentiles_1a,
-    quantity = paste("quantile of", name),
+    quantity = paste("quantile of", label),
     expected = expected,
     estimate = estimate,
     mcse = mcse
@@ -251,7 +282,7 @@ compare_quantity_1a <- function(x, name, setting, a, recipe) {
     ks = data.frame(
       prior = setting$prior,
       design = setting$design,
-      variable = name,
+      variable = label,
       against = against,
       ks_distance = unname(ks_distance),
       critical_at_01 = critical,
@@ -267,24 +298,44 @@ compare_1a <- function(draws, recipe, settings, predictors) {
   lapply(seq_len(nrow(settings)), function(i) {
     setting <- settings[i, c("prior", "design")]
     covariance <- covariance_of(predictors[[setting$design]])
-    a <- prior_shape(setting$prior, ncol(covariance))
+    independent <- setting$prior == "independent_partial_r"
+    # the Beta(a, 1) shape of R-squared; independent_partial_r has none, except
+    # with one predictor, where R-squared = r^2 with r flat: Beta(1/2, 1).
+    # With more, R-squared is compared with the recipe's draws.
+    a <- if (!independent) {
+      prior_shape(setting$prior, ncol(covariance))
+    } else if (ncol(covariance) == 1) {
+      1 / 2
+    } else {
+      NA_real_
+    }
     of_setting <- draws[draws$prior == setting$prior & draws$design == setting$design, ]
 
-    # the recipe's partial correlations as a draws x 3 matrix
-    recipe_matrix <- if (setting$design == "three_correlated") {
-      of_prior <- recipe[recipe$prior == setting$prior, ]
-      sapply(sprintf("partial correlation of x%d", 1:3), function(q) {
-        of_q <- of_prior[of_prior$quantity == q, ]
-        of_q$value[order(of_q$draw)]
-      })
+    # the recipe's draws of one quantity
+    recipe_of <- function(design, quantity) {
+      of_q <- recipe[recipe$prior == setting$prior & recipe$design == design &
+                       recipe$quantity == quantity, ]
+      of_q$value[order(of_q$draw)]
     }
 
     rows <- lapply(unique(of_setting$quantity), function(name) {
       of_quantity <- of_setting[of_setting$quantity == name, ]
       x <- matrix(NA_real_, max(of_quantity$iteration), max(of_quantity$chain))
       x[cbind(of_quantity$iteration, of_quantity$chain)] <- of_quantity$value
-      compare_quantity_1a(x, name, setting, a, recipe_matrix)
+      if (startsWith(name, "partial")) {
+        # against the recipe; independent_partial_r also against the exact U(-1, 1)
+        compared <- list(compare_quantity_1a(x, name, setting, a, recipe_of("three_correlated", name)))
+        if (independent) {
+          compared[[2]] <- compare_quantity_1a(
+            x, name, setting, a, "uniform", label = paste(name, "(exact)")
+          )
+        }
+        return(compared)
+      }
+      reference <- if (is.na(a)) recipe_of(setting$design, name)
+      list(compare_quantity_1a(x, name, setting, a, reference))
     })
+    rows <- unlist(rows, recursive = FALSE)
 
     list(
       quantiles = do.call(rbind, lapply(rows, `[[`, "quantiles")),
