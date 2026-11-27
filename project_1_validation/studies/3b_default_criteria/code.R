@@ -94,6 +94,18 @@ rate_bayes_factor_3b <- function(cell, replication) {
   row
 }
 
+## The expected rate of the intercept-only comparison (3b.5), per log n: the
+## shape a of R-squared ~ Beta(a, 1) for the q predictors the larger model
+## has. independent_partial_r has no Beta shape
+## (prior_shape() stops), so its rate is set to q / 2, the same local shape
+## as joint_partial_r (a = k / 2): near zero the prior has a flat density on
+## the k partial correlations (a box), so its mass within a small R grows like
+## R^k, as for Beta(k / 2, 1).
+## PENDING: local check in checks/2026-11-27_independent-rate
+expected_rate_3b <- function(prior, q) {
+  if (prior == "independent_partial_r") q / 2 else prior_shape(prior, q)
+}
+
 ## 3b.3-3b.5: the slopes against their asymptotic values, q/2 (or a against
 ## the intercept-only model)
 rate_slopes_3b <- function(rates) {
@@ -104,7 +116,7 @@ rate_slopes_3b <- function(rates) {
     ungroup() |>
     mutate(
       quantity = "slope of median log BF against log n",
-      expected = ifelse(setting == "intercept only", mapply(prior_shape, prior, q), q / 2),
+      expected = ifelse(setting == "intercept only", mapply(expected_rate_3b, prior, q), q / 2),
       distance_in_mcse = (estimate - expected) / mcse,
       delta = relative_delta_3b * expected
     ) |>
@@ -167,7 +179,7 @@ intrinsic_draws_of_3b <- function() {
   population <- matrix(0.5, 3, 3)
   diag(population) <- 1
 
-  per_prior <- lapply(priors_3b, function(p) {
+  per_prior <- lapply(project_priors, function(p) {
     limit <- with_stream_of(paste0("I5-", p, "-limit"), {
       draw_coefficients_from_prior(intrinsic_draws_3b, population, prior = p)[, 1]
     })
@@ -232,6 +244,8 @@ growing_bayes_factor_3b <- function(cell, replication) {
 ## direction_delta())
 growing_slopes_3b <- function(growing) {
   growing |>
+    # the priors in flatcor's order, then the references (design.R)
+    mutate(method = factor(method, levels = growing_methods_3b)) |>
     group_by(truth, growth, method) |>
     slopes_by_group("3b-bootstrap-growing") |>
     ungroup() |>
@@ -246,6 +260,7 @@ growing_slopes_3b <- function(growing) {
 
 growing_medians_3b <- function(growing) {
   growing |>
+    mutate(method = factor(method, levels = growing_methods_3b)) |>
     group_by(truth, growth, n, method) |>
     summarise(median_log_bf = median(log_bf), .groups = "drop")
 }
